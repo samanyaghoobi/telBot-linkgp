@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c84936c8389ad5f4d7500f8fdd4bdcdca97e6a561064b333e280bb3e05ac0e9c"
+            "sha256": "a92ceb82f8f3bdc22302d10f857d71eda8195074df495383acda04da96d55724"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -120,6 +120,15 @@
             "markers": "python_full_version >= '3.7.0'",
             "version": "==3.3.2"
         },
+        "convertdate": {
+            "hashes": [
+                "sha256:770c6b2195544d3e451e230b3f1c9b121ed02680b877f896306a04cf6f26b48f",
+                "sha256:fcffe3a67522172648cf03b0c3757cfd079726fe5ae04ce29989ad3958039e4e"
+            ],
+            "index": "pypi",
+            "markers": "python_version >= '3.7' and python_version < '4'",
+            "version": "==2.4.0"
+        },
         "idna": {
             "hashes": [
                 "sha256:028ff3aadf0609c1fd278d8ea3089299412a7a8b9bd005dd08b9f8285bcb5cfc",
@@ -160,6 +169,12 @@
             "index": "pypi",
             "markers": "python_version >= '3.8'",
             "version": "==9.0.0"
+        },
+        "pymeeus": {
+            "hashes": [
+                "sha256:548f7186bd8b96cbc069cf649a8e8e377dce49ac74486709849fe63a99cad684"
+            ],
+            "version": "==0.5.12"
         },
         "pytelegrambotapi": {
             "hashes": [

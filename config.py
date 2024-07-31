@@ -5,11 +5,12 @@ DB_CONFIG={
     'password':'root',
     'database':'justlink'}
 
-channels=['@linkgp']
 ##############################################################
-
+#vars
+channels=['@linkgp']
+admin_id=340500740
+days_of_week = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یک‌شنبه"]
 # admin="@saaman"
-# admin_id="340500740"
 # channel_main="@linkGP"
 # channel_main_id="1007477494"
 # channel_t="@linkGP_t"

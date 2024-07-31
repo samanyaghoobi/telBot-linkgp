@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 pytelegrambotapi = "*"
 mysql-connector-python = "*"
+convertdate = "*"
 
 [dev-packages]
 
