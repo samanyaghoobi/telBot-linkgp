@@ -1,15 +1,17 @@
 import mysql.connector # type: ignore
 from config import *
+# from custom_functions import *
+
 #########################################################
 #? tables 
 
-#* reservation
-def create_reservation_table():
+#* balance
+def create_table_transactions():
     """
-    reservation (id,approved,amount,username,user_id,record_data,record_time)
+    transactions (id,approved,amount,username,user_id,record_data,record_time)
     Like (1,true or false,15,saaman_pc,1054820423,2024-08-01,"13:00")
     """
-    sql=f"""create table reservation(
+    sql=f"""create table transactions(
     id INT AUTO_INCREMENT PRIMARY KEY,
     approved bool NOT NULl DEFAULT 0,
     amount DECIMAL(10,2) NOT NULl,
@@ -29,7 +31,7 @@ def create_reservation_table():
     
 
 #* users
-def create_reservation_users():
+def create_table_users():
     """
     users (userid,balance,score,username)
     users (1054820423,10,5,saaman_pc)
@@ -49,34 +51,35 @@ def create_reservation_users():
     except:
          return False
 #* channel_timing
-def create_reservation_channel_timing():
+def create_table_channel_timing():
     """
     channel_timing see what is it
+    each hour show userId that's reserved 
     """
     sql=f"""create table channel_timing(
  	record_date DATE PRIMARY KEY NOT NULL ,
-     hour_13 BOOLEAN NOT NULL DEFAULT 0,
-     hour_14 BOOLEAN NOT NULL DEFAULT 0,
-     hour_15 BOOLEAN NOT NULL DEFAULT 0,
-     hour_16 BOOLEAN NOT NULL DEFAULT 0,
-     hour_17 BOOLEAN NOT NULL DEFAULT 0,
-     hour_18 BOOLEAN NOT NULL DEFAULT 0,
-     hour_18_30 BOOLEAN NOT NULL DEFAULT 0,
-     hour_19 BOOLEAN NOT NULL DEFAULT 0,
-     hour_19_30 BOOLEAN NOT NULL DEFAULT 0,
-     hour_20 BOOLEAN NOT NULL DEFAULT 0,
-     hour_20_30 BOOLEAN NOT NULL DEFAULT 0,
-     hour_21 BOOLEAN NOT NULL DEFAULT 0,
-     hour_21_30 BOOLEAN NOT NULL DEFAULT 0,
-     hour_22 BOOLEAN NOT NULL DEFAULT 0,
-     hour_22_30 BOOLEAN NOT NULL DEFAULT 0,
-     hour_23 BOOLEAN NOT NULL DEFAULT 0,
-     hour_23_30 BOOLEAN NOT NULL DEFAULT 0,
-     hour_24 BOOLEAN NOT NULL DEFAULT 0,
-     hour_24_30 BOOLEAN NOT NULL DEFAULT 0,
-     hour_1 BOOLEAN NOT NULL DEFAULT 0,
-     hour_1_30 BOOLEAN NOT NULL DEFAULT 0,
-     hour_2 BOOLEAN NOT NULL DEFAULT 0);"""
+     hour_13 BIGINT NOT NULL DEFAULT 0,
+     hour_14 BIGINT NOT NULL DEFAULT 0,
+     hour_15 BIGINT NOT NULL DEFAULT 0,
+     hour_16 BIGINT NOT NULL DEFAULT 0,
+     hour_17 BIGINT NOT NULL DEFAULT 0,
+     hour_18 BIGINT NOT NULL DEFAULT 0,
+     hour_18_30 BIGINT NOT NULL DEFAULT 0,
+     hour_19 BIGINT NOT NULL DEFAULT 0,
+     hour_19_30 BIGINT NOT NULL DEFAULT 0,
+     hour_20 BIGINT NOT NULL DEFAULT 0,
+     hour_20_30 BIGINT NOT NULL DEFAULT 0,
+     hour_21 BIGINT NOT NULL DEFAULT 0,
+     hour_21_30 BIGINT NOT NULL DEFAULT 0,
+     hour_22 BIGINT NOT NULL DEFAULT 0,
+     hour_22_30 BIGINT NOT NULL DEFAULT 0,
+     hour_23 BIGINT NOT NULL DEFAULT 0,
+     hour_23_30 BIGINT NOT NULL DEFAULT 0,
+     hour_24 BIGINT NOT NULL DEFAULT 0,
+     hour_24_30 BIGINT NOT NULL DEFAULT 0,
+     hour_1 BIGINT NOT NULL DEFAULT 0,
+     hour_1_30 BIGINT NOT NULL DEFAULT 0,
+     hour_2 BIGINT NOT NULL DEFAULT 0);"""
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
                     with connection.cursor()  as cursor:
@@ -87,19 +90,19 @@ def create_reservation_channel_timing():
          return False
 
 #########################################################
-#! reservation 
+#! transactions 
 #########################################################
-def get_all_reservations():
-     sql=f"SELECT * FROM reservation;"
+def get_all_transactions():
+     sql=f"SELECT * FROM transactions;"
      with mysql.connector.connect(**DB_CONFIG) as connection:
           with connection.cursor()  as cursor:
             cursor.execute(sql)
             result =cursor.fetchall()
             return result
 #########################################################
-def get_reservations_of_month(year,month):
+def get_transactions_of_month(year,month):
      sql=f"""SELECT *
-FROM reservation
+FROM transactions
 WHERE YEAR(record_date) = '{year}' AND MONTH(record_date) = '{month}';
 """
      with mysql.connector.connect(**DB_CONFIG) as connection:
@@ -109,8 +112,8 @@ WHERE YEAR(record_date) = '{year}' AND MONTH(record_date) = '{month}';
             return result
 
 #########################################################
-def approve_a_reserve(id):
-    sql=f"""UPDATE reservation
+def approve_a_transactions(id):
+    sql=f"""UPDATE transactions
 SET approved = 1
 WHERE id = {id};"""
     try:
@@ -122,8 +125,8 @@ WHERE id = {id};"""
     except:
          return False
 #########################################################
-def update_amount(id,amount):
-    sql=f"""UPDATE reservation
+def update_amount_transactions(id,amount):
+    sql=f"""UPDATE transactions
 SET amount = {amount}
 WHERE id = {id};"""
     try:
@@ -135,9 +138,9 @@ WHERE id = {id};"""
     except:
          return False
 #########################################################
-def add_reserve(amount,user_name,user_id,record_date,record_time):
-    sql=f"""INSERT INTO reservation (approved, amount, user_name, user_id, record_date, record_time)
-VALUES (0, {amount}, '{user_name}', '{user_id}', '{record_date}', '{record_time}');
+def add_transactions(approve,amount,user_name,user_id,record_date,record_time):
+    sql=f"""INSERT INTO transactions (approved, amount, user_name, user_id, record_date, record_time)
+VALUES ({approve}, {amount}, '{user_name}', '{user_id}', '{record_date}', '{record_time}');
 """ 
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
@@ -246,4 +249,29 @@ def decrease_score(user_id,decrease_amount):
                connection.commit()
 
     return True
-#!#########################################################################
+##########################################################################
+#! channel timing
+def create_channel_timing(day):
+    sql= f"INSERT INTO channel_timing(record_date) VALUES ('{day}');"
+    try:
+            with mysql.connector.connect(**DB_CONFIG) as connection:
+              with connection.cursor()  as cursor:
+                cursor.execute(sql)
+                connection.commit()
+            return True
+    except:
+           return False
+
+def update_channel_timing(time_index,userid,date):
+    time=db_hour_name[time_index]
+    sql=f"""UPDATE channel_timing
+SET hour_{time} = {userid}
+WHERE record_date = '{date}';"""
+    try:
+            with mysql.connector.connect(**DB_CONFIG) as connection:
+              with connection.cursor()  as cursor:
+                cursor.execute(sql)
+                connection.commit()
+            return True
+    except:
+           return False

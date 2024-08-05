@@ -13,7 +13,7 @@ markup_join.add(button)
 markup_main=ReplyKeyboardMarkup(resize_keyboard=True,row_width=2)
 markup_main.add(free_rime_btn)
 markup_main.add(user_acc_btn)
-markup_main.add(support_btn)
+markup_main.add(support_btn,make_banner_btn)
 ###!admin
 markup_main_admin=ReplyKeyboardMarkup(resize_keyboard=True,row_width=2)
 markup_main_admin.add(admin_btn_bot_info)

@@ -14,3 +14,4 @@ class banner_state(StatesGroup):
     member=State()
     description=State()
     link=State()
+    banner=State()
