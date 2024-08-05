@@ -171,6 +171,13 @@ def get_user(user_id):
                result =cursor.fetchone()
      return result
 ##################################################
+def get_all_users():
+     sql=f"SELECT * FROM users;"
+     with mysql.connector.connect(**DB_CONFIG) as connection:
+          with connection.cursor()  as cursor:
+            cursor.execute(sql)
+            result =cursor.fetchall()
+            return result
 ##################################################
 ##################################################
 

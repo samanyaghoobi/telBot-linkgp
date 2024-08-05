@@ -2,7 +2,7 @@ from config import *
 
 new_user_text='خوش آمدی شما یک کاربر جدید هستید'
 old_user_text='سلام کاربر قدیمی'
-
+admin_link=""
 not_join_text=f'برای استفاده از این ربات باید در کانال ما عضو شوید \n @linkGP'
 link = f"https://t.me/{BOT_USERNAME}?start=start"
 joined_text="""عضویت شما تایید شد 
@@ -32,6 +32,7 @@ balance_inc_msg="برای افزایش موجودی خود دو راه کار و
 
 ### admin btn
 admin_btn_user_list="user_list"
+admin_btn_bot_info="bot_info"
 admin_btn_send_msg_to_all="send msg to all users"
 admin_btn_check_income="check income"
 admin_btn_accept_income="accept incomes"
