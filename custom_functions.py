@@ -1,10 +1,13 @@
 import mysql.connector # type: ignore
-from config import ADMIN_ID_LIST, DB_CONFIG,days_of_week,price_1,price_2,price_3,default_banner_pattern
+from config import ADMIN_ID_LIST, CHANNELS_USERNAME, DB_CONFIG,days_of_week,price_1,price_2,price_3,default_banner_pattern,time_of_day
 from datetime import datetime,timedelta
 from convertdate import persian
-from db_connections import get_all_transactions, get_transactions_of_month
-from main import bot
+from db_connections import get_all_transactions, get_transactions_of_month, get_user_balance
+from main import bot, isMemberOf, isMemberOfChannels
+from bot_messages import make_line
 import re
+from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
+
 ##############################################
 def make_timing_of_day(results,day):
     time=[]
@@ -12,48 +15,50 @@ def make_timing_of_day(results,day):
         if index !=0:
             if results[index] == 0:
                 time.append("خالی")
+            elif results[index]==1:
+                time.append("درحال رزرو : منتظر تایید ادمین")
             else:
-                time.append("رزرو شده است")
+                time.append(f"رزرو شده است : {results[index]}")
     text=f"""اخرین بروز رسانی : \n{get_current_datetime()}
-    روز : {cal_day(day)}
-طرح یک , قیمت = {price_1} هزارتومان
-13:00=>{time[0]}
-14:00=>{time[1]}
-15:00=>{time[2]}
-16:00=>{time[3]}
-17:00=>{time[4]}
--------------------
-طرح دو , قیمت = {price_2} هزارتومان
-18:00=>{time[5]}
-18:30=>{time[6]}
-19:00=>{time[7]}
-19:30=>{time[8]}
-20:00=>{time[9]}
-20:30=>{time[10]}
-21:00=>{time[11]}
-21:30=>{time[12]}
-22:00=>{time[13]}
-22:30=>{time[14]}
-23:00=>{time[15]}
-23:30=>{time[16]}
-00:00=>{time[17]}
-00:30=>{time[18]}
-01:00=>{time[19]}
-01:30=>{time[20]}
--------------------
-پست ویژه, قیمت = {price_3} هزارتومان
-02:00=>{time[21]}
+{make_line}
+روز رزرو : {cal_day(day)}
+🩵🩵🩵🩵🩵🩵🩵طرح یک🩵🩵🩵🩵🩵🩵
+حداقل یک ساعت پست اخر
+💵 قیمت = {price_1} هزارتومان
+13:00 ⬅️ {time[0]}
+14:00 ⬅️ {time[1]}
+15:00 ⬅️ {time[2]}
+16:00 ⬅️ {time[3]}
+17:00 ⬅️ {time[4]}
+{make_line}
+✨✨✨✨✨✨✨طرح دو ✨✨✨✨✨✨
+حداقل نیم ساعت پست اخر
+💵 قیمت = {price_2} هزارتومان
+18:00 ⬅️ {time[5]}
+18:30 ⬅️ {time[6]}
+19:00 ⬅️ {time[7]}
+19:30 ⬅️ {time[8]}
+20:00 ⬅️ {time[9]}
+20:30 ⬅️ {time[10]}
+21:00 ⬅️ {time[11]}
+21:30 ⬅️ {time[12]}
+22:00 ⬅️ {time[13]}
+22:30 ⬅️ {time[14]}
+23:00 ⬅️ {time[15]}
+23:30 ⬅️ {time[16]}
+00:00 ⬅️ {time[17]}
+00:30 ⬅️ {time[18]}
+01:00 ⬅️ {time[19]}
+01:30 ⬅️ {time[20]}
+{make_line}
+💎💎💎💎💎💎💎پست ویژه💎💎💎💎💎💎
+💵 قیمت = {price_3} هزارتومان
+حداقل تا ساعت 13:00  پست اخر
+02:00 ⬅️ {time[21]}
 """
     return text
 ###################################################
-def make_user_info (username,user_id,balance,score):
-     text=f""""اطلاعات حساب کاربری  :
-نام کاربری : <a href='tg://user?id={user_id}'>{username}</a>
-شناسه کاربری :<code>{user_id}</code>
-موجودی : {balance}
-امتیاز شما: {score}
-"""
-     return text
+
 ###################################################
 
 def current_date():
@@ -143,6 +148,8 @@ def find_pattern_id(text):
     x=re.findall(pattern=pattern,string=text)[0].split()[1]
     return x
 
+
+
 def find_pattern_balance_amount(text):
     pattern = r"balance increase amount:‌ \d+"
     x=re.findall(pattern=pattern,string=text)[0].split()[3]
@@ -173,6 +180,20 @@ lιnĸ: {link}
 def send_test_msg_to_admin():
     bot.send_message(chat_id=ADMIN_ID_LIST[1],text="this is test msg")
 
+
+def extract_link(banner):
+    # الگوی regex برای پیدا کردن لینک
+    # این الگو به دنبال رشته‌هایی می‌گردد که با http:// یا https:// شروع شده و پس از آن کاراکترهای معتبر URL قرار دارند
+    pattern = r'https?://[^\s]+'
+    
+    # جستجوی الگو در متن
+    match = re.search(pattern, banner)
+    
+    # اگر لینک پیدا شد، آن را برگردان
+    if match:
+        return match.group(0)
+    else:
+        return None
 
 
 
@@ -254,3 +275,78 @@ def is_banner_ok(banner):
     # print(banner)
     regex = re.compile(default_banner_pattern, re.MULTILINE | re.VERBOSE)
     return bool(regex.match(banner))
+
+#####################3
+def make_banner_acc_msg_to_admin(user_id,username,time, day, price,reserve_id):
+     text=f"""id: {user_id} 
+username: @{username} 
+user_balance: {get_user_balance(user_id=user_id)[0]}
+time: {time} = {time_of_day[time]} 
+day: {day} = {cal_day(day)} 
+date: {cal_date(day)}
+price: {price}
+---------------
+reserve_id: {reserve_id}
+"""
+     return text
+
+######################3
+
+def parse_text_for_acc_admin_banner(text):
+    # Split the text into lines
+    lines = text.splitlines()
+    
+    # Initialize a dictionary to hold the parsed data
+    data = {}
+
+    # Extract the required information from each line
+    for line in lines:
+        if line.startswith("username:"):
+            data['username'] = line.split(":")[1].strip().replace('@', '')
+        elif line.startswith("time:"):
+            data['time'] = line.split(":")[1].strip().split('=')[0].strip()
+        elif line.startswith("id:"):
+            data['user_id'] = line.split(":")[1].strip().split('=')[0].strip()
+        elif line.startswith("day:"):
+            data['day'] = line.split(":")[1].strip().split('=')[0].strip()
+        elif line.startswith("date:"):
+            data['date'] = line.split(":")[1].strip().split('=')[0].strip()
+        elif line.startswith("reserve_id:"):
+            data['reserve_id'] = line.split(":")[1].strip().split('=')[0].strip()
+
+    # Convert dictionary to JSON
+    return data
+#######
+def convert_to_time(string):
+    time_format = "%H:%M"
+    
+    # Convert the initial time string to a datetime object
+    time = datetime.strptime(string, time_format).time()
+    return time
+#######
+
+def get_reserve_id(text):
+    # Split the text into lines
+    lines = text.splitlines()
+    
+
+    # Extract the required information from each line
+    for line in lines:
+        if line.startswith("reserve_id:"):
+            data = line.split(":")[1]
+
+    # Convert dictionary to JSON
+    return data
+
+####join channels markup
+def makeJoinChannelMarkup(user_id):
+    markup=InlineKeyboardMarkup()
+    channels = [item.replace('@', '') for item in CHANNELS_USERNAME]
+    for index,channel in enumerate(CHANNELS_USERNAME,start=0):#make btn for plans
+        if not isMemberOf(user_id=user_id,channel=channel):
+            btn=InlineKeyboardButton(text=f"عضو شدن در @{channels[index]}",url=f"https://t.me/{channels[index]}")
+            markup.add(btn)
+    button=InlineKeyboardButton(text="برسی عضویت",callback_data="proceed")
+    markup.add(button)
+    return markup
+    

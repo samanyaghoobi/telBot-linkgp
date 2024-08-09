@@ -1,4 +1,3 @@
-import mysql.connector # type: ignore
 import time
 import schedule
 from datetime import datetime
@@ -13,200 +12,180 @@ from datetime import datetime,timedelta
 from convertdate import persian
 from db_connections import *
 from custom_functions import *
+from bot_messages import *
+from bot_message_functions import *
 
 ########################################################################
 state_storage=StateMemoryStorage()
 bot =TeleBot(token = TOKEN,state_storage=state_storage, parse_mode="HTML")
-
 ########################################
-#restart  msg
-def send_startup_message():
+#* restart  msg
+def restartMessageToAdmins():
      for admin in ADMIN_ID_LIST:
-        bot.send_message(admin,text=restart_msg)
-          
+        bot.send_message(admin,text=restart_msg)     
 ########################################
-#check if user is in channels
-def is_member_of(user_id,channels=CHANNELS_ID):
+#* user state in channels
+def isMemberOf(user_id,channel):
+    is_member=bot.get_chat_member(chat_id=channel,user_id=user_id)
+    if is_member.status in ['left','kicked']:
+        return False
+    return True
+#* user state in channels
+def isMemberOfChannels(user_id,channels=CHANNELS_USERNAME):
     for channel in channels:
         is_member=bot.get_chat_member(chat_id=channel,user_id=user_id)
         if is_member.status in ['left','kicked']:
             return False
         return True
+#* join and mem check handler 
+def isInDB(user_id):
+    # bot.send_message(user_id,text=reboot_text,reply_markup=ReplyKeyboardRemove())
+    is_in_DB= get_user(user_id=user_id)
+    if is_in_DB:
+        return True
+    return False
 
-#message for join
-def check_join_msg(chat_id):
-     is_member=is_member_of(user_id=chat_id,channels=CHANNELS_ID)
-     if is_member is True:
-          return True
-     elif is_member is False:
-          bot.send_message(chat_id,text=not_join_text,reply_markup=markup_join)
-          return False
-#!
-def total_check(user_id):
-     is_member = is_member_of(user_id=user_id)
-     is_user = get_user(user_id=user_id)
-     if is_member:
-        if is_user:
-            return True
-        else:
-            bot.send_message(user_id,text=reboot_text,reply_markup=ReplyKeyboardRemove())
-            
-     else:
-        check_join_msg(chat_id=user_id)
-     return False
+
+def botNeedReboot(user_id):
+    markup=ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(restart_markup_text)
+    bot.send_message(chat_id=user_id,text=bot_need_reboot_msg,reply_markup=markup)
+########################################
+#* user check handler
+def user_check_handler(user_id,username):
+    """check both user is in db and user is member of channels
+    and send a custom message and markup for each 
+    """
+    is_member= isMemberOfChannels(user_id=user_id)
+    if not is_member:
+        markup=makeJoinChannelMarkup(user_id=user_id)
+        bot.send_message(chat_id=user_id,text=not_member_msg,reply_markup=markup)
+        return False
+    is_in_db= isInDB(user_id=user_id)
+    if not is_in_db:
+        create_user(userid=user_id,username=username)
+        result= isInDB(user_id=user_id)
+        if not result:
+            markup=ReplyKeyboardMarkup(resize_keyboard=True)
+            markup.add(restart_markup_text)
+            bot.send_message(chat_id=user_id,text=not_in_db_msg,reply_markup=markup)
+            return False
+    return True        
 
 ########################################
 #callback query for join
 @bot.callback_query_handler(func=lambda call:call.data=="proceed")
 def proceed (call :CallbackQuery):
-        is_member=check_join_msg(chat_id=call.message.chat.id)
-        if is_member is True:
-          bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=joined_text)
-#todo: test section #######################################################################
-
-# # /test
-@bot.message_handler(commands=['test'])
-def test(msg : Message):
-    send_test_msg_to_admin()
+    user_id=call.message.chat.id
+    username=call.from_user.username
+    user_check= user_check_handler(user_id=user_id,username=username)
+    if user_check:
+        bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
+        bot.send_message(chat_id=user_id,text=joined_msg,reply_markup=markup_main)
 
 
-def send_scheduled_message():
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    message_text = f"این یک پیام زمان‌بندی‌شده است که در {current_time} ارسال شده است."
-    bot.send_message(ADMIN_ID_LIST[1], message_text)
-    # print(f"پیام در {current_time} ارسال شد.")
-def schedule_jobs():
-    schedule.clear()
-    for i in range(len(time_of_day)):
-        schedule.every().day.at(time_of_day[i]).do(send_scheduled_message)
-def schedule_jobs_test():
-    schedule.clear()
-    for i in range(10):
-        schedule.every().day.at(f"01:0{i}").do(send_scheduled_message)
-
-# تابع برای اجرای زمان‌بندی
-def run_scheduler():
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
-import threading
-def start_scheduler():
-    schedule_jobs_test()  # ثبت وظایف زمان‌بندی‌شده
-    scheduler_thread = threading.Thread(target=run_scheduler)
-    scheduler_thread.daemon = True  # این کار باعث می‌شود Thread با بستن برنامه اصلی بسته شود
-    scheduler_thread.start()
-#     bot.send_message(msg.chat.id,text="msg to all test")
-#     bot.set_state(user_id=msg.from_user.id,state=admin_state.message_to_all,chat_id=msg.chat.id)
-    
-# @bot.message_handler(state=admin_state.message_to_all)
-# def msg(msg : Message):
-#     bot.send_message(msg.chat.id,text="ok")
-#     with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
-#         data['msg']=msg.text
-#     # bot.send_message(ADMIN_ID_LIST[0],text=f"{data['msg']}")
-#     bot.send_message(msg.chat.id,text=f"{data['msg']}")
-#     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
-
-#todo: test section ################################################################
 ########################################################################
 #* /start
 @bot.message_handler(commands=['start'])
 def start(msg : Message):
-       username=msg.from_user.username
-       user_id=msg.from_user.id
-       is_member=check_join_msg(chat_id=msg.chat.id)#* join 
-       if user_id in ADMIN_ID_LIST:
-            bot.send_message(chat_id=msg.chat.id,text=admin_welcome_msg,reply_markup=markup_main)
-       elif is_member is True:
-            result=get_user(user_id=user_id)
-            if result is not None:
-                bot.send_message(chat_id=msg.chat.id,text=old_user_text,reply_markup=markup_main)
-            else:
-                result =create_user(userid=user_id,username=username)
-                if result is True:
-                    bot.send_message(chat_id=msg.chat.id,text=new_user_text,reply_markup=markup_main)
-                else:
-                    bot.send_message(chat_id=msg.chat.id,text="مشکلی در ثبت نام شما پیش امد",reply_markup=ReplyKeyboardRemove())
+        username=msg.from_user.username
+        user_id=msg.from_user.id
+        user_check= user_check_handler(user_id=user_id,username=username)
+        if not user_check:
+            return False
+        else:
+            bot.send_message(chat_id=msg.chat.id,text=new_user_text,reply_markup=markup_main)
 #?#######################################################################
 #* make banner
 @bot.message_handler(func=lambda m:m.text == make_banner_btn)
 def start(msg : Message):
+    user_id=msg.chat.id
+    username=msg.from_user.username
+    user_check= user_check_handler(user_id=user_id,username=username)
+    if not user_check:
+        ##  botNeedReboot(user_id=user_id)
+        return False
     text=f"برای ساخت بنر روی دکمه زیر کلیک کنید"
     markup=InlineKeyboardMarkup()
-    btn=InlineKeyboardButton(text="  ساخت بنر",callback_data=f"make_banner")
+    btn=InlineKeyboardButton(text="ساخت بنر",callback_data=f"make_banner")
     markup.add(btn)
-    bot.send_message(chat_id=msg.chat.id,text=text,reply_markup=markup)
+    bot.send_message(chat_id=user_id,text=text,reply_markup=markup)
     
 #?#######################################################################
-#user account
+#* user account brn
 @bot.message_handler(func=lambda m:m.text == user_acc_btn)
 def account(msg : Message):
-     user_id=msg.from_user.id
-     result = total_check(user_id=user_id)
-    #  print(result)
-     if result:
-            balance= get_user_balance(user_id)
-            score=get_user_score(user_id)
-            text=make_user_info(user_id=user_id,balance=balance[0],score=score[0],username=msg.from_user.username)
-            markup=InlineKeyboardMarkup(row_width=1)
-            btn1=InlineKeyboardButton(text=balance_inc_btn,callback_data="user_balance_inc")
-            #  btn2=InlineKeyboardButton(text=check_reservations_text,callback_data="user_balance_inc")
-            markup.add(btn1)
-            bot.send_message(user_id,text=text,reply_markup=markup)
+    user_id=msg.from_user.id
+    username=msg.from_user.username
+    user_check= user_check_handler(user_id=user_id,username=username)
+    if not user_check:
+        ##  botNeedReboot(user_id=user_id)
+        return False
+    balance= get_user_balance(user_id)
+    score=get_user_score(user_id)
+    text=make_user_info(user_id=user_id,balance=balance[0],score=score[0],username=msg.from_user.username)
+    markup=InlineKeyboardMarkup(row_width=1)
+    btn=InlineKeyboardButton(text=balance_inc_btn,callback_data="user_balance_inc")
+    markup.add(btn)
+    bot.send_message(user_id,text=text,reply_markup=markup)
 #?#######################################################################
-#balance inc
+#balance inc btn
 @bot.callback_query_handler(func=lambda call: call.data == "user_balance_inc")
-def handle_button_press(call : CallbackQuery):
-     user_id=call.from_user.id
-     result = total_check(user_id=user_id)
-     if result:
-            markup=InlineKeyboardMarkup()
-            buttons =[]
-            for index,plan in enumerate(increase_plans,start=0):
-                btn=InlineKeyboardButton(text=plan,callback_data=f"plan_{index}")
-                buttons.append(btn)
-            for btn in buttons:
-                markup.add(btn)
-            bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=increase_balance_msg,reply_markup=markup)
+def user_balance_inc(call : CallbackQuery):
+    user_id=call.from_user.id
+    username=call.from_user.username
+    user_check= user_check_handler(user_id=user_id,username=username)
+    if not user_check:
+        ##  botNeedReboot(user_id=user_id)
+        return False
+    markup=InlineKeyboardMarkup()
+    for index,plan in enumerate(increase_plans_btn_text,start=0):#make btn for plans
+        btn=InlineKeyboardButton(text=plan,callback_data=f"plan_{index}")
+        markup.add(btn)
+    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=increase_balance_msg,reply_markup=markup)
 ########################################################################
 #balance inc handler
 @bot.callback_query_handler(func=lambda call: call.data.startswith("plan_"))
 def handle_button_press(call :CallbackQuery):
-     user_id=call.from_user.id
-     result = total_check(user_id=user_id)
-     if result:
-        index=int(call.data.split('_')[1])
-        text=f"""{increase_balance_msg_final}
-    -----------------
-    میزان واریزی انتخاب شده برابر {plans[index]} هزار تومان میباشد لطفا واریز نمایید و برای ارسال فیش واریزی از دکمه زیر استفاده کنید """
-        markup=InlineKeyboardMarkup()
-        btn=InlineKeyboardButton(text="ارسال رسید",callback_data=f"send_receipt_{index}")
-        markup.add(btn)
-        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text,reply_markup=markup)
+    user_id=call.from_user.id
+    username=call.from_user.username
+    user_check= user_check_handler(user_id=user_id,username=username)
+    if not user_check:
+       # #  botNeedReboot(user_id=user_id)
+        return False
+    index=int(call.data.split('_')[1])
+    markup=InlineKeyboardMarkup()
+    btn=InlineKeyboardButton(text="ارسال رسید",callback_data=f"send_receipt_{index}")
+    markup.add(btn)
+    text=select_plan_msg(index=index)
+    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text,reply_markup=markup)
 ########################################################################
 #get pic_receipt
 @bot.callback_query_handler(func= lambda m:m.data.startswith("send_receipt_"))
 def handle_button_press(call:CallbackQuery):
-     user_id=call.from_user.id
-     result = total_check(user_id=user_id)
-     if result:
-        index=int(call.data.split('_')[2])
-        text=f"""لطفا عکس رسید خود را ارسال کنید
-        {increase_balance_msg_final}
-        (مبلِغ واریزی شما {plans[index]} هراز تومان)
-        """
-        bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
-        bot.send_message(chat_id=call.message.chat.id,text=text)
-        bot.set_state(user_id=call.message.chat.id,state=user_state.pic_receipt,chat_id=call.message.chat.id)
-        with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
-            data['plan'] = index
+    user_id=call.from_user.id
+    username=call.from_user.username
+    user_check= user_check_handler(user_id=user_id,username=username)
+    if not user_check:
+        return False
+    index=int(call.data.split('_')[2])
+    text=get_pic_receipt_msg(index)
+    bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
+    bot.send_message(chat_id=call.message.chat.id,text=text)
+    bot.set_state(user_id=call.message.chat.id,state=user_state.pic_receipt,chat_id=call.message.chat.id)
+    with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
+        data['plan'] = index
 
 
 ########################################################################
 # # send pic for admin 
 @bot.message_handler(state=user_state.pic_receipt,content_types=['photo'])
 def forward(msg : Message):
+    user_id=msg.from_user.id
+    username=msg.from_user.username
+    user_check= user_check_handler(user_id=user_id,username=username)
+    if not user_check:
+        return False
     text=f"رسید شما برای ادمین ارسال شد و تا ساعاتی دیگر مورد تایید قرار میگرد \n و پس از ان حساب شما شارژ میشود"
     markup=InlineKeyboardMarkup()
     btn1=InlineKeyboardButton(text="تایید",callback_data="pic_receipt_accept")
@@ -229,11 +208,6 @@ balance increase amount:‌ {plans[index]}  H T
 
 
 ########################################################################
-@bot.message_handler(state=user_state.pic_receipt, content_types=['text', 'video', 'document', 'audio', 'sticker', 'voice', 'location', 'contact'])
-def handle_non_photo(msg: Message):
-    # پیام خطا برای ارسال محتوای غیر از عکس
-    bot.send_message(msg.chat.id, "لطفاً فقط یک عکس از رسید خود ارسال کنید.")
-#todo : any pic error
 
 #?#######################################################################
 #accept btn
@@ -305,28 +279,30 @@ def deny_reason(msg : Message):
 #support btn
 @bot.message_handler(func=lambda m:m.text == support_btn)
 def account(msg : Message):
-    bot.send_message(chat_id=msg.chat.id,text=support_text)
+    bot.send_message(chat_id=msg.chat.id,text=support_msg)
      
 #?#######################################################################
 #free time :day of weak
 @bot.message_handler(func=lambda m:m.text == free_rime_btn)
 def account(msg : Message):
-     user_id=msg.from_user.id
-     result = total_check(user_id=user_id)
-     if result:
-        markup_free_time=InlineKeyboardMarkup(row_width=2) 
-        current_time=get_current_time()
-        if compare_time("00:00",current_time) and compare_time(current_time,"02:00"):
-            batten_test=InlineKeyboardButton(text=f"{cal_day(-1)} : {gregorian_to_jalali(cal_date(-1))}",callback_data=f"time_btn_-1")
-            markup_free_time.add(batten_test)
-        for i in range(7):
-            batten_test=InlineKeyboardButton(text=f"{cal_day(i)} : {gregorian_to_jalali(cal_date(i))}",callback_data=f"time_btn_{i}")
-            markup_free_time.add(batten_test)
+    user_id=msg.from_user.id
+    username=msg.from_user.username
+    user_check= user_check_handler(user_id=user_id,username=username)
+    if not user_check:
+       #  botNeedReboot(user_id=user_id)
+        return False
+    markup_free_time=InlineKeyboardMarkup(row_width=2) 
+    current_time=get_current_time()
+    print(current_time)
+    if compare_time("00:00",current_time) and compare_time(current_time,"02:00"):
+        batten_test=InlineKeyboardButton(text=f"{cal_day(-1)} : {gregorian_to_jalali(cal_date(-1))}",callback_data=f"time_btn_-1")
+        markup_free_time.add(batten_test)
+    for i in range(7):
+        batten_test=InlineKeyboardButton(text=f"{cal_day(i)} : {gregorian_to_jalali(cal_date(i))}",callback_data=f"time_btn_{i}")
+        markup_free_time.add(batten_test)
 
-        # markup_free_time.add(back_button)#todo: make back btn
-        # text =f"امروز {cal_day(0)} : {gregorian_to_jalali(cal_date(0))} \n می توانید از لیست زیر روز مورد نظر را انتخاب کنین تا لیست ساعت های خالی آن روز برای شما ارسال شود"
-        text=f"از لیست زیر می توانید روز مورد نظر را برای دریافت ساعت های خالی انتخاب کنید \n امروز {cal_day(0)} : {gregorian_to_jalali(cal_date(0))} "
-        bot.send_message(chat_id=msg.chat.id,text=text,reply_markup=markup_free_time)
+    text=f"از لیست زیر می توانید روز مورد نظر را برای دریافت ساعت های خالی انتخاب کنید \n امروز {cal_day(0)} : {gregorian_to_jalali(cal_date(0))} "
+    bot.send_message(chat_id=msg.chat.id,text=text,reply_markup=markup_free_time)
 
 
 ########################################################################
@@ -334,7 +310,7 @@ def account(msg : Message):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("time_btn_"))
 def handle_button_press(call :CallbackQuery):
      user_id=call.from_user.id
-     result_member = total_check(user_id=user_id)
+     result_member = isInDB(user_id=user_id)
      if result_member:
         day=int(call.data.split('_')[2])
         print(day,cal_day(day))
@@ -359,7 +335,7 @@ def handle_button_press(call :CallbackQuery):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("reserve_"))
 def handle_button_press(call :CallbackQuery):
      user_id=call.from_user.id
-     result_member = total_check(user_id=user_id)
+     result_member = isInDB(user_id=user_id)
      if result_member:
         day=int(call.data.split('_')[1])
         date=(call.data.split('_')[2])
@@ -372,13 +348,15 @@ def handle_button_press(call :CallbackQuery):
         if day == 0:
             for i in range (len(time_of_day)):
                 if not compare_time(time1=current_time,time2=time_of_day[i]): # if time is past
+                    if compare_time(time1=current_time,time2="23:59") and compare_time (time1=time_of_day[i],time2="02:01"):
+                        continue
                     result[(i+1)]=1
         if day==-1:
             for i in range (len(time_of_day)):
                 if i< 18:
                     result[(i+1)]=1
                     continue
-                print(current_time,time_of_day[i])
+                # print(current_time,time_of_day[i])
                 if not compare_time(time1= current_time,time2= time_of_day[i]): # if time is past
                     result[(i+1)]=1
         for i in range (len(time_of_day)):
@@ -394,7 +372,7 @@ def handle_button_press(call :CallbackQuery):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("day_"))
 def handle_button_press(call:CallbackQuery):
      user_id=call.from_user.id
-     result_member = total_check(user_id=user_id)
+     result_member = isInDB(user_id=user_id)
      if result_member:
      #todo: make sure time is available
      #todo: get link from user, and scheduling it
@@ -421,7 +399,7 @@ def handle_button_press(call:CallbackQuery):
 @bot.callback_query_handler(func=lambda call: call.data== "make_banner")
 def handle_button_press(call:CallbackQuery):
      user_id=call.from_user.id
-     result_member = total_check(user_id=user_id)
+     result_member = isInDB(user_id=user_id)
      if result_member:
       bot.send_message(chat_id=call.message.chat.id,text="اسم گروه شما چیست؟ \n حداکثر ۲۰ کاراکتر")
       bot.set_state(user_id=call.message.chat.id,state=banner_state.name,chat_id=call.message.chat.id)
@@ -436,7 +414,7 @@ def handle_button_press(call:CallbackQuery):
     price= price_1 if time <5 else price_2 if 5<=time< 21 else price_3
     call_text=call.message.text
     info_text=f"info: {time}_{day}_{price}"
-    result_member = total_check(user_id=user_id)
+    result_member = isInDB(user_id=user_id)
     if result_member:
         text=f"""{info_text}
         ---------------------------------------------
@@ -447,6 +425,7 @@ def handle_button_press(call:CallbackQuery):
         bot.set_state(user_id=call.message.chat.id,state=banner_state.banner,chat_id=call.message.chat.id)
         with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
           data['day'] = day
+          data['date'] = cal_date(day)
           data['time'] = time
           data['price'] = price
 #################
@@ -455,34 +434,52 @@ def handle_button_press(call:CallbackQuery):
 def get_banner(msg : Message):
     with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
           day=data['day'] 
+          date=data['date'] 
           time=data['time'] 
           price=data['price'] 
-    print(time,day,price)
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
     banner=msg.text
+    user_id=msg.from_user.id
+    username=msg.from_user.username
     if is_banner_ok(banner=banner):
-        markup=InlineKeyboardMarkup()
-        btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
-        btn2=InlineKeyboardButton(text="رد کردن",callback_data="banner_deny")
-        btn3=InlineKeyboardButton(text="تغییر بنر",callback_data="banner_custom")
-        markup.add(btn1,btn2)
-        markup.add(btn3)
-        forwarded_msg=bot.forward_message(chat_id=ADMIN_ID_LIST[0],from_chat_id=msg.chat.id,message_id=msg.message_id)
-        bot.send_message(chat_id=ADMIN_ID_LIST[0],text=f"""id: {msg.from_user.id} ,
-username: @{msg.from_user.username} 
-balance of user : {get_user_balance(user_id=msg.from_user.id)[0]}
-time: {time_of_day[time]}
-day: {days_of_week[day]}
-price: {price}
-""",reply_markup=markup,reply_to_message_id=forwarded_msg.message_id)
-        bot.send_message(chat_id=msg.from_user.id,text=forward_banner_text)
+        print('banner is good')
+        link=extract_link(banner)
+        result=make_a_reservation(price=price,userid=user_id,date=date,time_index=time,time=time_of_day[time],banner=banner,link=link)
+        print(result)
+        reserve_id=get_id_with_time_date_reserve(time=time_of_day[time],date=date)
+        result=update_channel_timing(time_index=time,date=date,userid=1)
+        if result:
+            # decrease_balance(user_id=user_id,decrease_balance_amount=price)
+            markup=InlineKeyboardMarkup()
+            btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
+            btn2=InlineKeyboardButton(text="رد کردن",callback_data="banner_deny")
+            btn3=InlineKeyboardButton(text="تغییر بنر",callback_data="banner_custom")
+            markup.add(btn1,btn2)
+            markup.add(btn3)
+            forwarded_msg=bot.forward_message(chat_id=ADMIN_ID_LIST[0],from_chat_id=msg.chat.id,message_id=msg.message_id)
+            text=make_banner_acc_msg_to_admin(username=username,user_id=user_id,time=time,day=day,price=price,reserve_id=reserve_id[0])
+            bot.send_message(chat_id=ADMIN_ID_LIST[0],text=text,reply_markup=markup,reply_to_message_id=forwarded_msg.message_id)
+            bot.send_message(chat_id=msg.from_user.id,text=forward_banner_text)
+        else:
+            bot.send_message(chat_id=msg.from_user.id,text="مشکلی پیش امده است لطفا مجدد تلاش کنید")
     else:
+        print('banner is good')
         bot.send_message(msg.from_user.id,text=banner_not_mach)
 ###
-#deny btn
+#deny btn  #todo:return balance to user
 @bot.callback_query_handler(func= lambda m:m.data =="banner_deny")
 def admin_deny(call :CallbackQuery):
-    user_id=(find_pattern_id(call.message.text))
+
+    info=call.message.text
+    user_id=(find_pattern_id(info))
+    reserve_id=get_reserve_id(info)
+    data=parse_text_for_acc_admin_banner(info)
+    print(reserve_id)
+    time_index=int(data['time'])
+    date=data['date']
+    price=data['price']
+    update_channel_timing(time_index=time_index,date=date,userid=0)
+    increase_balance(user_id=user_id,decrease_balance_amount=price)
     text=call.message.text
     markup=InlineKeyboardMarkup()
     btn=InlineKeyboardButton(text="این رزرو رد شد",callback_data="!?!?!?!")
@@ -495,15 +492,32 @@ def admin_deny(call :CallbackQuery):
 #accept btn
 @bot.callback_query_handler(func= lambda m:m.data =="banner_accept")
 def admin_accept(call :CallbackQuery):
-    user_id=(find_pattern_id(call.message.text))
     info_text=call.message.text
+    data=parse_text_for_acc_admin_banner(info_text)
+    date=data['date']
+    time_index=int(data['time'])
+    user_id=data['user_id']
+    reserve_id=int(data['reserve_id'])
+    data['banner']=call.message.reply_to_message.message_id
+    print(data)
     markup=InlineKeyboardMarkup()
     btn=InlineKeyboardButton(text="این رزرو تایید شد",callback_data="!?!?!?!")
     markup.add(btn)
     try:
-        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"{info_text} \n -----------",reply_markup=markup)
-        bot.send_message(chat_id=user_id,text="بنر شما تایید و در ساعت انتخاب شده گذاشته میشود") 
+        if update_channel_timing(time_index=time_index,date=date,userid=user_id):
+            if approve_a_reserve(reserve_id):
+                bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"{info_text} \n -----------",reply_markup=markup)
+                bot.send_message(chat_id=user_id,text="بنر شما تایید و در ساعت انتخاب شده گذاشته میشود") 
+         #todo : make sure its ok
+            return 
+        btn=InlineKeyboardButton(text="تایید مجدد",callback_data="banner_accept")
+        markup.add(btn)
+        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="مشکلی در اپدیت موجودی کاربر پیش امده است",reply_markup=markup)
+        
+        
     except:
+        btn=InlineKeyboardButton(text="تایید مجدد",callback_data="banner_accept")
+        markup.add(btn)
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="مشکلی در اپدیت موجودی کاربر پیش امده است",reply_markup=markup)
 
 
@@ -694,13 +708,77 @@ def handle_button_press(call :CallbackQuery):
 برابر است با : <a>{income}</a>
     """
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, )
+##########################
+#! error handler
+# بخش دریافت رسید از کاربر
+@bot.message_handler(state=user_state.pic_receipt, content_types=['text', 'video', 'document', 'audio', 'sticker', 'voice', 'location', 'contact'])
+def handle_non_photo(msg: Message):
+    # پیام خطا برای ارسال محتوای غیر از عکس
+    bot.send_message(msg.chat.id, "لطفاً فقط یک عکس از رسید خود ارسال کنید.")
+
+#هرپیامی از کاربر
+@bot.message_handler(func=lambda message: True)
+def handle_non_photo(msg: Message):
+    markup=ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(restart_markup_text)
+    bot.send_message(msg.chat.id, "لطفا برای استفاده از ربات یا از دکمه های ربات استفاده کنید یا مجدد ربات را راه اندازی کنید",reply_markup=markup)
+
 
 
 #!#########################
 # for making bot running
 if __name__ == "__main__":
-    start_scheduler()
+    # start_scheduler()
     bot.add_custom_filter(custom_filters.StateFilter(bot))
     # send_startup_message()
     bot.polling()
 # bot.close()
+
+
+#todo: test section #######################################################################
+
+# # # /test
+# @bot.message_handler(commands=['test'])
+# def test(msg : Message):
+#     send_test_msg_to_admin()
+
+
+# def send_scheduled_message():
+#     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+#     message_text = f"این یک پیام زمان‌بندی‌شده است که در {current_time} ارسال شده است."
+#     bot.send_message(ADMIN_ID_LIST[1], message_text)
+#     # print(f"پیام در {current_time} ارسال شد.")
+# def schedule_jobs():
+#     schedule.clear()
+#     for i in range(len(time_of_day)):
+#         schedule.every().day.at(time_of_day[i]).do(send_scheduled_message)
+# def schedule_jobs_test():
+#     schedule.clear()
+#     for i in range(10):
+#         schedule.every().day.at(f"01:0{i}").do(send_scheduled_message)
+
+# # تابع برای اجرای زمان‌بندی
+# def run_scheduler():
+#     while True:
+#         schedule.run_pending()
+#         time.sleep(1)
+
+# import threading
+# def start_scheduler():
+#     schedule_jobs_test()  # ثبت وظایف زمان‌بندی‌شده
+#     scheduler_thread = threading.Thread(target=run_scheduler)
+#     scheduler_thread.daemon = True  # این کار باعث می‌شود Thread با بستن برنامه اصلی بسته شود
+#     scheduler_thread.start()
+# #     bot.send_message(msg.chat.id,text="msg to all test")
+# #     bot.set_state(user_id=msg.from_user.id,state=admin_state.message_to_all,chat_id=msg.chat.id)
+    
+# # @bot.message_handler(state=admin_state.message_to_all)
+# # def msg(msg : Message):
+# #     bot.send_message(msg.chat.id,text="ok")
+# #     with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
+# #         data['msg']=msg.text
+# #     # bot.send_message(ADMIN_ID_LIST[0],text=f"{data['msg']}")
+# #     bot.send_message(msg.chat.id,text=f"{data['msg']}")
+# #     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
+
+# #todo: test section ################################################################

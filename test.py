@@ -3,8 +3,8 @@ import mysql.connector # type: ignore
 from config import *
 from datetime import datetime,timedelta
 # from custom_functions import *
-from custom_functions import compare_time, is_banner_ok
-from db_connections import create_table_transactions
+from custom_functions import compare_time, convert_to_time, extract_link, is_banner_ok, parse_text_for_acc_admin_banner
+from db_connections import create_table_reserve, create_table_transactions, make_a_reservation, update_channel_timing
 # # from main import cal_date
 # # bot =TeleBot(token = TOKEN)
 # connection = mysql.connector.connect(**DB_CONFIG)
@@ -51,7 +51,17 @@ from db_connections import create_table_transactions
 
 # result =compare_time(time1="23:50",time2="00:00")
 # print(result)
-text = """Super GP
+text = """id: 1054820423 
+username: @saaman_pc 
+user_balance: 657
+time: 5 = 18:00 
+day: 0 = سه‌شنبه 
+date: 2024-08-06
+price: 15
+---------------
+info : 0_5_15_1054820423"""
+banner="""
+Super GP
 
 naмe : GroupName
 
@@ -62,12 +72,15 @@ naмe : GroupName
 lιnĸ: http://example.com
 
 @LinkGP
-
-
-
 """
+# print(parse_text_for_acc_admin_banner(text=text))
+price=15
+user_id=231231
+date="2024-08-14"
+time=2
+link="asdgds"
+# result=make_a_reservation(price=price,userid=user_id,date=date,time_index=time,time=convert_to_time(time_of_day[time]),banner=banner,link=link)
 
-if is_banner_ok(text):
-    print("yes")
-else:
-    print("no")
+result =update_channel_timing(time_index=3,userid=1,date="2024-08-12")
+# create_table_reserve()
+print((result))

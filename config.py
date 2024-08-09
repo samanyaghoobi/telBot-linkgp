@@ -7,10 +7,13 @@ DB_CONFIG={
     'database':'justlink'}
 
 ##############################################################
-CHANNELS_ID=['@linkgp']
+CHANNELS_USERNAME=['@linkgp']
+SUPPORT_USERNAME='@linkgp_admin'
+SUPPORT_ID=345490618
 ADMIN_ID_LIST=[340500740,1054820423]
 CART_NUMBER=6037997493542279
-CART_NAME="سامان یعقوبی , بانک ملی"
+CART_NAME="سامان یعقوبی"
+CART_BANK="بانک ملی"
 CART_NUMBER_STRING='6037 9974 9354 2279'
 ##############################################################
 #vars
