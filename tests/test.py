@@ -1,9 +1,9 @@
 
 import mysql.connector # type: ignore
-from config import *
+from configs.config import *
 from datetime import datetime,timedelta
 # from custom_functions import *
-from custom_functions import compare_time, convert_to_time, extract_link, is_banner_ok, parse_text_for_acc_admin_banner
+from functions.custom_functions import compare_time, convert_to_time, extract_link, is_banner_ok, parse_text_for_acc_admin_banner
 from db_connections import create_table_reserve, create_table_transactions, make_a_reservation, update_channel_timing
 # # from main import cal_date
 # # bot =TeleBot(token = TOKEN)

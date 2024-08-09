@@ -1,10 +1,10 @@
 import mysql.connector # type: ignore
-from config import ADMIN_ID_LIST, CHANNELS_USERNAME, DB_CONFIG,days_of_week,price_1,price_2,price_3,default_banner_pattern,time_of_day
+from configs.config import ADMIN_ID_LIST, CHANNELS_USERNAME, DB_CONFIG,days_of_week,price_1,price_2,price_3,default_banner_pattern,time_of_day
 from datetime import datetime,timedelta
 from convertdate import persian
 from db_connections import get_all_transactions, get_transactions_of_month, get_user_balance
 from main import bot, isMemberOf, isMemberOfChannels
-from bot_messages import make_line
+from message_and_text.bot_messages import make_line
 import re
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
 

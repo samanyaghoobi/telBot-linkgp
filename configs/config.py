@@ -1,16 +1,4 @@
-TOKEN='6950779316:AAEu7_lAtR-qcBQSSCr2LGtYoslhgj8E4S0' # @linkgp_adminBot
-BOT_USERNAME="linkgp_adminBot"
-DB_CONFIG={
-    'host':'127.0.0.1',
-    'user':'root',
-    'password':'root',
-    'database':'justlink'}
 
-##############################################################
-CHANNELS_USERNAME=['@linkgp']
-SUPPORT_USERNAME='@linkgp_admin'
-SUPPORT_ID=345490618
-ADMIN_ID_LIST=[340500740,1054820423]
 CART_NUMBER=6037997493542279
 CART_NAME="سامان یعقوبی"
 CART_BANK="بانک ملی"

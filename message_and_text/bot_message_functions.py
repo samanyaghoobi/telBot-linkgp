@@ -1,5 +1,5 @@
-from text import *
-from bot_messages import *
+from message_and_text.text import *
+from message_and_text.bot_messages import *
 ##############
 def make_user_info (username,user_id,balance,score):
      text=f"""👤 نام کاربری : <a href='tg://user?id={user_id}'>{username}</a>

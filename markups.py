@@ -1,6 +1,6 @@
-from config import * 
-from custom_functions import *
-from text import *
+from configs.config import * 
+from functions.custom_functions import *
+from message_and_text.text import *
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery
 
 ########################################################################

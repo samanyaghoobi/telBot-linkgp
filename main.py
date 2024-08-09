@@ -1,19 +1,18 @@
-import time
-import schedule
-from datetime import datetime
-from config import * 
-from text import *
 from telebot import TeleBot , custom_filters
+from configs.auth import *
+from database.db_users import *
+from database.db_tables import *
+from database.db_timing import *
+from database.db_transactions import *
+from database.db_reserve import *
+from message_and_text.bot_message_functions import *
+from message_and_text.bot_messages import *
+from message_and_text.text import *
 from markups import *
 from states import *
 from telebot.storage import StateMemoryStorage
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
-from datetime import datetime,timedelta
-from convertdate import persian
-from db_connections import *
-from custom_functions import *
-from bot_messages import *
-from bot_message_functions import *
+from functions.custom_functions import *
 
 ########################################################################
 state_storage=StateMemoryStorage()
@@ -40,7 +39,7 @@ def isMemberOfChannels(user_id,channels=CHANNELS_USERNAME):
 #* join and mem check handler 
 def isInDB(user_id):
     # bot.send_message(user_id,text=reboot_text,reply_markup=ReplyKeyboardRemove())
-    is_in_DB= get_user(user_id=user_id)
+    is_in_DB= get_user_id(user_id=user_id)
     if is_in_DB:
         return True
     return False
