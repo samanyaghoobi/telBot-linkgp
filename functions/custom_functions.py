@@ -1,9 +1,11 @@
 import mysql.connector # type: ignore
-from configs.config import ADMIN_ID_LIST, CHANNELS_USERNAME, DB_CONFIG,days_of_week,price_1,price_2,price_3,default_banner_pattern,time_of_day
 from datetime import datetime,timedelta
+from configs.auth import ADMIN_ID_LIST, DB_CONFIG
+from configs.config import *
 from convertdate import persian
-from db_connections import get_all_transactions, get_transactions_of_month, get_user_balance
-from main import bot, isMemberOf, isMemberOfChannels
+from database.db_transactions import get_all_transactions, get_transactions_of_month
+from database.db_users import get_user_balance
+from main import bot, isMemberOf
 from message_and_text.bot_messages import make_line
 import re
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
@@ -313,6 +315,8 @@ def parse_text_for_acc_admin_banner(text):
             data['date'] = line.split(":")[1].strip().split('=')[0].strip()
         elif line.startswith("reserve_id:"):
             data['reserve_id'] = line.split(":")[1].strip().split('=')[0].strip()
+        elif line.startswith("price:"):
+            data['price'] = line.split(":")[1].strip().split('=')[0].strip()
 
     # Convert dictionary to JSON
     return data

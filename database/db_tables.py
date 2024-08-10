@@ -1,4 +1,5 @@
 import mysql.connector # type: ignore
+from configs.auth import *
 from configs.config import *
 #!###################################################
 def create_all_table():

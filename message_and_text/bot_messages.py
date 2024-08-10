@@ -1,5 +1,5 @@
+from configs.auth import SUPPORT_ID
 from message_and_text.text import *
-from configs.config import SUPPORT_ID
 ##########
 make_line="-----------------------------------------------------------------------"
 restart_msg="ربات مجدد راه اندازی شد"

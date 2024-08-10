@@ -416,10 +416,10 @@ def handle_button_press(call:CallbackQuery):
     result_member = isInDB(user_id=user_id)
     if result_member:
         text=f"""{info_text}
-        ---------------------------------------------
+{make_line}
 {call_text}
-        لطفا بنر خود را برای ما ارسال کنید
-        در صورتی که بنر چنل ما را ندارید لطفا از دکمه '{make_banner_btn}' استفاده کنید"""
+لطفا بنر خود را برای ما ارسال کنید
+در صورتی که بنر چنل ما را ندارید لطفا از دکمه '{make_banner_btn}' استفاده کنید"""
         bot.edit_message_text(text=text,chat_id=call.message.chat.id,message_id=call.message.message_id)
         bot.set_state(user_id=call.message.chat.id,state=banner_state.banner,chat_id=call.message.chat.id)
         with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
@@ -430,7 +430,7 @@ def handle_button_press(call:CallbackQuery):
 #################
 #دریافت بنر و ایجاد رزرو
 @bot.message_handler(state =banner_state.banner)
-def get_banner(msg : Message):
+def get_banner(msg : Message):    # Split the text into lines
     with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
           day=data['day'] 
           date=data['date'] 
@@ -441,14 +441,13 @@ def get_banner(msg : Message):
     user_id=msg.from_user.id
     username=msg.from_user.username
     if is_banner_ok(banner=banner):
-        print('banner is good')
+        # print('banner is good')
         link=extract_link(banner)
         result=make_a_reservation(price=price,userid=user_id,date=date,time_index=time,time=time_of_day[time],banner=banner,link=link)
-        print(result)
+        # print(result)
         reserve_id=get_id_with_time_date_reserve(time=time_of_day[time],date=date)
         result=update_channel_timing(time_index=time,date=date,userid=1)
         if result:
-            # decrease_balance(user_id=user_id,decrease_balance_amount=price)
             markup=InlineKeyboardMarkup()
             btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
             btn2=InlineKeyboardButton(text="رد کردن",callback_data="banner_deny")
@@ -468,7 +467,6 @@ def get_banner(msg : Message):
 #deny btn  #todo:return balance to user
 @bot.callback_query_handler(func= lambda m:m.data =="banner_deny")
 def admin_deny(call :CallbackQuery):
-
     info=call.message.text
     user_id=(find_pattern_id(info))
     reserve_id=get_reserve_id(info)
@@ -723,6 +721,7 @@ def handle_non_photo(msg: Message):
     bot.send_message(msg.chat.id, "لطفا برای استفاده از ربات یا از دکمه های ربات استفاده کنید یا مجدد ربات را راه اندازی کنید",reply_markup=markup)
 
 
+#!#########################
 
 #!#########################
 # for making bot running
@@ -732,6 +731,7 @@ if __name__ == "__main__":
     # send_startup_message()
     bot.polling()
 # bot.close()
+
 
 
 #todo: test section #######################################################################

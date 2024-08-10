@@ -1,4 +1,5 @@
 import mysql.connector # type: ignore
+from configs.auth import DB_CONFIG
 from configs.config import *
 ########################################################################
 def create_user(userid,username):

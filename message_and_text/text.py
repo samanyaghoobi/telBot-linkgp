@@ -1,3 +1,4 @@
+from configs.auth import BOT_USERNAME
 from configs.config import *
 
 new_user_text='خوش آمدی شما یک کاربر جدید هستید'

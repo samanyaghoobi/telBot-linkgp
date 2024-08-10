@@ -1,4 +1,5 @@
 import mysql.connector # type: ignore
+from configs.auth import DB_CONFIG
 from configs.config import *
 
 #########################################################
@@ -48,9 +49,7 @@ WHERE id = {id};
 def get_id_with_time_date_reserve(time,date):
      sql=f"""SELECT id 
 FROM reserve 
-WHERE date = '{date}' AND time = '{time}';
-
-"""
+WHERE date = '{date}' AND time = '{time}';"""
      with mysql.connector.connect(**DB_CONFIG) as connection:
           with connection.cursor()  as cursor:
             cursor.execute(sql)
