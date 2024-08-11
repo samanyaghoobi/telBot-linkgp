@@ -91,6 +91,8 @@ def proceed (call :CallbackQuery):
 #* /start
 @bot.message_handler(commands=['start'])
 def start(msg : Message):
+        bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
+        
         username=msg.from_user.username
         user_id=msg.from_user.id
         user_check= user_check_handler(user_id=user_id,username=username)
@@ -102,6 +104,8 @@ def start(msg : Message):
 #* make banner
 @bot.message_handler(func=lambda m:m.text == make_banner_btn)
 def start(msg : Message):
+    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
+
     user_id=msg.chat.id
     username=msg.from_user.username
     user_check= user_check_handler(user_id=user_id,username=username)
@@ -115,9 +119,11 @@ def start(msg : Message):
     bot.send_message(chat_id=user_id,text=text,reply_markup=markup)
     
 #?#######################################################################
-#* user account brn
+#* user account btn
 @bot.message_handler(func=lambda m:m.text == user_acc_btn)
 def account(msg : Message):
+    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
+
     user_id=msg.from_user.id
     username=msg.from_user.username
     user_check= user_check_handler(user_id=user_id,username=username)
@@ -132,9 +138,10 @@ def account(msg : Message):
     markup.add(btn)
     bot.send_message(user_id,text=text,reply_markup=markup)
 #?#######################################################################
-#balance inc btn
+#*balance inc btn
 @bot.callback_query_handler(func=lambda call: call.data == "user_balance_inc")
 def user_balance_inc(call : CallbackQuery):
+
     user_id=call.from_user.id
     username=call.from_user.username
     user_check= user_check_handler(user_id=user_id,username=username)
@@ -282,12 +289,15 @@ def deny_reason(msg : Message):
 #support btn
 @bot.message_handler(func=lambda m:m.text == support_btn)
 def account(msg : Message):
+    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
     bot.send_message(chat_id=msg.chat.id,text=support_msg)
      
 #?#######################################################################
 #free time :day of weak
 @bot.message_handler(func=lambda m:m.text == free_rime_btn)
 def account(msg : Message):
+    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
+
     user_id=msg.from_user.id
     username=msg.from_user.username
     user_check= user_check_handler(user_id=user_id,username=username)
@@ -387,8 +397,10 @@ def handle_button_press(call:CallbackQuery):
         price= price_1 if time <5 else price_2 if 5<=time< 21 else price_3
         text=f"{make_reserve_info_text(day=cal_day(day),date=gregorian_to_jalali(cal_date(day)),time=time_of_day[time],price=price)}  \n{make_line} \n موجودی حساب شما : {user_balance} هزار تومان"
         markup_balance_low=InlineKeyboardMarkup()
+        btn=InlineKeyboardButton(text=balance_inc_btn,callback_data="user_balance_inc")
         btn1=InlineKeyboardButton(text="موجودی حساب شما کافی نیست",callback_data=f"send_link_{day}_{time}")
         markup_balance_low.add(btn1)
+        markup_balance_low.add(btn)
         markup_ok=InlineKeyboardMarkup()
         btn2=InlineKeyboardButton(text="تایید و ارسال بنر",callback_data=f"get_banner_{day}_{time}")
         btn3=InlineKeyboardButton(text="  ساخت بنر",callback_data=f"make_banner")
@@ -397,7 +409,7 @@ def handle_button_press(call:CallbackQuery):
             markup=markup_ok
         else:
             markup=markup_balance_low
-            bot.send_message(chat_id=user_id,text=f"برای شارژ حساب خود از دکمه '{user_acc_btn}' استفاده کنید")
+            # bot.send_message(chat_id=user_id,text=f"برای شارژ حساب خود از دکمه '{user_acc_btn}' استفاده کنید")
         bot.edit_message_text(text=text,chat_id=call.message.chat.id,message_id=call.message.message_id,reply_markup=markup)
 #?##############################################
 # ساخت بنر
@@ -406,7 +418,7 @@ def handle_button_press(call:CallbackQuery):
      user_id=call.from_user.id
      result_member = isInDB(user_id=user_id)
      if result_member:
-      bot.send_message(chat_id=call.message.chat.id,text="اسم گروه شما چیست؟ \n حداکثر ۲۰ کاراکتر")
+      bot.send_message(chat_id=call.message.chat.id,text=f"اسم گروه شما چیست؟ \n حداکثر {max_len_name} کاراکتر")
       bot.set_state(user_id=call.message.chat.id,state=banner_state.name,chat_id=call.message.chat.id)
      
 #?##############################################
@@ -522,8 +534,11 @@ def admin_accept_banner_btn(call :CallbackQuery):
 @bot.message_handler(state =banner_state.name)
 def make_banner(msg : Message):
      with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
-        data['name']=msg.text
-     bot.send_message(text="تعداد اعضایگروه شما چند نفر است \n حداکثر ۱۰ کاراکتر",chat_id=msg.chat.id)
+        name=data['name']=msg.text
+     if len(name) > max_len_name:
+        bot.send_message(text=f"تعداد کارکتر وارد شده برای نام : {len(name)} \n حداکثر مجاز :{max_len_name} \n لطفا دوباره تلاش کنید",chat_id=msg.chat.id)
+        return
+     bot.send_message(text=f"تعداد اعضای گروه شما چند نفر است \n حداکثر {max_len_member} کاراکتر",chat_id=msg.chat.id)
      bot.set_state(state=banner_state.member,user_id=msg.chat.id,chat_id=msg.chat.id)
 
 #################
@@ -531,7 +546,7 @@ def make_banner(msg : Message):
 def make_banner(msg : Message):
      with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
         data['member']=msg.text
-     bot.send_message(text="در یک خط اگر توضیحاتی لازم است برای گروه خود بنویسید \n حداکثر ۳۰ کاراکتر",chat_id=msg.chat.id)
+     bot.send_message(text=f"در یک خط اگر توضیحاتی لازم است برای گروه خود بنویسید \n حداکثر {max_len_des} کاراکتر",chat_id=msg.chat.id)
      bot.set_state(state=banner_state.description,user_id=msg.chat.id,chat_id=msg.chat.id)
 
 #################
@@ -729,9 +744,10 @@ def send_scheduled_message():
         user_id=int(time_check[0])
         if user_id != 1 :
             reserve_id=get_id_with_time_date_reserve(time=time,date=date)[0]
-            banner=get_banner_with_id_reserve(reserve_id)
+            banner=get_banner_with_id_reserve(reserve_id)[0]
             for channel in CHANNELS_USERNAME:
                 bot.send_message(chat_id=channel,text=banner,disable_web_page_preview=True,link_preview_options=False)
+                bot.send_message(ADMIN_ID_LIST[0],text="یک بنر ارسال شد")
             
             
 
