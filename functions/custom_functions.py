@@ -1,17 +1,17 @@
 import mysql.connector # type: ignore
 from datetime import datetime,timedelta
-from configs.auth import ADMIN_ID_LIST, DB_CONFIG
+from configs.auth import ADMIN_ID_LIST, CHANNELS_USERNAME, DB_CONFIG
 from configs.config import *
 from convertdate import persian
 from database.db_transactions import get_all_transactions, get_transactions_of_month
-from database.db_users import get_user_balance
+from database.db_users import get_user_balance, get_username
 from main import bot, isMemberOf
 from message_and_text.bot_messages import make_line
 import re
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
 
 ##############################################
-def make_timing_of_day(results,day):
+def make_timing_of_day_msg(results,day,from_admin=False):
     time=[]
     for index in range(len(results)):
         if index !=0:
@@ -20,7 +20,12 @@ def make_timing_of_day(results,day):
             elif results[index]==1:
                 time.append("درحال رزرو : منتظر تایید ادمین")
             else:
-                time.append(f"رزرو شده است : {results[index]}")
+                if from_admin:
+                    user_id=int(results[index])
+                    time.append(f"""\nuser:<a href='tg://user?id={user_id}'>@{get_username(user_id=results[index])}</a>,<code>{user_id}</code>""")
+                else:
+                    time.append(f"رزرو شده است")
+
     text=f"""اخرین بروز رسانی : \n{get_current_datetime()}
 {make_line}
 روز رزرو : {cal_day(day)}
@@ -85,13 +90,23 @@ def cal_day(days):
     return tomorrow_persian
 
 def get_current_datetime():
+    """ return : %Y-%m-%d %H:%M:%S """
     # دریافت تاریخ و ساعت لحظه‌ای
     now = datetime.now()
     # تبدیل به رشته با فرمت YYYY-MM-DD HH:MM:SS
     date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
     return date_time_str
+def get_current_date():
+    """ return : %Y-%m-%d """
+    # دریافت تاریخ و ساعت لحظه‌ای
+    now = datetime.now()
+    # تبدیل به رشته با فرمت YYYY-MM-DD HH:MM:SS
+    date_time_str = now.strftime("%Y-%m-%d")
+    return date_time_str
 
 def get_current_time():
+    """ return : %H:%M """
+
     # بدست آوردن زمان کنونی
     now = datetime.now()
     
@@ -139,7 +154,7 @@ def get_day_reserves(day):
             result =cursor.fetchone()
             return result
 #################333
-def check_admin(user_id):
+def check_is_admin(user_id):
      if user_id in ADMIN_ID_LIST:
           return True
      return False
@@ -282,7 +297,7 @@ def is_banner_ok(banner):
 def make_banner_acc_msg_to_admin(user_id,username,time, day, price,reserve_id):
      text=f"""id: {user_id} 
 username: @{username} 
-user_balance: {get_user_balance(user_id=user_id)[0]}
+user_balance: {get_user_balance(user_id=user_id)}
 time: {time} = {time_of_day[time]} 
 day: {day} = {cal_day(day)} 
 date: {cal_date(day)}
@@ -353,4 +368,10 @@ def makeJoinChannelMarkup(user_id):
     button=InlineKeyboardButton(text="برسی عضویت",callback_data="proceed")
     markup.add(button)
     return markup
-    
+#######################
+def find_index(time,time_list):
+    try:
+        index = time_list.index(time)
+        return index
+    except ValueError:
+        return "Time not found in the list"
