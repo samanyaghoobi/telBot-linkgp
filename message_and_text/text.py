@@ -27,6 +27,7 @@ balance_inc_msg="برای افزایش موجودی خود دو راه کار و
 
 ### admin btn
 admin_btn_user_list="user_list"
+admin_btn_find_user_info="find_user_info"
 admin_btn_bot_info="bot_info"
 admin_btn_send_msg_to_all="send msg to all users"
 admin_btn_check_income="check income"
@@ -35,6 +36,14 @@ not_admin_text="شما دسترسی ادمین ندارید"
 
 check_income_msg="از لیست زیر ماه میلادی که میخواهید درامد ان را مشاهده کنید انتخاب کنید"
 check_reservations_text="مشاهده لیست رزرو شده ها"
+
+
+admin_btn_increase_score='admin_btn_in_score'
+admin_btn_increase_balance='admin_btn_in_balance'
+admin_btn_decrease_score='admin_btn_de_score'
+admin_btn_decrease_balance='admin_btn_de_balance'
+admin_btn_delete_user='delete_user'
+admin_btn_msg_user='send_message_to_user'
 #?###########################33
 
 

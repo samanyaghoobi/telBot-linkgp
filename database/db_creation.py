@@ -6,15 +6,19 @@ from configs.config import *
 def create_database():
     try:
         # create_data_base()
-        create_table_channel_timing()
-        create_table_reserve()
-        create_table_transactions()
-        create_table_users()
-        print("\033[32m data base and tables are ok \033[0m")
+        result= create_table_channel_timing()
+        if result:
+            result=create_table_reserve()
+            if result:
+                result= create_table_transactions()
+                if result:
+                    result=create_table_users()
+                    if result:
+                        print("\033[32m data base and tables are ok \033[0m")
 
-        return True
-    except:
-          return False
+    except Error as e:
+        print(e)
+        return False
 #!###################################################
 def create_data_base():
     sql="CREATE DATABASE IF NOT EXISTS linkGP;"
@@ -52,10 +56,12 @@ def create_table_transactions():
                      connection.commit()
                      cursor.close()
                      connection.close()
+                     return True
         # print("\033[32m transactions created\033[0m")
 
     except Error as e:
         print(f"\033[91merror from create transactions: \n {e}  \n \033[0m")
+        return False
 #!###################################################
 #* users table: user info table 
 def create_table_users():
@@ -77,9 +83,12 @@ def create_table_users():
                      connection.commit()
                      cursor.close()
                      connection.close()
+                     return True
+
         # print("\033[32m users created\033[0m")
     except Error as e:
         print(f"\033[91merror from create users: \n {e}  \n \033[0m")
+        return False
 #!###################################################
 #* reserve table : make a reservation connected to time date and user and price
 def create_table_reserve():
@@ -105,9 +114,12 @@ def create_table_reserve():
                      connection.commit()
                      cursor.close()
                      connection.close()
+                     return True
         # print("\033[32m reserve created\033[0m")
     except Error as e:
         print(f"\033[91merror from create reserve: \n {e} \n \033[0m")
+        return False
+
 #!###################################################
 #* channel_timing : which time is available
 def create_table_channel_timing():
@@ -147,7 +159,9 @@ def create_table_channel_timing():
                      connection.commit()
                      cursor.close()
                      connection.close()
+                     return True
             # print("\033[32m timing created\033[0m")
 
     except Error as e:
         print(f"\033[91merror from create channel_timing: \n {e} \n \033[0m")
+        return False

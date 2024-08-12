@@ -7,7 +7,7 @@ from database.db_functions import admin_accept_banner, admin_deny_banner, make_r
 from database.db_timing import *
 from database.db_transactions import *
 from database.db_reserve import *
-from database.db_users import create_user, decrease_balance, get_all_users, get_user_id, get_user_score, increase_balance, increase_score
+from database.db_users import create_user, decrease_balance, delete_user, get_all_users, get_user_id, get_user_score, increase_balance, increase_score
 from message_and_text.bot_message_functions import *
 from message_and_text.bot_messages import *
 from message_and_text.text import *
@@ -530,7 +530,7 @@ def admin_accept_banner_btn(call :CallbackQuery):
         markup.add(btn)
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="مشکلی در اپدیت موجودی کاربر پیش امده است",reply_markup=markup)
 #?###############################################################################
-#* make banner 
+#* make banner  section
 @bot.message_handler(state =banner_state.name)
 def make_banner(msg : Message):
      with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
@@ -545,7 +545,10 @@ def make_banner(msg : Message):
 @bot.message_handler(state =banner_state.member)
 def make_banner(msg : Message):
      with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
-        data['member']=msg.text
+       member= data['member']=msg.text
+       if len(member) > max_len_member:
+            bot.send_message(text=f"تعداد کارکتر وارد شده برای نام : {len(member)} \n حداکثر مجاز :{max_len_member} \n لطفا دوباره تلاش کنید",chat_id=msg.chat.id)
+            return
      bot.send_message(text=f"در یک خط اگر توضیحاتی لازم است برای گروه خود بنویسید \n حداکثر {max_len_des} کاراکتر",chat_id=msg.chat.id)
      bot.set_state(state=banner_state.description,user_id=msg.chat.id,chat_id=msg.chat.id)
 
@@ -553,7 +556,10 @@ def make_banner(msg : Message):
 @bot.message_handler(state =banner_state.description)
 def make_banner(msg : Message):
      with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
-        data['description']=msg.text
+        des=data['description']=msg.text
+     if len(des) > max_len_des:
+        bot.send_message(text=f"تعداد کارکتر وارد شده برای نام : {len(des)} \n حداکثر مجاز :{max_len_des} \n لطفا دوباره تلاش کنید",chat_id=msg.chat.id)
+        return
      bot.send_message(text="لینک خصوصی گروه خود را ارسال کنید",chat_id=msg.chat.id)
      bot.set_state(state=banner_state.link,user_id=msg.chat.id,chat_id=msg.chat.id)
 
@@ -603,6 +609,48 @@ def user_list(msg : Message):
          btn= InlineKeyboardButton(text=f"{user[3]}:{user[0]}",callback_data=f"users_{user[0]}")
          markup.add(btn)
      bot.send_message(chat_id=msg.chat.id,text="لیست کاربر ها",reply_markup=markup)
+##########################
+#* find user
+@bot.message_handler(func=lambda m:m.text == admin_btn_find_user_info)
+def find_user(msg : Message):
+    admin_id=msg.from_user.id
+    bot.set_state(user_id=msg.from_user.id,state=admin_state.find_user,chat_id=msg.chat.id)
+    bot.send_message(admin_id,"user_id کاربر مد نظر را ارسال کنید")
+#############33
+@bot.message_handler(state=admin_state.find_user)
+def get_user_info_admin(msg:Message):
+    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
+    user_id=msg.text
+    balance=get_user_balance(user_id)
+    score=get_user_score(user_id)
+    text=f"id: {user_id}\n{make_user_info(user_id=user_id,balance=balance,score=score)}"
+    markup=InlineKeyboardMarkup()
+    btn1=InlineKeyboardButton(text=admin_btn_increase_balance,callback_data=admin_btn_increase_balance)
+    btn2=InlineKeyboardButton(text=admin_btn_decrease_balance,callback_data=admin_btn_decrease_balance)
+    btn3=InlineKeyboardButton(text=admin_btn_increase_score,callback_data=admin_btn_increase_score)
+    btn4=InlineKeyboardButton(text=admin_btn_decrease_score,callback_data=admin_btn_decrease_score)
+    btn5=InlineKeyboardButton(text=admin_btn_msg_user,callback_data=admin_btn_msg_user)
+    btn6=InlineKeyboardButton(text=admin_btn_delete_user,callback_data=admin_btn_delete_user)
+    markup.add(btn1,btn2)
+    markup.add(btn3,btn4)
+    markup.add(btn5,btn6)
+    bot.edit_message_text(chat_id=msg.chat.id,message_id=msg.message_id,text=text, reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data== admin_btn_delete_user)
+def handle_button_press(call :CallbackQuery):
+    text=call.message.text
+    try:
+        user_id=find_pattern_id(text)
+        delete_user(user_id)
+        markup=InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton(text="کاربر پاک شد",callback_data="2134"))
+        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text)
+    except Error as e:
+        print(f"\033[91merror delete a user: \n {e} \n \033[0m")
+        bot.send_message(call.message.from_user.id,text="مجدد تلاش کنید کاربر پاک نشد")
+        
+
+
 ##########################
 #* bot info
 @bot.message_handler(func=lambda m:m.text == admin_btn_bot_info)
@@ -728,10 +776,21 @@ def handle_non_photo(msg: Message):
 # # /test
 @bot.message_handler(commands=['test'])
 def test(msg : Message):
-    send_test_msg_to_admin()
+    link='+HJAazmF_lDtlODI0'
+    # if link.startswith('https://t.me/'):
+        # link = link[len('https://t.me/'):]
+    try:
+        chat_id_or_username = link
+        chat_info = bot.get_chat(chat_id_or_username)
+        print(chat_info)
+    except:
+        print()
+    # bot.send_message(msg.from_user.id,text=chat_info)
+
 
 ################################################
 def send_scheduled_message():
+
     current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     text = f"این یک پیام زمان‌بندی‌شده است که در {current_time} ارسال شده است."
     bot.send_message(ADMIN_ID_LIST[1], text)
@@ -742,6 +801,7 @@ def send_scheduled_message():
     time_check=check_time_date(time=time,date=date)
     if time_check is not None :
         user_id=int(time_check[0])
+        bot.send_message(ADMIN_ID_LIST[0],text=f"time:{time} : date:{date}\n user_id:{user_id}")
         if user_id != 1 :
             reserve_id=get_id_with_time_date_reserve(time=time,date=date)[0]
             banner=get_banner_with_id_reserve(reserve_id)[0]

@@ -4,6 +4,7 @@ from telebot.handler_backends import State,StatesGroup
 class admin_state(StatesGroup): 
     message_to_all = State()
     deny_reason=State()
+    find_user=State()
 
 class user_state(StatesGroup): 
     pic_receipt = State()
