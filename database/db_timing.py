@@ -1,3 +1,4 @@
+import logging
 import mysql.connector # type: ignore
 from mysql.connector import Error
 from configs.auth import DB_CONFIG
@@ -17,7 +18,7 @@ def create_channel_timing(date):
                       cursor.close()
                       connection.close()
       except Error as e:
-          print(f"\033[91merror create_channel_timing: \n {e} \n \033[0m")
+          logging.error(f"\033[91merror create_channel_timing: \n {e} \n \033[0m")
 ####################################################################
 def update_channel_timing(time_index,userid,date):
     time=db_hour_name[time_index]
@@ -34,7 +35,7 @@ WHERE record_date = '{date}';"""
                      connection.close()
                      return True
     except Error as e:
-        print(f"\033[91merror update_channel_timing: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror update_channel_timing: \n {e} \n \033[0m")
         return False
 #################################################################
 def get_channel_timing(date):
@@ -51,9 +52,9 @@ WHERE record_date = '{date}';"""
                      connection.close()
                      return timing
     except Error as e:
-        print(f"\033[91merror get_channel_timing: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_channel_timing: \n {e} \n \033[0m")
 #################################################################
-def check_time_date(date,time):
+def get_id_reserver(date,time):
     """return id of who reserved the time , none for not reserved time"""
     time_index=find_index(time,time_of_day)
     db_column_time_name=db_hour_name[time_index]
@@ -70,4 +71,4 @@ WHERE record_date = '{date}' AND hour_{db_column_time_name} <> 0;"""
                      connection.close()
                      return timing
     except Error as e:
-        print(f"\033[91merror get_channel_timing: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_channel_timing: \n {e} \n \033[0m")

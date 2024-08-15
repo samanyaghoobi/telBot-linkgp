@@ -1,0 +1,3 @@
+2024-08-15 11:12:50,983 - root - INFO - ربات در حال اجراست...
+2024-08-15 11:12:50,983 - root - INFO - connect to :{'host': 'localhost', 'port': '3333', 'user': 'root', 'password': 'root', 'database': 'linkGP'}
+2024-08-15 11:12:51,416 - root - INFO - [32m data base and tables are ok [0m

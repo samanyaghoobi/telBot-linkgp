@@ -1,3 +1,4 @@
+import logging
 import mysql.connector # type: ignore
 from mysql.connector import Error
 
@@ -24,11 +25,11 @@ def make_reserve_transaction(user_id,price,time_index,date,banner,link):
                     cursor.execute(sql_make_reserve)
                     connection.commit()
 
-                    print("\033[32m Transaction committed successfully \033[0m")
+                    logging.error("\033[32m Transaction committed successfully \033[0m")
 
     except Error as e:
         connection.rollback()
-        print(f"\033[91m Error occurred, rolling back: \n {e} \n \033[0m")
+        logging.error(f"\033[91m Error occurred, rolling back: \n {e} \n \033[0m")
     finally:
         if connection.is_connected():
             cursor.close()
@@ -52,10 +53,10 @@ def admin_deny_banner(user_id,price,time_index,date,reserve_id):
                     cursor.execute(sql_delete_reserve)
                     connection.commit()
 
-                    print("\033[32m Transaction committed successfully \033[0m")
+                    logging.error("\033[32m Transaction committed successfully \033[0m")
     except Error as e:
         connection.rollback()
-        print(f"\033[91m Error occurred, rolling back: \n {e} \n \033[0m")
+        logging.error(f"\033[91m Error occurred, rolling back: \n {e} \n \033[0m")
     finally:
         if connection.is_connected():
             cursor.close()
@@ -76,10 +77,10 @@ def admin_accept_banner(user_id,time_index,date,reserve_id):
                     cursor.execute(sql_approve_reserve)
                     connection.commit()
 
-                    print("\033[32m Transaction committed successfully \033[0m")
+                    logging.error("\033[32m Transaction committed successfully \033[0m")
     except Error as e:
         connection.rollback()
-        print(f"\033[91m Error occurred, rolling back: \n {e} \n \033[0m")
+        logging.error(f"\033[91m Error occurred, rolling back: \n {e} \n \033[0m")
     finally:
         if connection.is_connected():
             cursor.close()

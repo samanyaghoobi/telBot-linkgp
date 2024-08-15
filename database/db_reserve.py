@@ -1,3 +1,4 @@
+import logging
 import mysql.connector # type: ignore
 from mysql.connector import Error
 from configs.auth import DB_CONFIG
@@ -20,7 +21,7 @@ VALUES (0, {userid}, {price}, '{date}', '{time}', {time_index}, '{banner}', '{li
                      connection.close()
                      return True
     except Error as e:
-        print(f"\033[91merror make_a_reservation: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror make_a_reservation: \n {e} \n \033[0m")
 ########################################
 #*approve
 def approve_a_reserve(id):
@@ -37,7 +38,7 @@ WHERE id = {id};
                      cursor.close()
                      connection.close()
     except Error as e:
-        print(f"\033[91merror approve_a_reserve: \n {e} \n \033[0m")    
+        logging.error(f"\033[91merror approve_a_reserve: \n {e} \n \033[0m")    
 
 ###########################
 #*get banner_with id
@@ -57,14 +58,14 @@ WHERE id = {reserve_id};
                      connection.close()
                      return banner
      except Error as e:
-        print(f"\033[91merror get_banner_with_id_reserve:  \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_banner_with_id_reserve:  \n {e} \n \033[0m")
 ##########################
 #* get id with time and date
 def get_id_with_time_date_reserve(time,date):
      sql=f"""SELECT id 
 FROM reserve 
 WHERE date = '{date}' AND time = '{time}';"""
-     print(sql)
+     logging.error(sql)
      try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
             if connection.is_connected():
@@ -76,7 +77,7 @@ WHERE date = '{date}' AND time = '{time}';"""
                      connection.close()
                      return id
      except Error as e:
-         print(f"\033[91merror get_id_with_time_date_reserve: \n {e} \n \033[0m")
+         logging.error(f"\033[91merror get_id_with_time_date_reserve: \n {e} \n \033[0m")
 ###############################
 #* get link with id 
 def get_link_with_id_reserve(id):
@@ -95,7 +96,7 @@ WHERE id = {id};
                      connection.close()
                      return link
      except Error as e:
-        print(f"\033[91merror: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror: \n {e} \n \033[0m")
 #########################################
 #* get links of day with date 
 def get_link_with_date_reserve(date):
@@ -114,7 +115,7 @@ WHERE date = '{date}';
                      connection.close()
                      return link
      except Error as e:
-        print(f"\033[91merror get_link_with_id_reserve: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_link_with_id_reserve: \n {e} \n \033[0m")
 ####################################3
 #* get  all 
 def get_all_reserves():
@@ -130,6 +131,6 @@ def get_all_reserves():
                      connection.close()
                      return reserves
      except Error as e:
-        print(f"\033[91merror get_all_reserves: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_all_reserves: \n {e} \n \033[0m")
 #########################################################
 #

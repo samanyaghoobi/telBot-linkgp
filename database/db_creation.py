@@ -1,3 +1,4 @@
+import logging
 import mysql.connector # type: ignore
 from mysql.connector import Error
 from configs.auth import DB_CONFIG
@@ -5,6 +6,7 @@ from configs.config import *
 #!###################################################
 def create_database():
     try:
+        logging.info(f"connect to :{DB_CONFIG}")
         # create_data_base()
         result= create_table_channel_timing()
         if result:
@@ -14,10 +16,10 @@ def create_database():
                 if result:
                     result=create_table_users()
                     if result:
-                        print("\033[32m data base and tables are ok \033[0m")
+                        logging.info("\033[32m data base and tables are ok \033[0m")
 
     except Error as e:
-        print(e)
+        logging.error(e)
         return False
 #!###################################################
 def create_data_base():
@@ -31,7 +33,7 @@ def create_data_base():
                      cursor.close()
                      connection.close()
     except Error as e:
-        print(f"\033[91merror from create database: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror from create database: \n {e} \n \033[0m")
 ####################################################
 #* transactions : save each payment of each user 
 def create_table_transactions():
@@ -57,10 +59,10 @@ def create_table_transactions():
                      cursor.close()
                      connection.close()
                      return True
-        # print("\033[32m transactions created\033[0m")
+        # logging.error("\033[32m transactions created\033[0m")
 
     except Error as e:
-        print(f"\033[91merror from create transactions: \n {e}  \n \033[0m")
+        logging.error(f"\033[91merror from create transactions: \n {e}  \n \033[0m")
         return False
 #!###################################################
 #* users table: user info table 
@@ -85,9 +87,9 @@ def create_table_users():
                      connection.close()
                      return True
 
-        # print("\033[32m users created\033[0m")
+        # logging.error("\033[32m users created\033[0m")
     except Error as e:
-        print(f"\033[91merror from create users: \n {e}  \n \033[0m")
+        logging.error(f"\033[91merror from create users: \n {e}  \n \033[0m")
         return False
 #!###################################################
 #* reserve table : make a reservation connected to time date and user and price
@@ -115,9 +117,9 @@ def create_table_reserve():
                      cursor.close()
                      connection.close()
                      return True
-        # print("\033[32m reserve created\033[0m")
+        # logging.error("\033[32m reserve created\033[0m")
     except Error as e:
-        print(f"\033[91merror from create reserve: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror from create reserve: \n {e} \n \033[0m")
         return False
 
 #!###################################################
@@ -160,8 +162,8 @@ def create_table_channel_timing():
                      cursor.close()
                      connection.close()
                      return True
-            # print("\033[32m timing created\033[0m")
+            # logging.error("\033[32m timing created\033[0m")
 
     except Error as e:
-        print(f"\033[91merror from create channel_timing: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror from create channel_timing: \n {e} \n \033[0m")
         return False

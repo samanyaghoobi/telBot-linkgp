@@ -1,5 +1,8 @@
 import time
 import schedule
+import threading
+import logging
+from datetime import datetime
 from telebot import TeleBot , custom_filters
 from configs.auth import *
 from database.db_creation import create_database
@@ -11,7 +14,7 @@ from database.db_users import create_user, decrease_balance, delete_user, get_al
 from message_and_text.bot_message_functions import *
 from message_and_text.bot_messages import *
 from message_and_text.text import *
-from markups import *
+from Markups import *
 from states import *
 from telebot.storage import StateMemoryStorage
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
@@ -23,9 +26,11 @@ bot =TeleBot(token = TOKEN,state_storage=state_storage, parse_mode="HTML")
 ########################################
 #* restart  msg
 def restartMessageToAdmins():
-     for admin in ADMIN_ID_LIST:
-        bot.send_message(admin,text=restart_msg)     
+    text=f'bot is started at : {get_current_datetime()}'
+    for admin in ADMIN_ID_LIST:
+        bot.send_message(chat_id=admin,text=text)     
 ########################################
+
 #* user state in channels
 def isMemberOf(user_id,channel):
     is_member=bot.get_chat_member(chat_id=channel,user_id=user_id)
@@ -239,7 +244,7 @@ def admin_accept_banner_btn(call :CallbackQuery):
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"{info_text} \n -----------\nnew amount: {new_balance} HT",reply_markup=markup)
         bot.send_message(chat_id=user_id,text=f"تراکنش شما تایید و حساب شما شارژ شد  \n برای مشاهده موجودی خود از دکمه '{user_acc_btn}' استفاده کنید") 
     except Error as e:
-        print(e)
+        logging.error(f"admin_accept_banner_btn : {e}")
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="مشکلی در اپدیت موجودی کاربر پیش امده است")
 #?#######################################################################
 #deny btn
@@ -462,7 +467,7 @@ def get_banner(msg : Message):    # Split the text into lines
             make_reserve_transaction(user_id=user_id,price=price,time_index=time_index,date=date,banner=banner,link=link)
         except Error as e:
             bot.send_message(chat_id=msg.from_user.id,text="مشکلی پیش امده است لطفا مجدد تلاش کنید")
-            print(f"\033[91m error 'get_banner' from user: \n {e} \n \033[0m")
+            logging.error(f"\033[91m error 'get_banner' from user: \n {e} \n \033[0m")
 
         markup=InlineKeyboardMarkup()
         btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
@@ -493,7 +498,7 @@ def admin_deny(call :CallbackQuery):
     try:
         admin_deny_banner(user_id=user_id,price=price,time_index=time_index,date=date,reserve_id=reserve_id)
     except Error as e:
-        print(f"\033[91m error 'admin_deny' banner: \n {e} \n \033[0m")
+        logging.error(f"\033[91m error 'admin_deny' banner: \n {e} \n \033[0m")
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"مشکلی پیش امد دوباره تلاش کنید \n {make_line} \n{text}")
 
 
@@ -525,7 +530,7 @@ def admin_accept_banner_btn(call :CallbackQuery):
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"{info_text} \n {make_line} \n بنر تایید شد",reply_markup=markup)
         bot.send_message(chat_id=user_id,text="بنر شما تایید و در ساعت انتخاب شده گذاشته میشود") 
     except Error as e:
-        print(f"\033[91m Error admin_accept_banner_btn: \n {e} \n \033[0m")
+        logging.error(f"\033[91m Error admin_accept_banner_btn: \n {e} \n \033[0m")
         btn=InlineKeyboardButton(text="تایید مجدد",callback_data="banner_accept")
         markup.add(btn)
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="مشکلی در اپدیت موجودی کاربر پیش امده است",reply_markup=markup)
@@ -646,7 +651,7 @@ def handle_button_press(call :CallbackQuery):
         markup.add(InlineKeyboardButton(text="کاربر پاک شد",callback_data="2134"))
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text)
     except Error as e:
-        print(f"\033[91merror delete a user: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror delete a user: \n {e} \n \033[0m")
         bot.send_message(call.message.from_user.id,text="مجدد تلاش کنید کاربر پاک نشد")
         
 
@@ -790,17 +795,18 @@ def test(msg : Message):
 
 ################################################
 def send_scheduled_message():
+    bot.send_message(chat_id=ADMIN_ID_LIST[0],text=f"schedule_jobs : {get_current_time()}")
 
-    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    text = f"این یک پیام زمان‌بندی‌شده است که در {current_time} ارسال شده است."
-    bot.send_message(ADMIN_ID_LIST[1], text)
+    # current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    # text = f"این یک پیام زمان‌بندی‌شده است که در {current_time} ارسال شده است."
+    # bot.send_message(ADMIN_ID_LIST[1], text)
     time=datetime.now().strftime('%H:%M')
-    print(time)
+    # print(time)
     time_index=find_index(time,time_of_day)
     date=get_current_date()
-    time_check=check_time_date(time=time,date=date)
-    if time_check is not None :
-        user_id=int(time_check[0])
+    user_id=get_id_reserver(time=time,date=date)
+    if user_id is not None :
+        user_id=int(user_id[0])
         bot.send_message(ADMIN_ID_LIST[0],text=f"time:{time} : date:{date}\n user_id:{user_id}")
         if user_id != 1 :
             reserve_id=get_id_with_time_date_reserve(time=time,date=date)[0]
@@ -832,17 +838,13 @@ def run_scheduler():
         schedule.run_pending()
         time.sleep(1)
 
-import threading
 def start_scheduler():
-    # schedule_jobs()
-    schedule_jobs_test()  # ثبت وظایف زمان‌بندی‌شده
+    schedule_jobs()
+    # schedule_jobs_test()  # ثبت وظایف زمان‌بندی‌شده
     scheduler_thread = threading.Thread(target=run_scheduler)
     scheduler_thread.daemon = True  # این کار باعث می‌شود Thread با بستن برنامه اصلی بسته شود
     scheduler_thread.start()
-#     bot.send_message(msg.chat.id,text="msg to all test")
-#     bot.set_state(user_id=msg.from_user.id,state=admin_state.message_to_all,chat_id=msg.chat.id)
 
-# #todo: test section ################################################################
 #!#########################
 #هر پیامی از کاربر
 @bot.message_handler(func=lambda message: True)
@@ -854,11 +856,21 @@ def handle_non_photo(msg: Message):
 
 # for making bot running
 if __name__ == "__main__":
-    create_database()
-    start_scheduler()
-    bot.add_custom_filter(custom_filters.StateFilter(bot))
-    # send_startup_message()
-    bot.polling()
+    try:
+        # تنظیمات اولیه لاگ‌گیری
+        log_filename = f"./logs/output_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        logging.basicConfig(filename=log_filename,
+                    level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+        logging.info("ربات در حال اجراست...")
+        create_database() # DATA BASE
+        restartMessageToAdmins() # hello message
+        start_scheduler() # auto send post 
+        bot.add_custom_filter(custom_filters.StateFilter(bot))
+        bot.polling() # keep bot running
+    except Exception as e:
+        logging.error(f"خطا در اجرای ربات: {e}")
 # bot.close()
 
 

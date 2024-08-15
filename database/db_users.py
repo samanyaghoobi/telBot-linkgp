@@ -1,3 +1,4 @@
+import logging
 import mysql.connector # type: ignore
 from mysql.connector import Error
 from configs.auth import DB_CONFIG
@@ -16,9 +17,9 @@ def create_user(userid,username):
                         cursor.close()
                         connection.close()
         except Error as e:
-            print(f"\033[91merror create_user: \n {e} \n \033[0m")
+            logging.error(f"\033[91merror create_user: \n {e} \n \033[0m")
     else:
-        print("user_exists")
+        logging.error("user_exists")
 ##################################################
 def get_user_info(user_id):
     sql=f"""SELECT * FROM users 
@@ -34,7 +35,7 @@ WHERE userid= {user_id};"""
                      connection.close()
                      return user
     except Error as e:
-        print(f"\033[91merror get_user_info: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_user_info: \n {e} \n \033[0m")
 ############################
 def get_all_users():
     sql=f"SELECT * FROM users;"
@@ -49,7 +50,7 @@ def get_all_users():
                      connection.close()
                      return users
     except Error as e:
-        print(f"\033[91merror get_all_users: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_all_users: \n {e} \n \033[0m")
 ##################################################
 
 def get_user_balance(user_id):
@@ -65,7 +66,7 @@ def get_user_balance(user_id):
                      connection.close()
                      return balance[0]
     except Error as e:
-        print(f"\033[91merror get_user_balance: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_user_balance: \n {e} \n \033[0m")
 ########################################################################
 def get_user_score(user_id):
     sql= f"SELECT score from users where userid = {user_id}"
@@ -80,7 +81,7 @@ def get_user_score(user_id):
                      connection.close()
                      return score[0]
     except Error as e:
-        print(f"\033[91merror get_user_score: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_user_score: \n {e} \n \033[0m")
 ########################################################################
 def get_user_id(user_id):
     sql= f"SELECT userid from users where userid = {user_id}"
@@ -95,7 +96,7 @@ def get_user_id(user_id):
                      connection.close()
                      return id
     except Error as e:
-        print(f"\033[91merror get_user_id: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_user_id: \n {e} \n \033[0m")
      
 ########################################################################
 def get_username(user_id):
@@ -111,7 +112,7 @@ def get_username(user_id):
                      connection.close()
                      return username[0]
     except Error as e:
-        print(f"\033[91merror get_user_id: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror get_user_id: \n {e} \n \033[0m")
      
 ########################################################################
 def increase_balance(user_id,increase_amount):
@@ -125,7 +126,7 @@ def increase_balance(user_id,increase_amount):
                      cursor.close()
                      connection.close()
     except Error as e:
-        print(f"\033[91merror increase_balance: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror increase_balance: \n {e} \n \033[0m")
 ########################################################################
 def decrease_balance(user_id,decrease_balance_amount):
     user_balance=int(get_user_balance(user_id=user_id))
@@ -141,7 +142,7 @@ def decrease_balance(user_id,decrease_balance_amount):
                      cursor.close()
                      connection.close()
     except Error as e:
-        print(f"\033[91merror decrease_balance: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror decrease_balance: \n {e} \n \033[0m")
 ########################################################################
 def increase_score(user_id,increase_amount):
     sql= f"UPDATE users SET score = score + {increase_amount} WHERE userid = {user_id};"
@@ -154,7 +155,7 @@ def increase_score(user_id,increase_amount):
                      cursor.close()
                      connection.close()
     except Error as e:
-        print(f"\033[91merror increase_score: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror increase_score: \n {e} \n \033[0m")
 ########################################################################
 def decrease_score(user_id,decrease_amount ):
     user_score=get_user_score(user_id=user_id)
@@ -170,7 +171,8 @@ def decrease_score(user_id,decrease_amount ):
                      cursor.close()
                      connection.close()
     except Error as e:
-        print(f"\033[91merror decrease_score: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror decrease_score: \n {e} \n \033[0m")
+        
 ##########################################################################
 def delete_user(user_id):
     sql= f"delete from users where userid ={user_id};"
@@ -183,4 +185,4 @@ def delete_user(user_id):
                      cursor.close()
                      connection.close()
     except Error as e:
-        print(f"\033[91merror delete_user: \n {e} \n \033[0m")
+        logging.error(f"\033[91merror delete_user: \n {e} \n \033[0m")
