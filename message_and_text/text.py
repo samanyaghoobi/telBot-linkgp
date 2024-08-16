@@ -1,7 +1,7 @@
 from configs.auth import BOT_USERNAME
 from configs.config import *
 
-new_user_text='خوش آمدی شما یک کاربر جدید هستید'
+new_user_text="خوش امدید"
 old_user_text='سلام کاربر قدیمی'
 admin_link=""
 not_join_text=f'برای استفاده از این ربات باید در کانال ما عضو شوید \n @linkGP'
