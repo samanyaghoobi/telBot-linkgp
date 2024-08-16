@@ -5,7 +5,7 @@ ENV TZ=Asia/Tehran
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 # make dir
-RUN mkdir -p /logs
+RUN mkdir -p /logs 
 WORKDIR /bot
 
 # copy alla file to dir '/bot'
