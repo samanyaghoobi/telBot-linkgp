@@ -18,7 +18,7 @@ def create_channel_timing(date):
                       cursor.close()
                       connection.close()
       except Error as e:
-          logging.error(f"\033[91merror create_channel_timing: \n {e} \n \033[0m")
+          logging.error(f" error create_channel_timing:   {e} ")
 ####################################################################
 def update_channel_timing(time_index,userid,date):
     time=db_hour_name[time_index]
@@ -35,7 +35,7 @@ WHERE record_date = '{date}';"""
                      connection.close()
                      return True
     except Error as e:
-        logging.error(f"\033[91merror update_channel_timing: \n {e} \n \033[0m")
+        logging.error(f" error update_channel_timing:   {e} ")
         return False
 #################################################################
 def get_channel_timing(date):
@@ -52,7 +52,7 @@ WHERE record_date = '{date}';"""
                      connection.close()
                      return timing
     except Error as e:
-        logging.error(f"\033[91merror get_channel_timing: \n {e} \n \033[0m")
+        logging.error(f" error get_channel_timing:   {e} ")
 #################################################################
 def get_id_reserver(date,time):
     """return id of who reserved the time , none for not reserved time"""
@@ -71,4 +71,4 @@ WHERE record_date = '{date}' AND hour_{db_column_time_name} <> 0;"""
                      connection.close()
                      return timing
     except Error as e:
-        logging.error(f"\033[91merror get_channel_timing: \n {e} \n \033[0m")
+        logging.error(f" error get_channel_timing:   {e} ")

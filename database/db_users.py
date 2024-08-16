@@ -17,7 +17,7 @@ def create_user(userid,username):
                         cursor.close()
                         connection.close()
         except Error as e:
-            logging.error(f"\033[91merror create_user: \n {e} \n \033[0m")
+            logging.error(f" error create_user:  {e}  ")
     else:
         logging.error("user_exists")
 ##################################################
@@ -35,7 +35,7 @@ WHERE userid= {user_id};"""
                      connection.close()
                      return user
     except Error as e:
-        logging.error(f"\033[91merror get_user_info: \n {e} \n \033[0m")
+        logging.error(f" error get_user_info:  {e}  ")
 ############################
 def get_all_users():
     sql=f"SELECT * FROM users;"
@@ -50,7 +50,7 @@ def get_all_users():
                      connection.close()
                      return users
     except Error as e:
-        logging.error(f"\033[91merror get_all_users: \n {e} \n \033[0m")
+        logging.error(f" error get_all_users:  {e}  ")
 ##################################################
 
 def get_user_balance(user_id):
@@ -66,7 +66,7 @@ def get_user_balance(user_id):
                      connection.close()
                      return balance[0]
     except Error as e:
-        logging.error(f"\033[91merror get_user_balance: \n {e} \n \033[0m")
+        logging.error(f" error get_user_balance:  {e}  ")
 ########################################################################
 def get_user_score(user_id):
     sql= f"SELECT score from users where userid = {user_id}"
@@ -81,9 +81,9 @@ def get_user_score(user_id):
                      connection.close()
                      return score[0]
     except Error as e:
-        logging.error(f"\033[91merror get_user_score: \n {e} \n \033[0m")
+        logging.error(f" error get_user_score:  {e}  ")
 ########################################################################
-def get_user_id(user_id):
+def user_exist(user_id):
     sql= f"SELECT userid from users where userid = {user_id}"
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
@@ -94,9 +94,12 @@ def get_user_id(user_id):
                      id=cursor.fetchone()
                      cursor.close()
                      connection.close()
-                     return id
+                     if id is not None:
+                        return True
+                     return False
     except Error as e:
-        logging.error(f"\033[91merror get_user_id: \n {e} \n \033[0m")
+        logging.error(f" error get_user_id:  {e}  ")
+        return False
      
 ########################################################################
 def get_username(user_id):
@@ -112,11 +115,11 @@ def get_username(user_id):
                      connection.close()
                      return username[0]
     except Error as e:
-        logging.error(f"\033[91merror get_user_id: \n {e} \n \033[0m")
+        logging.error(f" error get_user_id:  {e}  ")
      
 ########################################################################
 def increase_balance(user_id,increase_amount):
-    sql= f"UPDATE users SET balance = balance + {increase_amount} WHERE userid = {user_id};"
+    sql=f"UPDATE users SET balance = balance + {increase_amount} WHERE userid = {user_id};"
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
             if connection.is_connected():
@@ -126,7 +129,7 @@ def increase_balance(user_id,increase_amount):
                      cursor.close()
                      connection.close()
     except Error as e:
-        logging.error(f"\033[91merror increase_balance: \n {e} \n \033[0m")
+        logging.error(f" error increase_balance:  {e}  ")
 ########################################################################
 def decrease_balance(user_id,decrease_balance_amount):
     user_balance=int(get_user_balance(user_id=user_id))
@@ -141,8 +144,10 @@ def decrease_balance(user_id,decrease_balance_amount):
                      connection.commit()
                      cursor.close()
                      connection.close()
+                     return True
     except Error as e:
-        logging.error(f"\033[91merror decrease_balance: \n {e} \n \033[0m")
+        logging.error(f" error decrease_balance:  {e}  ")
+        return False
 ########################################################################
 def increase_score(user_id,increase_amount):
     sql= f"UPDATE users SET score = score + {increase_amount} WHERE userid = {user_id};"
@@ -155,13 +160,13 @@ def increase_score(user_id,increase_amount):
                      cursor.close()
                      connection.close()
     except Error as e:
-        logging.error(f"\033[91merror increase_score: \n {e} \n \033[0m")
+        logging.error(f" error increase_score:  {e}  ")
 ########################################################################
 def decrease_score(user_id,decrease_amount ):
     user_score=get_user_score(user_id=user_id)
     if user_score<decrease_amount :
         return False
-    sql= f"UPDATE users SET score = score + {decrease_amount} WHERE userid = {user_id};"
+    sql= f"UPDATE users SET score = score - {decrease_amount} WHERE userid = {user_id};"
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
             if connection.is_connected():
@@ -170,8 +175,10 @@ def decrease_score(user_id,decrease_amount ):
                      connection.commit()
                      cursor.close()
                      connection.close()
+                     return True
     except Error as e:
-        logging.error(f"\033[91merror decrease_score: \n {e} \n \033[0m")
+        logging.error(f" error decrease_score:  {e}  ")
+        return False
         
 ##########################################################################
 def delete_user(user_id):
@@ -185,4 +192,4 @@ def delete_user(user_id):
                      cursor.close()
                      connection.close()
     except Error as e:
-        logging.error(f"\033[91merror delete_user: \n {e} \n \033[0m")
+        logging.error(f" error delete_user:  {e}  ")

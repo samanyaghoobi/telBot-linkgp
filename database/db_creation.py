@@ -16,7 +16,7 @@ def create_database():
                 if result:
                     result=create_table_users()
                     if result:
-                        logging.info("\033[32m data base and tables are ok \033[0m")
+                        logging.info("data base and tables are ok")
 
     except Error as e:
         logging.error(e)
@@ -33,7 +33,7 @@ def create_data_base():
                      cursor.close()
                      connection.close()
     except Error as e:
-        logging.error(f"\033[91merror from create database: \n {e} \n \033[0m")
+        logging.error(f"error from create database: {e}")
 ####################################################
 #* transactions : save each payment of each user 
 def create_table_transactions():
@@ -59,10 +59,9 @@ def create_table_transactions():
                      cursor.close()
                      connection.close()
                      return True
-        # logging.error("\033[32m transactions created\033[0m")
 
     except Error as e:
-        logging.error(f"\033[91merror from create transactions: \n {e}  \n \033[0m")
+        logging.error(f"error from create transactions: {e} ")
         return False
 #!###################################################
 #* users table: user info table 
@@ -87,9 +86,8 @@ def create_table_users():
                      connection.close()
                      return True
 
-        # logging.error("\033[32m users created\033[0m")
     except Error as e:
-        logging.error(f"\033[91merror from create users: \n {e}  \n \033[0m")
+        logging.error(f"error from create users: {e}")
         return False
 #!###################################################
 #* reserve table : make a reservation connected to time date and user and price
@@ -117,9 +115,8 @@ def create_table_reserve():
                      cursor.close()
                      connection.close()
                      return True
-        # logging.error("\033[32m reserve created\033[0m")
     except Error as e:
-        logging.error(f"\033[91merror from create reserve: \n {e} \n \033[0m")
+        logging.error(f"error from create reserve: {e} ")
         return False
 
 #!###################################################
@@ -162,8 +159,7 @@ def create_table_channel_timing():
                      cursor.close()
                      connection.close()
                      return True
-            # logging.error("\033[32m timing created\033[0m")
 
     except Error as e:
-        logging.error(f"\033[91merror from create channel_timing: \n {e} \n \033[0m")
+        logging.error(f"error from create channel_timing: {e} ")
         return False

@@ -26,24 +26,24 @@ back_btn_msg="به منوی اولیه خوش امدید"
 balance_inc_msg="برای افزایش موجودی خود دو راه کار وجود دارد"
 
 ### admin btn
-admin_btn_user_list="user_list"
-admin_btn_find_user_info="find_user_info"
-admin_btn_bot_info="bot_info"
-admin_btn_send_msg_to_all="send msg to all users"
-admin_btn_check_income="check income"
-admin_btn_accept_income="accept incomes"
+admin_btn_user_list="لیست کاربران"
+admin_btn_find_user_info="پیدا کردن کاربر"
+admin_btn_bot_info="اطلاعات ربات"
+admin_btn_send_msg_to_all="ارسال پیام عمومی"
+admin_btn_check_income="محاسبه درامد"
+# admin_btn_accept_income="accept incomes"
 not_admin_text="شما دسترسی ادمین ندارید"
 
 check_income_msg="از لیست زیر ماه میلادی که میخواهید درامد ان را مشاهده کنید انتخاب کنید"
 check_reservations_text="مشاهده لیست رزرو شده ها"
 
 
-admin_btn_increase_score='admin_btn_in_score'
-admin_btn_increase_balance='admin_btn_in_balance'
-admin_btn_decrease_score='admin_btn_de_score'
-admin_btn_decrease_balance='admin_btn_de_balance'
-admin_btn_delete_user='delete_user'
-admin_btn_msg_user='send_message_to_user'
+admin_btn_increase_score='افزایش امتیاز کاربر'
+admin_btn_increase_balance='افزایش موجودی کاربر'
+admin_btn_decrease_score='کاهش امتیاز کاربر'
+admin_btn_decrease_balance='کاهش موجودی کاربر'
+admin_btn_delete_user='پاک کردن کاربر'
+admin_btn_msg_user='ارسال پیام به کاربر'
 #?###########################33
 
 

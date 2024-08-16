@@ -36,8 +36,6 @@ default_banner_pattern=r"""^Super\ GP\n
         \n
         мeмвer:\ .+\n
         \n
-        𝓭𝓮𝓼𝓬𝓻𝓲𝓹𝓽𝓲𝓸𝓷:\ .+\n
-        \n
         lιnĸ:\ .+\n
         \n
         @LinkGP$"""

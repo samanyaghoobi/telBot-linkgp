@@ -18,5 +18,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY logrotate.conf /etc/logrotate.d/bot-logrotate.conf
 
 #run code
-#CMD ["python", "main.py"]
-CMD ["sh", "-c", "python main.py > /logs/output.log 2>&1"]
+CMD ["python", "main.py"]
+# CMD ["sh", "-c", "python main.py > /logs/output.log 2>&1"]

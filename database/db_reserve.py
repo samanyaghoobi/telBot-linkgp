@@ -21,7 +21,7 @@ VALUES (0, {userid}, {price}, '{date}', '{time}', {time_index}, '{banner}', '{li
                      connection.close()
                      return True
     except Error as e:
-        logging.error(f"\033[91merror make_a_reservation: \n {e} \n \033[0m")
+        logging.error(f"error make_a_reservation:  {e} ")
 ########################################
 #*approve
 def approve_a_reserve(id):
@@ -38,7 +38,7 @@ WHERE id = {id};
                      cursor.close()
                      connection.close()
     except Error as e:
-        logging.error(f"\033[91merror approve_a_reserve: \n {e} \n \033[0m")    
+        logging.error(f"error approve_a_reserve: {e}")    
 
 ###########################
 #*get banner_with id
@@ -58,7 +58,7 @@ WHERE id = {reserve_id};
                      connection.close()
                      return banner
      except Error as e:
-        logging.error(f"\033[91merror get_banner_with_id_reserve:  \n {e} \n \033[0m")
+        logging.error(f"error get_banner_with_id_reserve: {e} ")
 ##########################
 #* get id with time and date
 def get_id_with_time_date_reserve(time,date):
@@ -77,7 +77,7 @@ WHERE date = '{date}' AND time = '{time}';"""
                      connection.close()
                      return id
      except Error as e:
-         logging.error(f"\033[91merror get_id_with_time_date_reserve: \n {e} \n \033[0m")
+         logging.error(f" error get_id_with_time_date_reserve:   {e}  ")
 ###############################
 #* get link with id 
 def get_link_with_id_reserve(id):
@@ -96,7 +96,7 @@ WHERE id = {id};
                      connection.close()
                      return link
      except Error as e:
-        logging.error(f"\033[91merror: \n {e} \n \033[0m")
+        logging.error(f" error:   {e}  ")
 #########################################
 #* get links of day with date 
 def get_link_with_date_reserve(date):
@@ -109,13 +109,13 @@ WHERE date = '{date}';
             if connection.is_connected():
                 with connection.cursor()  as cursor:
                      cursor.execute(sql)
-                     link=cursor.fetchone()
+                     link=cursor.fetchall()
                     #  connection.commit()
                      cursor.close()
                      connection.close()
                      return link
      except Error as e:
-        logging.error(f"\033[91merror get_link_with_id_reserve: \n {e} \n \033[0m")
+        logging.error(f" error get_link_with_id_reserve:   {e}  ")
 ####################################3
 #* get  all 
 def get_all_reserves():
@@ -131,6 +131,6 @@ def get_all_reserves():
                      connection.close()
                      return reserves
      except Error as e:
-        logging.error(f"\033[91merror get_all_reserves: \n {e} \n \033[0m")
+        logging.error(f" error get_all_reserves:   {e}  ")
 #########################################################
 #

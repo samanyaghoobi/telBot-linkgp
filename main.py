@@ -10,7 +10,7 @@ from database.db_functions import admin_accept_banner, admin_deny_banner, make_r
 from database.db_timing import *
 from database.db_transactions import *
 from database.db_reserve import *
-from database.db_users import create_user, decrease_balance, delete_user, get_all_users, get_user_id, get_user_score, increase_balance, increase_score
+from database.db_users import create_user, decrease_balance, decrease_score, delete_user, get_all_users, user_exist, get_user_score, increase_balance, increase_score
 from message_and_text.bot_message_functions import *
 from message_and_text.bot_messages import *
 from message_and_text.text import *
@@ -47,7 +47,7 @@ def isMemberOfChannels(user_id,channels=CHANNELS_USERNAME):
 #* join and mem check handler 
 def isInDB(user_id):
     # bot.send_message(user_id,text=reboot_text,reply_markup=ReplyKeyboardRemove())
-    is_in_DB= get_user_id(user_id=user_id)
+    is_in_DB= user_exist(user_id=user_id)
     if is_in_DB:
         return True
     return False
@@ -188,6 +188,7 @@ def handle_button_press(call:CallbackQuery):
     bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
     bot.send_message(chat_id=call.message.chat.id,text=text)
     bot.set_state(user_id=call.message.chat.id,state=user_state.pic_receipt,chat_id=call.message.chat.id)
+
     with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
         data['plan'] = index
 
@@ -221,8 +222,6 @@ balance increase amount:‌ {plans[index]}  H T
     bot.send_message(msg.chat.id,text=text)
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
-
-########################################################################
 
 #?#######################################################################
 #accept btn
@@ -278,6 +277,7 @@ def deny_msg(call : CallbackQuery):
     markup.add(btn2)
     bot.edit_message_text(text=f"{msg} \n------------------- \n علت رد کردن را بنویسید",chat_id=call.message.chat.id,message_id=call.message.message_id,reply_markup=markup)
     bot.set_state(user_id=call.message.chat.id,state=admin_state.deny_reason,chat_id=call.message.chat.id)
+
     with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
         data['user_id'] = user_id
 #send deny reason
@@ -327,7 +327,7 @@ def account(msg : Message):
 #free time handler : show times of day
 @bot.callback_query_handler(func=lambda call: call.data.startswith("time_btn_"))
 def handle_button_press(call :CallbackQuery):
-     user_id=call.from_user.id
+     user_id=int(call.from_user.id)
      result_member = isInDB(user_id=user_id)
      if result_member:
         day=int(call.data.split('_')[2])
@@ -425,6 +425,7 @@ def handle_button_press(call:CallbackQuery):
      if result_member:
       bot.send_message(chat_id=call.message.chat.id,text=f"اسم گروه شما چیست؟ \n حداکثر {max_len_name} کاراکتر")
       bot.set_state(user_id=call.message.chat.id,state=banner_state.name,chat_id=call.message.chat.id)
+
      
 #?##############################################
 # تایید و ارسال بنر
@@ -443,6 +444,7 @@ def get_banner_from_user(call:CallbackQuery):
 در صورتی که بنر چنل ما را ندارید لطفا از دکمه '{make_banner_btn}' استفاده کنید"""
         bot.edit_message_text(text=text,chat_id=call.message.chat.id,message_id=call.message.message_id)
         bot.set_state(user_id=call.message.chat.id,state=banner_state.banner,chat_id=call.message.chat.id)
+
         with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
           data['day'] = day
           data['date'] = cal_date(day)
@@ -463,11 +465,17 @@ def get_banner(msg : Message):    # Split the text into lines
     username=msg.from_user.username
     if is_banner_ok(banner=banner):
         link=extract_link(banner)
+        # print (link)
+        #todo: check link for today
+        is_duplicate=is_duplicate_link(link=link,date=date)
+        if is_duplicate:
+            bot.send_message(chat_id=msg.from_user.id,text="لینک شما تکراری است \n هر گروه فقط یک بار در روز اجازه تبلیغ دارد")
+            return False
         try:#* decrease balance , make time full , make reserve
             make_reserve_transaction(user_id=user_id,price=price,time_index=time_index,date=date,banner=banner,link=link)
         except Error as e:
             bot.send_message(chat_id=msg.from_user.id,text="مشکلی پیش امده است لطفا مجدد تلاش کنید")
-            logging.error(f"\033[91m error 'get_banner' from user: \n {e} \n \033[0m")
+            logging.error(f"error 'get_banner' from user: {e} ")
 
         markup=InlineKeyboardMarkup()
         btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
@@ -498,7 +506,7 @@ def admin_deny(call :CallbackQuery):
     try:
         admin_deny_banner(user_id=user_id,price=price,time_index=time_index,date=date,reserve_id=reserve_id)
     except Error as e:
-        logging.error(f"\033[91m error 'admin_deny' banner: \n {e} \n \033[0m")
+        logging.error(f"error 'admin_deny' banner:  {e} ")
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"مشکلی پیش امد دوباره تلاش کنید \n {make_line} \n{text}")
 
 
@@ -530,7 +538,7 @@ def admin_accept_banner_btn(call :CallbackQuery):
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"{info_text} \n {make_line} \n بنر تایید شد",reply_markup=markup)
         bot.send_message(chat_id=user_id,text="بنر شما تایید و در ساعت انتخاب شده گذاشته میشود") 
     except Error as e:
-        logging.error(f"\033[91m Error admin_accept_banner_btn: \n {e} \n \033[0m")
+        logging.error(f" Error admin_accept_banner_btn: {e} ")
         btn=InlineKeyboardButton(text="تایید مجدد",callback_data="banner_accept")
         markup.add(btn)
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="مشکلی در اپدیت موجودی کاربر پیش امده است",reply_markup=markup)
@@ -546,6 +554,7 @@ def make_banner(msg : Message):
      bot.send_message(text=f"تعداد اعضای گروه شما چند نفر است \n حداکثر {max_len_member} کاراکتر",chat_id=msg.chat.id)
      bot.set_state(state=banner_state.member,user_id=msg.chat.id,chat_id=msg.chat.id)
 
+
 #################
 @bot.message_handler(state =banner_state.member)
 def make_banner(msg : Message):
@@ -554,35 +563,44 @@ def make_banner(msg : Message):
        if len(member) > max_len_member:
             bot.send_message(text=f"تعداد کارکتر وارد شده برای نام : {len(member)} \n حداکثر مجاز :{max_len_member} \n لطفا دوباره تلاش کنید",chat_id=msg.chat.id)
             return
-     bot.send_message(text=f"در یک خط اگر توضیحاتی لازم است برای گروه خود بنویسید \n حداکثر {max_len_des} کاراکتر",chat_id=msg.chat.id)
-     bot.set_state(state=banner_state.description,user_id=msg.chat.id,chat_id=msg.chat.id)
-
-#################
-@bot.message_handler(state =banner_state.description)
-def make_banner(msg : Message):
-     with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
-        des=data['description']=msg.text
-     if len(des) > max_len_des:
-        bot.send_message(text=f"تعداد کارکتر وارد شده برای نام : {len(des)} \n حداکثر مجاز :{max_len_des} \n لطفا دوباره تلاش کنید",chat_id=msg.chat.id)
-        return
+    #  bot.send_message(text=f"در یک خط اگر توضیحاتی لازم است برای گروه خود بنویسید \n حداکثر {max_len_des} کاراکتر",chat_id=msg.chat.id)
      bot.send_message(text="لینک خصوصی گروه خود را ارسال کنید",chat_id=msg.chat.id)
+
      bot.set_state(state=banner_state.link,user_id=msg.chat.id,chat_id=msg.chat.id)
+
+
+# #################
+# @bot.message_handler(state =banner_state.description)
+# def make_banner(msg : Message):
+#      with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
+#         des=data['description']=msg.text
+#      if len(des) > max_len_des:
+#         bot.send_message(text=f"تعداد کارکتر وارد شده برای نام : {len(des)} \n حداکثر مجاز :{max_len_des} \n لطفا دوباره تلاش کنید",chat_id=msg.chat.id)
+#         return
+#      bot.send_message(text="لینک خصوصی گروه خود را ارسال کنید",chat_id=msg.chat.id)
+#      bot.set_state(state=banner_state.link,user_id=msg.chat.id,chat_id=msg.chat.id)
+
 
 #################
 @bot.message_handler(state =banner_state.link)
 def make_banner(msg : Message):
-     with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
-        data['link']=msg.text
-        name=f"{data['name']}"
-        member=f"{data['member']}"
-        description=f"{data['description']}"
-        link=f"{data['link']}"
-     banner= make_channel_banner(name=name,members=member,description=description,link=link)
-     bot.send_message(text="بنر شما اماده است",chat_id=msg.chat.id,)
-     bot.send_message(text=banner,chat_id=msg.chat.id)
-     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
-    
-#################
+    with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
+       data['link']=msg.text
+       name=f"{data['name']}"
+       member=f"{data['member']}"
+       # description=f"{data['description']}"
+       link=f"{data['link']}"
+       #todo check link
+    result =is_telegram_group_link(link=link)
+    if not result:
+        text=' لیک ارشال شده قابل قبول نیست \nلینک شما حتما باید خصوصی باشد و مربوط به گروه تلگرامی باشد\n لطفا مجدد تلاش کنید '
+        bot.send_message(text=text,chat_id=msg.chat.id)
+        return False;
+
+    banner= make_channel_banner(name=name,members=member,link=link)
+    bot.send_message(text="بنر شما اماده است",chat_id=msg.chat.id,)
+    bot.send_message(text=banner,chat_id=msg.chat.id)
+    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
 #?#######################################################################
 @bot.message_handler(func=lambda m:m.text == back_btn)
@@ -602,7 +620,7 @@ def start(msg : Message):
             bot.send_message(chat_id=msg.chat.id,text=not_admin_text,reply_markup=markup_main)
 ##########################
 #* user list
-#todo : paging
+#todo : page limit 10 user 
 @bot.message_handler(func=lambda m:m.text == admin_btn_user_list)
 def user_list(msg : Message):
      if not check_is_admin(msg.from_user.id):
@@ -619,27 +637,24 @@ def user_list(msg : Message):
 @bot.message_handler(func=lambda m:m.text == admin_btn_find_user_info)
 def find_user(msg : Message):
     admin_id=msg.from_user.id
-    bot.set_state(user_id=msg.from_user.id,state=admin_state.find_user,chat_id=msg.chat.id)
     bot.send_message(admin_id,"user_id کاربر مد نظر را ارسال کنید")
-#############33
+    bot.set_state(user_id=msg.from_user.id,state=admin_state.find_user,chat_id=msg.chat.id)
+####
 @bot.message_handler(state=admin_state.find_user)
 def get_user_info_admin(msg:Message):
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
-    user_id=msg.text
+    user_id = convert_to_english_number(msg.text)
+    result=user_exist(user_id=user_id)
+    if not result:
+        bot.send_message(chat_id=msg.from_user.id,text='کاربر در ربات وجود ندارد')
+        return False
+    user_id=int(msg.text)
     balance=get_user_balance(user_id)
     score=get_user_score(user_id)
-    text=f"id: {user_id}\n{make_user_info(user_id=user_id,balance=balance,score=score)}"
-    markup=InlineKeyboardMarkup()
-    btn1=InlineKeyboardButton(text=admin_btn_increase_balance,callback_data=admin_btn_increase_balance)
-    btn2=InlineKeyboardButton(text=admin_btn_decrease_balance,callback_data=admin_btn_decrease_balance)
-    btn3=InlineKeyboardButton(text=admin_btn_increase_score,callback_data=admin_btn_increase_score)
-    btn4=InlineKeyboardButton(text=admin_btn_decrease_score,callback_data=admin_btn_decrease_score)
-    btn5=InlineKeyboardButton(text=admin_btn_msg_user,callback_data=admin_btn_msg_user)
-    btn6=InlineKeyboardButton(text=admin_btn_delete_user,callback_data=admin_btn_delete_user)
-    markup.add(btn1,btn2)
-    markup.add(btn3,btn4)
-    markup.add(btn5,btn6)
-    bot.edit_message_text(chat_id=msg.chat.id,message_id=msg.message_id,text=text, reply_markup=markup)
+    username=get_username(user_id=user_id)
+    text=f"id: {user_id}\n{make_user_info(user_id=user_id,balance=balance,score=score,username=username)}"
+    markup=make_admin_markup_user_info()
+    bot.send_message(chat_id=msg.chat.id,text=text, reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data== admin_btn_delete_user)
 def handle_button_press(call :CallbackQuery):
@@ -651,15 +666,14 @@ def handle_button_press(call :CallbackQuery):
         markup.add(InlineKeyboardButton(text="کاربر پاک شد",callback_data="2134"))
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text)
     except Error as e:
-        logging.error(f"\033[91merror delete a user: \n {e} \n \033[0m")
+        logging.error(f"error delete a user: {e}")
         bot.send_message(call.message.from_user.id,text="مجدد تلاش کنید کاربر پاک نشد")
-        
-
+#todo: increase and decrease balance and score
 
 ##########################
 #* bot info
 @bot.message_handler(func=lambda m:m.text == admin_btn_bot_info)
-def user_list(msg : Message):
+def bot_info(msg : Message):
      if not check_is_admin(msg.from_user.id):
             bot.send_message(chat_id=msg.chat.id,text=not_admin_text,reply_markup=markup_main)
             return False
@@ -670,34 +684,34 @@ def user_list(msg : Message):
 """
      bot.send_message(msg.from_user.id,text=text)
 ##########################
+#users #todo need work
 @bot.callback_query_handler(func=lambda call: call.data.startswith("users_"))
 def handle_button_press(call :CallbackQuery):
-    if not check_is_admin(call.message.from_user.id):
-            bot.send_message(call.message.chat.id,text=not_admin_text,reply_markup=markup_main)
-            return False
-    user_id=int(call.data.split('_')[1])
-    id=get_user_id(user_id=user_id)
-    balance=get_user_balance(user_id=user_id)
-    score=get_user_score(user_id=user_id)
-    text= make_user_info(username=id[0],user_id=user_id,balance=balance[0],score=score[0])
-    markup=InlineKeyboardMarkup(row_width=2)
-    btn1=InlineKeyboardButton(text="increase balance",callback_data="increase_balance")
-    btn2=InlineKeyboardButton(text="increase score",callback_data="increase_score")
-    btn3=InlineKeyboardButton(text="decrease balance",callback_data="decrease_balance")
-    btn4=InlineKeyboardButton(text="decrease score",callback_data="decrease_score")
-    btn5=InlineKeyboardButton(text="ban user",callback_data="ban_user")
-    btn5=InlineKeyboardButton(text="send message",callback_data="send_message")
-    markup.add(btn1,btn2,btn3,btn4,btn5)
-    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
+    try:
+        if not check_is_admin(int(call.from_user.id)):
+                bot.send_message(call.message.chat.id,text=not_admin_text,reply_markup=markup_main)
+                return False
+        user_id=int(call.data.split('_')[1])
+        username=get_username(user_id=user_id)
+        balance=get_user_balance(user_id=user_id)
+        score=get_user_score(user_id=user_id)
+        text=f"id: {user_id}\n{make_user_info(user_id=user_id,balance=balance,score=score,username=username)}"
+
+        markup=make_admin_markup_user_info()
+
+        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
+    except Error as e:
+        logging.error(e)
 ##########################
 #?send msg to all
 @bot.message_handler(func=lambda m:m.text == admin_btn_send_msg_to_all)
 def msg_to_all(msg : Message):
-    if not check_is_admin(msg.from_user.id):
+    if not check_is_admin(int(msg.from_user.id)):
             bot.send_message(chat_id=msg.chat.id,text=not_admin_text,reply_markup=markup_main)
             return False
     bot.send_message(chat_id=msg.chat.id,text="پیامی برای ارسال به همه برای من بنویسید")
     bot.set_state(user_id=msg.from_user.id,state=admin_state.message_to_all,chat_id=msg.chat.id)
+
 
     
 @bot.message_handler(state =admin_state.message_to_all)
@@ -715,7 +729,7 @@ def get_message_to_send(msg : Message):
 #?check income
 @bot.message_handler(func=lambda m:m.text == admin_btn_check_income)
 def msg_to_all(msg : Message):
-     if not check_is_admin(msg.from_user.id):
+     if not check_is_admin(int(msg.from_user.id)):
             bot.send_message(chat_id=msg.chat.id,text=not_admin_text,reply_markup=markup_main)
             return False
      markup=InlineKeyboardMarkup(row_width=3)
@@ -739,33 +753,121 @@ def handle_button_press(call :CallbackQuery):
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("income_approved_"))
 def handle_button_press(call :CallbackQuery):
-    if not check_is_admin(call.from_user.id):
-            bot.send_message(chat_id=call.message.chat.id,text=not_admin_text,reply_markup=markup_main)
-            return False
-    month=int(call.data.split('_')[2])
-    # print(call.data)
-    income=get_month_income_approved(year="2024",month=f"{month}")
-    # income=10#! remove it
 
+    month=int(call.data.split('_')[2])
+    income=get_month_income_approved(year="2024",month=f"{month}")
     text=f"""درامد شما در ماه {months[month]},{month} 
-برابر است با : <a>{income}</a>
+برابر است با : <a>{income}</a> هزار تومان
     """
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, )
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("income_all_"))
 def handle_button_press(call :CallbackQuery):
-    if not check_is_admin(call.message.from_user.id):
-            bot.send_message(chat_id=call.message.chat.id,text=not_admin_text,reply_markup=markup_main)
-            return False
     month=int(call.data.split('_')[2])
-    # print(month)
     income=get_month_income(year="2024",month=f"{month}")
-    # income=10#! remove it
     text=f"""درامد شما در ماه 
     {months[month]},{month} 
 برابر است با : <a>{income}</a>
     """
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, )
+##########################################################################################################
+@bot.callback_query_handler(func=lambda call: call.data == admin_btn_increase_balance)
+def handle_button_press(call :CallbackQuery):
+    msg_text=call.message.text
+    text=f'{msg_text}\n {make_line} \n مبلغ مورد نظر را وارد کنید ،افزایش موجودی کاربر' 
+    bot.send_message(chat_id=call.from_user.id,text=text)
+    bot.set_state(user_id=call.message.chat.id,state=admin_state.increase_balance,chat_id=call.message.chat.id)
+    user_id=find_pattern_id(msg_text)
+    with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
+        data['user_id'] = user_id
+
+@bot.callback_query_handler(func=lambda call: call.data == admin_btn_decrease_balance)
+def handle_button_press(call :CallbackQuery):
+    msg_text=call.message.text
+    text=f'{msg_text}\n {make_line} \n مبلغ مورد نظر را وارد کنید کاهش موجودی کاربر'
+    bot.send_message(chat_id=call.from_user.id,text=text)
+    bot.set_state(user_id=call.message.chat.id,state=admin_state.decrease_balance,chat_id=call.message.chat.id)
+    user_id=find_pattern_id(msg_text)
+    with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
+        data['user_id'] = user_id
+
+@bot.callback_query_handler(func=lambda call: call.data == admin_btn_increase_score)
+def handle_button_press(call :CallbackQuery):
+    msg_text=call.message.text
+    text=f'{msg_text}\n {make_line} \n میزان مورد نظر را وارد کنید، افزایش امتیاز کاربر'
+    bot.send_message(chat_id=call.from_user.id,text=text)
+    bot.set_state(user_id=call.message.chat.id,state=admin_state.increase_score,chat_id=call.message.chat.id)
+    user_id=find_pattern_id(msg_text)
+    with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
+        data['user_id'] = user_id
+
+@bot.callback_query_handler(func=lambda call: call.data == admin_btn_decrease_score)
+def handle_button_press(call :CallbackQuery):
+    msg_text=call.message.text
+    text=f'{msg_text}\n {make_line} \n میزان مورد نظر را وارد کنید، کاهش امتیاز کاربر'
+    bot.send_message(chat_id=call.from_user.id,text=text)
+    bot.set_state(user_id=call.message.chat.id,state=admin_state.decrease_score,chat_id=call.message.chat.id)
+    user_id=find_pattern_id(msg_text)
+    with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
+        data['user_id'] = user_id
+
+####################################################################################
+@bot.message_handler(state=admin_state.increase_balance)
+def handle_non_photo(msg: Message):
+    with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
+        user_id= data['user_id'] 
+    number=msg.text
+    amount= int(convert_to_english_number(number))
+    before=get_user_balance(user_id)
+    increase_balance(user_id=user_id,increase_amount=amount)
+    after=get_user_balance(user_id)
+    text=f'تغییرات لازم انجام شد \n before: {before} \n after:{after}'
+    bot.send_message(chat_id=msg.from_user.id,text=text)
+
+@bot.message_handler(state=admin_state.decrease_balance)
+def handle_non_photo(msg: Message):
+    with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
+        user_id= data['user_id'] 
+    number=msg.text
+    amount= int(convert_to_english_number(number))
+    before=get_user_balance(user_id)
+    result =decrease_balance(user_id=user_id,decrease_balance_amount=amount)
+    if not result:
+        bot.send_message(chat_id=msg.from_user.id,text="موجودی کاربر کمتر از انتخاب شماست")
+        return
+    after=get_user_balance(user_id)
+    text=f'تغییرات لازم انجام شد \n before: {before} \n after:{after}'
+    bot.send_message(chat_id=msg.from_user.id,text=text)
+
+
+@bot.message_handler(state=admin_state.increase_score)
+def handle_non_photo(msg: Message):
+    with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
+        user_id= data['user_id'] 
+    number=msg.text
+    amount= int(convert_to_english_number(number))
+    before=get_user_score(user_id)
+    increase_score(user_id=user_id,increase_amount=amount)
+    after=get_user_score(user_id)
+    text=f'تغییرات لازم انجام شد \n before: {before} \n after:{after}'
+    bot.send_message(chat_id=msg.from_user.id,text=text)
+
+@bot.message_handler(state=admin_state.decrease_score)
+def handle_non_photo(msg: Message):
+    with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
+        user_id= data['user_id'] 
+    number=msg.text
+    amount= int(convert_to_english_number(number))
+    before=get_user_score(user_id)
+    result=decrease_score(user_id=user_id,decrease_amount=amount)
+    if not result:
+        bot.send_message(chat_id=msg.from_user.id,text="موجودی کاربر کمتر از انتخاب شماست")
+        return False
+    after=get_user_score(user_id)
+    text=f'تغییرات لازم انجام شد \n before: {before} \n after:{after}'
+    bot.send_message(chat_id=msg.from_user.id,text=text)
+
+
 ##########################
 #! error handler
 # بخش دریافت رسید از کاربر
@@ -776,9 +878,8 @@ def handle_non_photo(msg: Message):
 
 
 #!#########################
-#todo: test section #######################################################################
 
-# # /test
+#* /test
 @bot.message_handler(commands=['test'])
 def test(msg : Message):
     link='+HJAazmF_lDtlODI0'
@@ -797,13 +898,12 @@ def test(msg : Message):
 def send_scheduled_message():
     bot.send_message(chat_id=ADMIN_ID_LIST[0],text=f"schedule_jobs : {get_current_time()}")
 
-    # current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    # text = f"این یک پیام زمان‌بندی‌شده است که در {current_time} ارسال شده است."
-    # bot.send_message(ADMIN_ID_LIST[1], text)
     time=datetime.now().strftime('%H:%M')
-    # print(time)
     time_index=find_index(time,time_of_day)
-    date=get_current_date()
+    if compare_time("00:00",time) and compare_time(time,"02:00"):
+        date=cal_date(-1)
+    else:
+        date=current_date()
     user_id=get_id_reserver(time=time,date=date)
     if user_id is not None :
         user_id=int(user_id[0])
@@ -815,10 +915,6 @@ def send_scheduled_message():
                 bot.send_message(chat_id=channel,text=banner,disable_web_page_preview=True,link_preview_options=False)
                 bot.send_message(ADMIN_ID_LIST[0],text="یک بنر ارسال شد")
             
-            
-
-    # bot.send_message(CHANNELS_USERNAME[1],text)
-    # print(f"پیام در {current_time} ارسال شد.")
 
 ##############################################
 def schedule_jobs():
@@ -840,7 +936,6 @@ def run_scheduler():
 
 def start_scheduler():
     schedule_jobs()
-    # schedule_jobs_test()  # ثبت وظایف زمان‌بندی‌شده
     scheduler_thread = threading.Thread(target=run_scheduler)
     scheduler_thread.daemon = True  # این کار باعث می‌شود Thread با بستن برنامه اصلی بسته شود
     scheduler_thread.start()
@@ -862,7 +957,6 @@ if __name__ == "__main__":
         logging.basicConfig(filename=log_filename,
                     level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
         logging.info("ربات در حال اجراست...")
         create_database() # DATA BASE
         restartMessageToAdmins() # hello message
@@ -870,8 +964,7 @@ if __name__ == "__main__":
         bot.add_custom_filter(custom_filters.StateFilter(bot))
         bot.polling() # keep bot running
     except Exception as e:
-        logging.error(f"خطا در اجرای ربات: {e}")
-# bot.close()
+        logging.error(f"error in main : {e}")
 
 
 

@@ -1,0 +1,26 @@
+"filename", "language", "Python", "pip requirements", "toml", "Markdown", "Properties", "JSON", "Docker", "comment", "blank", "total"
+"/home/saman/gits/PRJ/vscode_github/Dockerfile", "Docker", 0, 0, 0, 0, 0, 0, 9, 7, 6, 22
+"/home/saman/gits/PRJ/vscode_github/Markups.py", "Python", 29, 0, 0, 0, 0, 0, 0, 4, 2, 35
+"/home/saman/gits/PRJ/vscode_github/Pipfile", "toml", 0, 0, 11, 0, 0, 0, 0, 0, 4, 15
+"/home/saman/gits/PRJ/vscode_github/Pipfile.lock", "JSON", 0, 0, 0, 0, 0, 206, 0, 0, 1, 207
+"/home/saman/gits/PRJ/vscode_github/configs/auth.py", "Python", 12, 0, 0, 0, 0, 0, 0, 3, 1, 16
+"/home/saman/gits/PRJ/vscode_github/configs/config.py", "Python", 34, 0, 0, 0, 0, 0, 0, 14, 2, 50
+"/home/saman/gits/PRJ/vscode_github/database/db_creation.py", "Python", 149, 0, 0, 0, 0, 0, 0, 11, 5, 165
+"/home/saman/gits/PRJ/vscode_github/database/db_functions.py", "Python", 70, 0, 0, 0, 0, 0, 0, 4, 13, 87
+"/home/saman/gits/PRJ/vscode_github/database/db_reserve.py", "Python", 111, 0, 0, 0, 0, 0, 0, 23, 2, 136
+"/home/saman/gits/PRJ/vscode_github/database/db_timing.py", "Python", 68, 0, 0, 0, 0, 0, 0, 6, 0, 74
+"/home/saman/gits/PRJ/vscode_github/database/db_transactions.py", "Python", 76, 0, 0, 0, 0, 0, 0, 8, 4, 88
+"/home/saman/gits/PRJ/vscode_github/database/db_users.py", "Python", 173, 0, 0, 0, 0, 0, 0, 18, 4, 195
+"/home/saman/gits/PRJ/vscode_github/functions/custom_functions.py", "Python", 273, 0, 0, 0, 0, 0, 0, 50, 61, 384
+"/home/saman/gits/PRJ/vscode_github/logrotate.conf", "Properties", 0, 0, 0, 0, 12, 0, 0, 1, 1, 14
+"/home/saman/gits/PRJ/vscode_github/main.py", "Python", 740, 0, 0, 0, 0, 0, 0, 127, 88, 955
+"/home/saman/gits/PRJ/vscode_github/message_and_text/bot_message_functions.py", "Python", 21, 0, 0, 0, 0, 0, 0, 2, 4, 27
+"/home/saman/gits/PRJ/vscode_github/message_and_text/bot_messages.py", "Python", 17, 0, 0, 0, 0, 0, 0, 6, 1, 24
+"/home/saman/gits/PRJ/vscode_github/message_and_text/text.py", "Python", 52, 0, 0, 0, 0, 0, 0, 5, 13, 70
+"/home/saman/gits/PRJ/vscode_github/readme.md", "Markdown", 0, 0, 0, 9, 0, 0, 0, 0, 0, 9
+"/home/saman/gits/PRJ/vscode_github/requirements.txt", "pip requirements", 0, 5, 0, 0, 0, 0, 0, 0, 0, 5
+"/home/saman/gits/PRJ/vscode_github/states.py", "Python", 18, 0, 0, 0, 0, 0, 0, 0, 4, 22
+"/home/saman/gits/PRJ/vscode_github/tests/test.py", "Python", 29, 0, 0, 0, 0, 0, 0, 44, 13, 86
+"/home/saman/gits/PRJ/vscode_github/tests/test2.py", "Python", 15, 0, 0, 0, 0, 0, 0, 4, 2, 21
+"/home/saman/gits/PRJ/vscode_github/tests/test3.py", "Python", 7, 0, 0, 0, 0, 0, 0, 0, 3, 10
+"Total", "-", 1894, 5, 11, 9, 12, 206, 9, 337, 234, 2717

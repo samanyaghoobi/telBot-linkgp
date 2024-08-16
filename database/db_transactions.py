@@ -20,7 +20,7 @@ def get_all_transactions():
                      return transactions
 
      except Error as e:
-        logging.error(f"\033[91merror get_all_transactions: \n {e} \n \033[0m")
+        logging.error(f" error get_all_transactions:   {e} ")
 #########################################################
 def get_transactions_of_month(year,month):
      sql=f"""SELECT *
@@ -38,7 +38,7 @@ WHERE YEAR(record_date) = '{year}' AND MONTH(record_date) = '{month}';
                      connection.close()
                      return transactions
      except Error as e:
-        logging.error(f"\033[91merror get_transactions_of_month: \n {e} \n \033[0m")
+        logging.error(f" error get_transactions_of_month:   {e} ")
 #########################################################
 def approve_a_transactions(id):
      sql=f"""UPDATE transactions
@@ -53,7 +53,7 @@ WHERE id = {id};"""
                      cursor.close()
                      connection.close()
      except Error as e:
-        logging.error(f"\033[91merror approve_a_transactions: \n {e} \n \033[0m")
+        logging.error(f" error approve_a_transactions:   {e} ")
 #########################################################
 def update_amount_transactions(id,amount):
      sql=f"""UPDATE transactions
@@ -68,7 +68,7 @@ WHERE id = {id};"""
                      cursor.close()
                      connection.close()
      except Error as e:
-        logging.error(f"\033[91merror update_amount_transactions: \n {e} \n \033[0m")
+        logging.error(f" error update_amount_transactions:   {e} ")
 #########################################################
 def add_transactions(approve,amount,user_name,user_id,record_date,record_time):
      sql=f"""INSERT INTO transactions (approved, amount, user_name, user_id, record_date, record_time)
@@ -83,5 +83,5 @@ VALUES ({approve}, {amount}, '{user_name}', '{user_id}', '{record_date}', '{reco
                      cursor.close()
                      connection.close()
      except Error as e:
-        logging.error(f"\033[91merror add_transactions:  \n {e} \n \033[0m")
+        logging.error(f" error add_transactions:    {e} ")
 #########################################################

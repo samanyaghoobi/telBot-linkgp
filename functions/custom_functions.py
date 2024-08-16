@@ -3,6 +3,7 @@ from datetime import datetime,timedelta
 from configs.auth import ADMIN_ID_LIST, CHANNELS_USERNAME, DB_CONFIG
 from configs.config import *
 from convertdate import persian
+from database.db_reserve import get_link_with_date_reserve
 from database.db_transactions import get_all_transactions, get_transactions_of_month
 from database.db_users import get_user_balance, get_username
 from main import bot, isMemberOf
@@ -154,7 +155,7 @@ def get_day_reserves(day):
             result =cursor.fetchone()
             return result
 #################333
-def check_is_admin(user_id):
+def check_is_admin(user_id : int):
      if user_id in ADMIN_ID_LIST:
           return True
      return False
@@ -179,14 +180,12 @@ def find_pattern_reserve(text):
     return x
 
 #####################
-def make_channel_banner(name,description,members,link):
+def make_channel_banner(name,members,link):
     banner=f"""Super GP
 
 naмe : {name}
 
 мeмвer: {members}
-
-𝓭𝓮𝓼𝓬𝓻𝓲𝓹𝓽𝓲𝓸𝓷: {description}
 
 lιnĸ: {link}
 
@@ -375,3 +374,36 @@ def find_index(time,time_list):
         return index
     except ValueError:
         return "Time not found in the list"
+    
+
+def convert_to_english_number(text):
+    persian_digits = "۰۱۲۳۴۵۶۷۸۹"
+    arabic_digits = "٠١٢٣٤٥٦٧٨٩"
+    english_digits = "0123456789"
+    
+    translation_table = str.maketrans(persian_digits + arabic_digits, english_digits * 2)
+    return (text.translate(translation_table))
+
+def is_telegram_group_link(link):
+    # تعریف الگوی regex برای شناسایی لینک گروه‌های تلگرام
+    pattern = r'^(https?://)?(www\.)?(t\.me/joinchat/|t\.me/\+|telegram\.me/joinchat/|telegram\.me/\+).+'
+    
+    # بررسی اینکه آیا لینک با الگوی گروه تلگرام مطابقت دارد
+    if re.match(pattern, link):
+        return True
+    else:
+        return False
+
+def is_duplicate_link(link,date):
+    try:
+        links=get_link_with_date_reserve(date)
+        if links is None:
+            return False
+        for l in links:
+            print(f"test : {link} : {l[0]}")
+            if link == l[0]:
+                return True
+        return False
+    except (KeyError,TypeError) as e:
+        print (f"is_duplicate_link : {e}")
+        return True
