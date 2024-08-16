@@ -26,6 +26,8 @@ price_plan1=103  # plus 15% = 103
 price_plan2=216 # plus 20% = 216
 price_plan3=421 # plus 25% = 421
 plans=[price_1,price_2,price_3,price_plan1_off,price_plan2_off,price_plan3_off]
+plans_off=[price_plan1_off,price_plan2_off,price_plan3_off]
+plans_off_real=[price_plan1,price_plan2,price_plan3]
 ##############################################################
 creator_username="@saaman"
 interval_reservation_time="00:30"

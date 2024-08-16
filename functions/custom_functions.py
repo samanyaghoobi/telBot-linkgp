@@ -362,15 +362,15 @@ def makeJoinChannelMarkup(user_id):
     channels = [item.replace('@', '') for item in CHANNELS_USERNAME]
     for index,channel in enumerate(CHANNELS_USERNAME,start=0):#make btn for plans
         if not isMemberOf(user_id=user_id,channel=channel):
-            btn=InlineKeyboardButton(text=f"عضو شدن در @{channels[index]}",url=f"https://t.me/{channels[index]}")
+            btn=InlineKeyboardButton(text=f"عضو شدن در {channels[index]}",url=f"https://t.me/{channels[index]}")
             markup.add(btn)
     button=InlineKeyboardButton(text="برسی عضویت",callback_data="proceed")
     markup.add(button)
     return markup
 #######################
-def find_index(time,time_list):
+def find_index(item,list):
     try:
-        index = time_list.index(time)
+        index = list.index(item)
         return index
     except ValueError:
         return "Time not found in the list"

@@ -193,3 +193,4 @@ def delete_user(user_id):
                      connection.close()
     except Error as e:
         logging.error(f" error delete_user:  {e}  ")
+

@@ -224,7 +224,7 @@ balance increase amount:‌ {plans[index]}  H T
 
 
 #?#######################################################################
-#accept btn
+#accept pic btn 
 @bot.callback_query_handler(func= lambda m:m.data =="pic_receipt_accept")
 def admin_accept_banner_btn(call :CallbackQuery):
     user_id=(find_pattern_id(call.message.text))
@@ -234,6 +234,10 @@ def admin_accept_banner_btn(call :CallbackQuery):
     btn=InlineKeyboardButton(text="این تراکنش تایید شد",callback_data="!?!?!?!")
     markup.add(btn)
     try:
+        for index ,price in enumerate(plans_off,start=0):
+            if int(price) == int(amount):
+                amount=int(plans_off_real[index])
+
         increase_balance(user_id=user_id,increase_amount=amount)
         add_transactions(approve=1,amount=amount,user_id=int(user_id),user_name=call.from_user.username,record_date=current_date(),record_time=get_current_time())
         for index,price in enumerate(price_plans, start=1):
@@ -520,7 +524,7 @@ def admin_deny(call :CallbackQuery):
     bot.send_message(chat_id=user_id,text=f"رزرو شما از سمت ادمین رد شد \n درصورت نیاز میتوانید با استفاده از دکمه '{support_btn}' با ادمین ارتباط برقرار کنید")
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text,reply_markup=markup)
 #######
-#accept btn
+#accept reserve btn
 @bot.callback_query_handler(func= lambda m:m.data =="banner_accept")
 def admin_accept_banner_btn(call :CallbackQuery):
     info_text=call.message.text
