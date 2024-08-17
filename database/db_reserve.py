@@ -39,6 +39,25 @@ WHERE id = {id};
                      connection.close()
     except Error as e:
         logging.error(f"error approve_a_reserve: {e}")    
+########################################
+#*change banner
+def change_banner_reserve(reserve_id: int,banner :str):
+    sql=f"""UPDATE reserve
+SET banner = '{banner}'
+WHERE id = {reserve_id};
+"""
+    try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                     cursor.execute(sql)
+                     connection.commit()
+                     cursor.close()
+                     connection.close()
+                     return True
+    except Error as e:
+        logging.error(f"error change_banner_reserve: {e}")    
+        return False
 
 ###########################
 #*get banner_with id
@@ -65,7 +84,6 @@ def get_id_with_time_date_reserve(time,date):
      sql=f"""SELECT id 
 FROM reserve 
 WHERE date = '{date}' AND time = '{time}';"""
-     logging.error(sql)
      try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
             if connection.is_connected():
@@ -78,6 +96,26 @@ WHERE date = '{date}' AND time = '{time}';"""
                      return id
      except Error as e:
          logging.error(f" error get_id_with_time_date_reserve:   {e}  ")
+         return None
+##########################
+#* get id with user_id and date
+def get_id_with_user_id_date_reserve(user_id :int,date):
+     sql=f"""SELECT id
+FROM reserve 
+WHERE date = '{date}' AND userid ={user_id} ;"""
+     try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                     cursor.execute(sql)
+                    #  connection.commit()
+                     id=cursor.fetchone()
+                     cursor.close()
+                     connection.close()
+                     return id
+     except Error as e:
+         logging.error(f" error get_id_with_time_date_reserve:   {e}  ")
+         return None
 ###############################
 #* get link with id 
 def get_link_with_id_reserve(id):
@@ -97,6 +135,46 @@ WHERE id = {id};
                      return link
      except Error as e:
         logging.error(f" error:   {e}  ")
+###############################
+#* get approved with id 
+def is_reserve_approved(id):
+     sql=f"""SELECT approved
+FROM reserve
+WHERE id = {id};
+"""
+     try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                     cursor.execute(sql)
+                    #  connection.commit()
+                     link=cursor.fetchone()
+                     cursor.close()
+                     connection.close()
+                     return link
+     except Error as e:
+        logging.error(f" error:   {e}  ")
+###############################
+#* get ifno with id 
+def get_info_with_reserve_id(reserve_id):
+     """userid,price,date,time,time_index"""
+     sql=f"""SELECT userid,price,date,time,time_index
+FROM reserve
+WHERE id = {reserve_id};
+"""
+     try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                     cursor.execute(sql)
+                    #  connection.commit()
+                     link=cursor.fetchone()
+                     cursor.close()
+                     connection.close()
+                     return link
+     except Error as e:
+        logging.error(f" error:   {e}  ")
+###############################
 #########################################
 #* get links of day with date 
 def get_link_with_date_reserve(date):

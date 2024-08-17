@@ -54,7 +54,7 @@ WHERE record_date = '{date}';"""
     except Error as e:
         logging.error(f" error get_channel_timing:   {e} ")
 #################################################################
-def get_id_reserver(date,time):
+def get_id_reserver_channel_timing(date,time):
     """return id of who reserved the time , none for not reserved time"""
     time_index=find_index(time,time_of_day)
     db_column_time_name=db_hour_name[time_index]

@@ -13,8 +13,8 @@ reboot_text="""مشکلی پیش امده است
 <a href='{link}'>/start</a>
  ضربه کنید
 """
-
-user_acc_btn="👤 حساب کاربری"
+user_find_reserve="✅مشاهده  رزرو ها"
+user_account_btn="👤 حساب کاربری"
 balance_inc_btn='شارژ حساب'
 free_rime_btn='⏰ ساعت های خالی'
 make_banner_btn='📝 ساخت بنر'
@@ -31,7 +31,7 @@ admin_btn_find_user_info="پیدا کردن کاربر"
 admin_btn_bot_info="اطلاعات ربات"
 admin_btn_send_msg_to_all="ارسال پیام عمومی"
 admin_btn_check_income="محاسبه درامد"
-# admin_btn_accept_income="accept incomes"
+admin_btn_reserves="مشاهده رزرو ها"
 not_admin_text="شما دسترسی ادمین ندارید"
 
 check_income_msg="از لیست زیر ماه میلادی که میخواهید درامد ان را مشاهده کنید انتخاب کنید"
@@ -44,6 +44,9 @@ admin_btn_decrease_score='کاهش امتیاز کاربر'
 admin_btn_decrease_balance='کاهش موجودی کاربر'
 admin_btn_delete_user='پاک کردن کاربر'
 admin_btn_msg_user='ارسال پیام به کاربر'
+
+admin_btn_cancel_reserve='کنسل کردن رزرو'
+admin_btn_change_banner='تغییر بنر'
 #?###########################33
 
 

@@ -125,7 +125,7 @@ def start(msg : Message):
     
 #?#######################################################################
 #* user account btn
-@bot.message_handler(func=lambda m:m.text == user_acc_btn)
+@bot.message_handler(func=lambda m:m.text == user_account_btn)
 def account(msg : Message):
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
@@ -245,7 +245,7 @@ def admin_accept_banner_btn(call :CallbackQuery):
                 increase_score(user_id=user_id,increase_amount=index)
         new_balance=get_user_balance(user_id=user_id)
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"{info_text} \n -----------\nnew amount: {new_balance} HT",reply_markup=markup)
-        bot.send_message(chat_id=user_id,text=f"تراکنش شما تایید و حساب شما شارژ شد  \n برای مشاهده موجودی خود از دکمه '{user_acc_btn}' استفاده کنید") 
+        bot.send_message(chat_id=user_id,text=f"تراکنش شما تایید و حساب شما شارژ شد  \n برای مشاهده موجودی خود از دکمه '{user_account_btn}' استفاده کنید") 
     except Error as e:
         logging.error(f"admin_accept_banner_btn : {e}")
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="مشکلی در اپدیت موجودی کاربر پیش امده است")
@@ -730,6 +730,135 @@ def get_message_to_send(msg : Message):
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
 ##########################
+#* see reserve users
+@bot.message_handler(func=lambda m:m.text == user_find_reserve)
+def admin_btn_reserve(msg : Message):
+    markup=InlineKeyboardMarkup()
+    user_id=int(msg.from_user.id)
+    is_not_any_reserve=True
+    for i in range(-1,7):
+        date=cal_date(i)
+        reserve_id=get_id_with_user_id_date_reserve(user_id=user_id,date=date)
+        if reserve_id is not None:
+            is_any=False
+
+            reserve_id=int(reserve_id[0])
+            time = str(get_info_with_reserve_id(reserve_id)[3])[:5]
+            btn=InlineKeyboardButton(text=f"{cal_day(i)} : {time}, {gregorian_to_jalali(date)}",callback_data=f"user_reserveID_{reserve_id}")
+            markup.add(btn)
+    if is_not_any_reserve:
+            btn=InlineKeyboardButton(text=f"شما هیچ لینک رزور شده ای ندارید",callback_data=f"!!!!!!!")
+            markup.add(btn)
+
+    temp_date=current_date()
+    text=f'برای مشاهده رزرو های خود روز مد نظر خود را انتخاب کنید\nامروز:  {cal_day(0)} , {gregorian_to_jalali(temp_date)} \n {make_line}'
+    bot.send_message(chat_id=msg.from_user.id,text=text,reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("user_reserveID_"))
+def handle_button_press(call :CallbackQuery):
+    reserve_id=int(call.data.split('_')[2])
+    markup=InlineKeyboardMarkup()
+    btn1=InlineKeyboardButton(text=admin_btn_cancel_reserve,callback_data=f"{admin_btn_cancel_reserve}_{reserve_id}")
+    btn2=InlineKeyboardButton(text=admin_btn_change_banner,callback_data=f"{admin_btn_change_banner}_{reserve_id}")
+    markup.add(btn1,btn2)
+    text=get_banner_with_id_reserve(reserve_id=reserve_id)
+    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
+
+   
+##########################
+#* see reserve admin
+@bot.message_handler(func=lambda m:m.text == admin_btn_reserves)
+def admin_btn_reserve(msg : Message):
+    markup=InlineKeyboardMarkup()
+    btn=InlineKeyboardButton(text=f"{cal_day(-1)} : {gregorian_to_jalali(cal_date(-1))}",callback_data=f"admin_time_btn_-1")
+    markup.add(btn)
+    for i in range(7):
+        btn=InlineKeyboardButton(text=f"{cal_day(i)} : {gregorian_to_jalali(cal_date(i))}",callback_data=f"admin_time_btn_{i}")
+        markup.add(btn)
+    temp_date=current_date()
+    text=f'برای مشاهده رزرو ها روز مد نظر خود را انتخاب کنید\nامروز:  {cal_day(0)}\n{temp_date} , {gregorian_to_jalali(temp_date)} \n {make_line}'
+    bot.send_message(chat_id=msg.from_user.id,text=text,reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("admin_time_btn_"))
+def handle_button_press(call :CallbackQuery):
+    date_index=int(call.data.split('_')[3])
+    user_id=call.from_user.id
+    date=cal_date(date_index)
+    markup=InlineKeyboardMarkup()
+    for  time in time_of_day:
+        reserve_id= get_id_with_time_date_reserve(date=date,time=time)
+        if reserve_id is not None :
+            reserve_id=reserve_id[0]
+            approved =is_reserve_approved(reserve_id)
+            if approved != 0:
+                text=f'id: {get_id_reserver_channel_timing(date=date,time=time)[0]}-time: {time}'
+                print (text)
+                btn=InlineKeyboardButton(text=text,callback_data=f"admin_reserveId_{reserve_id}")
+                markup.add(btn)
+    text=f'day:{cal_day(date_index)}\ndate : {date}  '
+    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("admin_reserveId_"))
+def handle_button_press(call :CallbackQuery):
+    reserve_id=int(call.data.split('_')[2])
+    markup=InlineKeyboardMarkup()
+    btn1=InlineKeyboardButton(text=admin_btn_cancel_reserve,callback_data=f"{admin_btn_cancel_reserve}_{reserve_id}")
+    btn2=InlineKeyboardButton(text=admin_btn_change_banner,callback_data=f"{admin_btn_change_banner}_{reserve_id}")
+    markup.add(btn1,btn2)
+    text=get_banner_with_id_reserve(reserve_id=reserve_id)
+    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
+
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith(admin_btn_cancel_reserve))
+def handle_button_press(call :CallbackQuery):
+    reserve_id=int(call.data.split('_')[1])
+    try:
+        DATA=get_info_with_reserve_id(reserve_id=reserve_id)
+        user_id=int(DATA[0])
+        price=int(DATA[1])
+        date=DATA[2]
+        # time=DATA[3]
+        time_index=DATA[4]
+        admin_deny_banner(user_id=user_id,price=price,time_index=time_index,date=date,reserve_id=reserve_id)
+        markup=InlineKeyboardMarkup()
+        btn1=InlineKeyboardButton(text='این رزرو کنسل شد',callback_data=f"!!!!!!!!!!!!!")
+        markup.add(btn1)
+        text=call.message.text
+        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
+    except Error as e:
+        logging.error(e)
+        bot.send_message(chat_id=call.from_user.id,text="دوباره تلاش کنید")
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith(admin_btn_change_banner))
+def handle_button_press(call :CallbackQuery):
+    reserve_id=int(call.data.split('_')[1])
+    bot.send_message(chat_id=call.from_user.id,text="بنر جدید را ارسال کنید")
+    bot.set_state(user_id=call.message.chat.id,state=admin_state.change_banner,chat_id=call.message.chat.id)
+    with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
+        data['reserve_id'] =reserve_id
+
+
+@bot.message_handler(state=admin_state.change_banner)
+def handle_non_photo(msg: Message):
+    with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
+        reserve_id= data['reserve_id'] 
+    banner=msg.text
+    if is_banner_ok(banner=banner):
+        bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
+        try:
+            result =change_banner_reserve(reserve_id=reserve_id,banner=banner)
+            if result :
+                bot.send_message(chat_id=msg.from_user.id,text="بنر تغییر کرد")
+            else:
+                bot.send_message(chat_id=msg.from_user.id,text="دوباره تلاش کنید")
+
+        except Error as e :
+            print(e)
+    else:
+        bot.send_message(chat_id=msg.from_user.id,text="بنر با الگوی کانال همخوانی ندارد")
+        
+##########################
 #?check income
 @bot.message_handler(func=lambda m:m.text == admin_btn_check_income)
 def msg_to_all(msg : Message):
@@ -900,18 +1029,19 @@ def test(msg : Message):
 
 ################################################
 def send_scheduled_message():
-    bot.send_message(chat_id=ADMIN_ID_LIST[0],text=f"schedule_jobs : {get_current_time()}")
+    # bot.send_message(chat_id=ADMIN_ID_LIST[0],text=f"schedule_jobs : {get_current_time()}")
 
     time=datetime.now().strftime('%H:%M')
     time_index=find_index(time,time_of_day)
-    if compare_time("00:00",time) and compare_time(time,"02:00"):
+    if compare_time("00:00",add_time(initial_time=time,duration="00:01")) and compare_time(time,"02:15"):
         date=cal_date(-1)
     else:
         date=current_date()
-    user_id=get_id_reserver(time=time,date=date)
+    # print(date)
+    user_id=get_id_reserver_channel_timing(time=time,date=date)
     if user_id is not None :
         user_id=int(user_id[0])
-        bot.send_message(ADMIN_ID_LIST[0],text=f"time:{time} : date:{date}\n user_id:{user_id}")
+        # bot.send_message(ADMIN_ID_LIST[0],text=f"time:{time} : date:{date}\n user_id:{user_id}")
         if user_id != 1 :
             reserve_id=get_id_with_time_date_reserve(time=time,date=date)[0]
             banner=get_banner_with_id_reserve(reserve_id)[0]
@@ -948,9 +1078,7 @@ def start_scheduler():
 #هر پیامی از کاربر
 @bot.message_handler(func=lambda message: True)
 def handle_non_photo(msg: Message):
-    markup=ReplyKeyboardMarkup(resize_keyboard=True)
-    markup.add(restart_markup_text)
-    bot.send_message(msg.chat.id, "لطفا برای استفاده از ربات یا از دکمه های ربات استفاده کنید یا مجدد ربات را راه اندازی کنید",reply_markup=markup)
+    bot.send_message(msg.chat.id, "\n /start لطفا برای استفاده از ربات یا از دکمه های ربات استفاده کنید یا مجدد ربات را راه اندازی کنید")
 
 
 # for making bot running
