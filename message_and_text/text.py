@@ -1,8 +1,16 @@
 from configs.auth import BOT_USERNAME
-from configs.config import *
+from configs.basic_info import *
+from message_and_text.bot_messages import make_line
+msg_start_command=f"""🥳خوش امدید🥳
+این ربات مخصوص کانال @linkGp است
+{make_line}
+مراحل استفاده از ربات:
+۱. ابتدا حساب کاربری خود را شارژ کنید💵
+۲. منتظر تایید ادمین بمانید⏳
+۳. سپس یک بنر برای خود بسازید📝
+۴. از بخش 'ساعت های خالی' ساعت مورد نظر رو انتخاب کنید⏰
+"""
 
-new_user_text="خوش امدید"
-old_user_text='سلام کاربر قدیمی'
 admin_link=""
 not_join_text=f'برای استفاده از این ربات باید در کانال ما عضو شوید \n @linkGP'
 restart_link_bot = f"https://t.me/{BOT_USERNAME}?start=start"
@@ -13,30 +21,31 @@ reboot_text="""مشکلی پیش امده است
 <a href='{link}'>/start</a>
  ضربه کنید
 """
-user_find_reserve="✅مشاهده  رزرو ها"
-user_account_btn="👤 حساب کاربری"
+btn_user_find_reserve="✅مشاهده  رزرو ها"
+btn_user_account_btn="👤 حساب کاربری"
 balance_inc_btn='شارژ حساب'
-free_rime_btn='⏰ ساعت های خالی'
-make_banner_btn='📝 ساخت بنر'
-support_btn='🆘 پشتیبانی'
+btn_free_rime='⏰ ساعت های خالی'
+btn_make_banner='📝 ساخت بنر'
+btn_support='🆘 پشتیبانی'
+btn_convert_score='✨تبدیل امتیاز'
 
 back_btn="برگشت به منوی اصلی"
 back_btn_msg="به منوی اولیه خوش امدید"
 
 balance_inc_msg="برای افزایش موجودی خود دو راه کار وجود دارد"
 
-### admin btn
-admin_btn_user_list="لیست کاربران"
-admin_btn_find_user_info="پیدا کردن کاربر"
-admin_btn_bot_info="اطلاعات ربات"
-admin_btn_send_msg_to_all="ارسال پیام عمومی"
-admin_btn_check_income="محاسبه درامد"
-admin_btn_reserves="مشاهده رزرو ها"
+#! admin btn
+#mains
+admin_btn_user_list="👤لیست کاربر ها"
+admin_btn_find_user_info="👤پیدا کردن کاربر👤"
+admin_btn_bot_info="اطلاعات ربات 🤖"
+admin_btn_send_msg_to_all="ارسال پیام عمومی✍🏻"
+admin_btn_check_income="محاسبه درامد💰"
+admin_btn_reserves="مشاهده رزرو ها✅"
 not_admin_text="شما دسترسی ادمین ندارید"
 
-check_income_msg="از لیست زیر ماه میلادی که میخواهید درامد ان را مشاهده کنید انتخاب کنید"
+#
 check_reservations_text="مشاهده لیست رزرو شده ها"
-
 
 admin_btn_increase_score='افزایش امتیاز کاربر'
 admin_btn_increase_balance='افزایش موجودی کاربر'
@@ -66,7 +75,7 @@ cart_info_text=f"""💳 شماره کارت : <code>{CART_NUMBER}</code>
 👤 مالک کارت : {CART_NAME} 
 🏦 بانک : {CART_BANK}"""
 banner_not_mach=f"""بنر ارسالی شما با الگوی کانال همخوانی ندارد 
-لطفا از دکمه '{make_banner_btn}' استفاده کنید
+لطفا از دکمه '{btn_make_banner}' استفاده کنید
 و مجدد تلاش کنید
 """
 ########################33

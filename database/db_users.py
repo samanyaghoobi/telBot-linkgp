@@ -2,7 +2,7 @@ import logging
 import mysql.connector # type: ignore
 from mysql.connector import Error
 from configs.auth import DB_CONFIG
-from configs.config import *
+from configs.basic_info import *
 ########################################################################
 def create_user(userid,username):
     user_exists=get_user_info(user_id=userid)

@@ -1,16 +1,17 @@
-import time
-import schedule
-import threading
 import logging
+import json
 from datetime import datetime
 from telebot import TeleBot , custom_filters
 from configs.auth import *
 from database.db_creation import create_database
-from database.db_functions import admin_accept_banner, admin_deny_banner, make_reserve_transaction
+from database.db_functions import transactions_admin_accept_banner, admin_deny_banner, db_convert_score, make_reserve_transaction
 from database.db_timing import *
 from database.db_transactions import *
 from database.db_reserve import *
 from database.db_users import create_user, decrease_balance, decrease_score, delete_user, get_all_users, user_exist, get_user_score, increase_balance, increase_score
+from functions.calender_functions import add_time, compare_date, compare_time, date_isEq, get_current_date, get_current_datetime, get_current_time
+from functions.log_functions import get_last_errors, get_latest_log_file, remove_old_logs, test_logError
+from functions.sched_functions import start_scheduler
 from message_and_text.bot_message_functions import *
 from message_and_text.bot_messages import *
 from message_and_text.text import *
@@ -19,31 +20,33 @@ from states import *
 from telebot.storage import StateMemoryStorage
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
 from functions.custom_functions import *
+###################################################################################
+#todo: aprrove work
+#todo : all user remain mony
+#todo custom payment
+#todo reserve a week
+#todo :reserve custom for admin
 
-########################################################################
+###################################################################################
 state_storage=StateMemoryStorage()
 bot =TeleBot(token = TOKEN,state_storage=state_storage, parse_mode="HTML")
+banner_need_approve=False
 ########################################
-#* restart  msg
-def restartMessageToAdmins():
-    text=f'bot is started at : {get_current_datetime()}'
-    for admin in ADMIN_ID_LIST:
-        bot.send_message(chat_id=admin,text=text)     
-########################################
-
-#* user state in channels
+#* user state in a single channel
 def isMemberOf(user_id,channel):
     is_member=bot.get_chat_member(chat_id=channel,user_id=user_id)
     if is_member.status in ['left','kicked']:
         return False
     return True
-#* user state in channels
+
+#* user state in a array of channels
 def isMemberOfChannels(user_id,channels=CHANNELS_USERNAME):
     for channel in channels:
         is_member=bot.get_chat_member(chat_id=channel,user_id=user_id)
         if is_member.status in ['left','kicked']:
             return False
         return True
+
 #* join and mem check handler 
 def isInDB(user_id):
     # bot.send_message(user_id,text=reboot_text,reply_markup=ReplyKeyboardRemove())
@@ -56,7 +59,7 @@ def isInDB(user_id):
 def botNeedReboot(user_id):
     markup=ReplyKeyboardMarkup(resize_keyboard=True)
     markup.add(restart_markup_text)
-    bot.send_message(chat_id=user_id,text=bot_need_reboot_msg,reply_markup=markup)
+    bot.send_message(chat_id=user_id,text=msg_bot_need_reboot,reply_markup=markup)
 ########################################
 #* user check handler
 def user_check_handler(user_id,username):
@@ -66,17 +69,16 @@ def user_check_handler(user_id,username):
     is_member= isMemberOfChannels(user_id=user_id)
     if not is_member:
         markup=makeJoinChannelMarkup(user_id=user_id)
-        bot.send_message(chat_id=user_id,text=not_member_msg,reply_markup=markup)
+        bot.send_message(chat_id=user_id,text=msg_not_member,reply_markup=markup)
         return False
     is_in_db= isInDB(user_id=user_id)
-    # print(is_in_db)
     if not is_in_db:
         create_user(userid=user_id,username=username)
         result= isInDB(user_id=user_id)
         if not result:
             markup=ReplyKeyboardMarkup(resize_keyboard=True)
             markup.add(restart_markup_text)
-            bot.send_message(chat_id=user_id,text=not_in_db_msg,reply_markup=markup)
+            bot.send_message(chat_id=user_id,text=msg_not_in_db,reply_markup=markup)
             return False
     return True        
 
@@ -89,7 +91,7 @@ def proceed (call :CallbackQuery):
     user_check= user_check_handler(user_id=user_id,username=username)
     if user_check:
         bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
-        bot.send_message(chat_id=user_id,text=joined_msg,reply_markup=markup_main)
+        bot.send_message(chat_id=user_id,text=msg_joined,reply_markup=markup_main)
 
 
 ########################################################################
@@ -104,10 +106,10 @@ def start(msg : Message):
         if not user_check:
             return False
         else:
-            bot.send_message(chat_id=msg.chat.id,text=new_user_text,reply_markup=markup_main)
+            bot.send_message(chat_id=msg.chat.id,text=msg_start_command,reply_markup=markup_main)
 #?#######################################################################
 #* make banner
-@bot.message_handler(func=lambda m:m.text == make_banner_btn)
+@bot.message_handler(func=lambda m:m.text == btn_make_banner)
 def start(msg : Message):
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
@@ -117,15 +119,14 @@ def start(msg : Message):
     if not user_check:
         ##  botNeedReboot(user_id=user_id)
         return False
-    text=f"برای ساخت بنر روی دکمه زیر کلیک کنید"
     markup=InlineKeyboardMarkup()
     btn=InlineKeyboardButton(text="ساخت بنر",callback_data=f"make_banner")
     markup.add(btn)
-    bot.send_message(chat_id=user_id,text=text,reply_markup=markup)
+    bot.send_message(chat_id=user_id,text=msg_make_banner,reply_markup=markup)
     
 #?#######################################################################
 #* user account btn
-@bot.message_handler(func=lambda m:m.text == user_account_btn)
+@bot.message_handler(func=lambda m:m.text == btn_user_account_btn)
 def account(msg : Message):
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
@@ -133,7 +134,6 @@ def account(msg : Message):
     username=msg.from_user.username
     user_check= user_check_handler(user_id=user_id,username=username)
     if not user_check:
-        ##  botNeedReboot(user_id=user_id)
         return False
     balance= get_user_balance(user_id)
     score=get_user_score(user_id)
@@ -151,10 +151,9 @@ def user_balance_inc(call : CallbackQuery):
     username=call.from_user.username
     user_check= user_check_handler(user_id=user_id,username=username)
     if not user_check:
-        ##  botNeedReboot(user_id=user_id)
         return False
     markup=InlineKeyboardMarkup()
-    for index,plan in enumerate(increase_plans_btn_text,start=0):#make btn for plans
+    for index,plan in enumerate(increase_plans_btn_text,start=0):
         btn=InlineKeyboardButton(text=plan,callback_data=f"plan_{index}")
         markup.add(btn)
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=increase_balance_msg,reply_markup=markup)
@@ -166,7 +165,6 @@ def handle_button_press(call :CallbackQuery):
     username=call.from_user.username
     user_check= user_check_handler(user_id=user_id,username=username)
     if not user_check:
-       # #  botNeedReboot(user_id=user_id)
         return False
     index=int(call.data.split('_')[1])
     markup=InlineKeyboardMarkup()
@@ -216,9 +214,8 @@ def forward(msg : Message):
     bot.send_message(chat_id=ADMIN_ID_LIST[0],text=f"""id: {msg.from_user.id} ,
 username: @{msg.from_user.username} 
 balance of user : {get_user_balance(user_id=msg.from_user.id)}
-balance increase amount:‌ {plans[index]}  H T
+balance increase amount:‌ {plans[index]}  H T 💵
 """,reply_markup=markup,reply_to_message_id=forwarded_msg.message_id)
-    # bot.send_message(chat_id=ADMIN_ID_LIST[0],text=f"------------------------------",reply_to_message_id=forwarded_msg.message_id)
     bot.send_message(msg.chat.id,text=text)
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
@@ -239,13 +236,13 @@ def admin_accept_banner_btn(call :CallbackQuery):
                 amount=int(plans_off_real[index])
 
         increase_balance(user_id=user_id,increase_amount=amount)
-        add_transactions(approve=1,amount=amount,user_id=int(user_id),user_name=call.from_user.username,record_date=current_date(),record_time=get_current_time())
+        add_transactions(approve=1,amount=amount,user_id=int(user_id),user_name=call.from_user.username,record_date=get_current_date(),record_time=get_current_time())
         for index,price in enumerate(price_plans, start=1):
             if amount == price :
                 increase_score(user_id=user_id,increase_amount=index)
         new_balance=get_user_balance(user_id=user_id)
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"{info_text} \n -----------\nnew amount: {new_balance} HT",reply_markup=markup)
-        bot.send_message(chat_id=user_id,text=f"تراکنش شما تایید و حساب شما شارژ شد  \n برای مشاهده موجودی خود از دکمه '{user_account_btn}' استفاده کنید") 
+        bot.send_message(chat_id=user_id,text=f"تراکنش شما تایید و حساب شما شارژ شد  \n برای مشاهده موجودی خود از دکمه '{btn_user_account_btn}' استفاده کنید") 
     except Error as e:
         logging.error(f"admin_accept_banner_btn : {e}")
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="مشکلی در اپدیت موجودی کاربر پیش امده است")
@@ -262,12 +259,10 @@ def admin_deny(call :CallbackQuery):
     markup.add(btn)
     markup.add(btn2)
     amount=int(find_pattern_balance_amount(info_text))
-    add_transactions(approve=0,amount=amount,user_id=int(user_id),user_name=call.from_user.username,record_date=current_date(),record_time=get_current_time())
+    add_transactions(approve=0,amount=amount,user_id=int(user_id),user_name=call.from_user.username,record_date=get_current_date(),record_time=get_current_time())
 
     bot.send_message(chat_id=user_id,text=f"تراکنش شما از سمت ادمین رد شد \n درصورت نیاز میتوانید با استفاده از دکمه پشتیبانی با ادمین ارتباط برقرار کنید")
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text,reply_markup=markup)
-
-    # bot.send_message(chat_id=user_id,,)
 
 #deny msg reason
 @bot.callback_query_handler(func= lambda m:m.data.startswith("deny_message_to_"))
@@ -296,14 +291,14 @@ def deny_reason(msg : Message):
 
 #?#######################################################################
 #support btn
-@bot.message_handler(func=lambda m:m.text == support_btn)
+@bot.message_handler(func=lambda m:m.text == btn_support)
 def account(msg : Message):
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
     bot.send_message(chat_id=msg.chat.id,text=support_msg)
      
 #?#######################################################################
 #free time :day of weak
-@bot.message_handler(func=lambda m:m.text == free_rime_btn)
+@bot.message_handler(func=lambda m:m.text == btn_free_rime)
 def account(msg : Message):
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
@@ -311,7 +306,6 @@ def account(msg : Message):
     username=msg.from_user.username
     user_check= user_check_handler(user_id=user_id,username=username)
     if not user_check:
-       #  botNeedReboot(user_id=user_id)
         return False
     markup_free_time=InlineKeyboardMarkup(row_width=2) 
     current_time=get_current_time()
@@ -323,11 +317,10 @@ def account(msg : Message):
         batten_test=InlineKeyboardButton(text=f"{cal_day(i)} : {gregorian_to_jalali(cal_date(i))}",callback_data=f"time_btn_{i}")
         markup_free_time.add(batten_test)
 
-    text=f"از لیست زیر می توانید روز مورد نظر را برای دریافت ساعت های خالی انتخاب کنید \n امروز {cal_day(0)} : {gregorian_to_jalali(cal_date(0))} "
+    text=f" امروز : <u>{cal_day(0)}</u>معادل : 📆<u>{gregorian_to_jalali(cal_date(0))}</u>📆\n {msg_select_day} "
     bot.send_message(chat_id=msg.chat.id,text=text,reply_markup=markup_free_time)
 
-
-########################################################################
+########
 #free time handler : show times of day
 @bot.callback_query_handler(func=lambda call: call.data.startswith("time_btn_"))
 def handle_button_press(call :CallbackQuery):
@@ -335,14 +328,10 @@ def handle_button_press(call :CallbackQuery):
      result_member = isInDB(user_id=user_id)
      if result_member:
         day=int(call.data.split('_')[2])
-        # print(day,cal_day(day))
         make_day=cal_date(day)
-        #todo:check is update
-        #todo:except and try reverse
-        created = create_channel_timing(make_day)
+        create_channel_timing(make_day)
         try:
             result =get_day_reserves(day)
-            # #show result
             markup_reserve=InlineKeyboardMarkup()
             btn_reserve=InlineKeyboardButton(text=f"رزرو لینک برای تاریخ:{gregorian_to_jalali(cal_date(day))}",callback_data=f"reserve_{day}_{cal_date(day)}")
             markup_reserve.add(btn_reserve)
@@ -352,9 +341,7 @@ def handle_button_press(call :CallbackQuery):
         except:
             bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text="مشکلی پیش امده لطفا دوباره تلاش کنید",reply_markup=ReplyKeyboardRemove())
 
-         
-    
-################################################
+########
 # hour's reserve  handler : select times
 @bot.callback_query_handler(func=lambda call: call.data.startswith("reserve_"))
 def handle_button_press(call :CallbackQuery):
@@ -368,30 +355,34 @@ def handle_button_press(call :CallbackQuery):
         markup=InlineKeyboardMarkup(row_width=4)
         buttons=[]
         current_time=get_current_time();
-        current_time=add_time(current_time,interval_reservation_time)
+        current_time=add_time(current_time,time_duration_def)
         if day == 0:
-            for i in range (len(time_of_day)):
-                if not compare_time(time1=current_time,time2=time_of_day[i]): # if time is past
-                    if compare_time(time1=current_time,time2="23:59") and compare_time (time1=time_of_day[i],time2="02:01"):
+            for i in range (len(dayClockArray)):
+                if compare_time(lower=current_time,than="00:29"):
+                    if i<18:
+                        result[(i+1)]=1
+                        continue
+                if compare_time(lower=dayClockArray[i],than=current_time): # if time is past
+                    if compare_time(lower=current_time,than="23:59") and compare_time (lower=dayClockArray[i],than="02:01"):
                         continue
                     result[(i+1)]=1
         if day==-1:
-            for i in range (len(time_of_day)):
+            for i in range (len(dayClockArray)):
                 if i< 18:
                     result[(i+1)]=1
                     continue
                 # print(current_time,time_of_day[i])
-                if not compare_time(time1= current_time,time2= time_of_day[i]): # if time is past
+                if compare_time(lower=dayClockArray[i],than=current_time): # if time is past
                     result[(i+1)]=1
-        for i in range (len(time_of_day)):
+        for i in range (len(dayClockArray)):
             if result[(i+1)] == 0:# if time is full dont show it
-                btn_day_reserve=InlineKeyboardButton(text=time_of_day[i],callback_data=f"day_{day}_{i}")
+                btn_day_reserve=InlineKeyboardButton(text=dayClockArray[i],callback_data=f"day_{day}_{i}")
                 buttons.append(btn_day_reserve)
         for i in range(0, len(buttons), 3):
             markup.row(*buttons[i:i+3])
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,
                             text=f" ساعت های خالی برای \n  {cal_day(day)} , معادل : {gregorian_to_jalali(date)}",reply_markup=markup)
-################################################
+########
 # reserve handler : reserve info 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("day_"))
 def handle_button_press(call:CallbackQuery):
@@ -399,12 +390,11 @@ def handle_button_press(call:CallbackQuery):
      result_member = isInDB(user_id=user_id)
      if result_member:
      #todo: make sure time is available
-     #todo: get link from user, and scheduling it
         day=int(call.data.split('_')[1]) # it is a number in range(0 to 6)
         time=int(call.data.split('_')[2]) # its number , use 'time_of_day[time]'
         user_balance=int(get_user_balance(user_id=user_id))
         price= price_1 if time <5 else price_2 if 5<=time< 21 else price_3
-        text=f"{make_reserve_info_text(day=cal_day(day),date=gregorian_to_jalali(cal_date(day)),time=time_of_day[time],price=price)}  \n{make_line} \n موجودی حساب شما : {user_balance} هزار تومان"
+        text=f"{make_reserve_info_text(day=cal_day(day),date=gregorian_to_jalali(cal_date(day)),time=dayClockArray[time],price=price)}  \n{make_line} \n موجودی حساب شما : {user_balance} هزار تومان"
         markup_balance_low=InlineKeyboardMarkup()
         btn=InlineKeyboardButton(text=balance_inc_btn,callback_data="user_balance_inc")
         btn1=InlineKeyboardButton(text="موجودی حساب شما کافی نیست",callback_data=f"send_link_{day}_{time}")
@@ -440,12 +430,11 @@ def get_banner_from_user(call:CallbackQuery):
     time=int(call.data.split('_')[3]) # its number , use 'time_of_day[time]'
     price= price_1 if time <5 else price_2 if 5<=time< 21 else price_3
     call_text=call.message.text
-    # info_text=f"info: {time}_{day}_{price}"
     result_member = isInDB(user_id=user_id)
     if result_member:
         text=f"""{call_text}
 لطفا بنر خود را برای ما ارسال کنید
-در صورتی که بنر چنل ما را ندارید لطفا از دکمه '{make_banner_btn}' استفاده کنید"""
+در صورتی که بنر چنل ما را ندارید لطفا از دکمه '{btn_make_banner}' استفاده کنید"""
         bot.edit_message_text(text=text,chat_id=call.message.chat.id,message_id=call.message.message_id)
         bot.set_state(user_id=call.message.chat.id,state=banner_state.banner,chat_id=call.message.chat.id)
 
@@ -469,29 +458,43 @@ def get_banner(msg : Message):    # Split the text into lines
     username=msg.from_user.username
     if is_banner_ok(banner=banner):
         link=extract_link(banner)
-        # print (link)
-        #todo: check link for today
         is_duplicate=is_duplicate_link(link=link,date=date)
         if is_duplicate:
             bot.send_message(chat_id=msg.from_user.id,text="لینک شما تکراری است \n هر گروه فقط یک بار در روز اجازه تبلیغ دارد")
             return False
-        try:#* decrease balance , make time full , make reserve
-            make_reserve_transaction(user_id=user_id,price=price,time_index=time_index,date=date,banner=banner,link=link)
-        except Error as e:
-            bot.send_message(chat_id=msg.from_user.id,text="مشکلی پیش امده است لطفا مجدد تلاش کنید")
-            logging.error(f"error 'get_banner' from user: {e} ")
+        #check time and day
+        currentDate=get_current_date()
+        if compare_date(lower_eq=date,than=currentDate): # date id past
+            logging.error("reserve date is past")
+            bot.send_message(chat_id=msg.from_user.id,text=msg_time_is_past)
+            return False
+        current_time=get_current_time()
+        current_time=add_time(initial_time=current_time,duration=time_duration_def)
+        banner_time=dayClockArray[time_index]
+        if compare_time(lower=banner_time,than=current_time) and date_isEq(date,currentDate):# time is past
+            logging.error("reserve time is past")
+            bot.send_message(chat_id=msg.from_user.id,text=msg_time_is_past)
+            return False
+        #end 
+        make_reserve_transaction(user_id=user_id,price=price,time_index=time_index,date=date,banner=banner,link=link)
+        if banner_need_approve:
+            markup=InlineKeyboardMarkup()
+            btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
+            btn2=InlineKeyboardButton(text="رد کردن",callback_data="banner_deny")
+            btn3=InlineKeyboardButton(text="تغییر بنر",callback_data="banner_custom")
+            markup.add(btn1,btn2)
+            markup.add(btn3)
+            forwarded_msg=bot.forward_message(chat_id=ADMIN_ID_LIST[0],from_chat_id=msg.chat.id,message_id=msg.message_id)
+            reserve_id=int(get_id_with_time_date_reserve(time=dayClockArray[time_index],date=date))
+            text=make_banner_acc_msg_to_admin(username=username,user_id=user_id,time=time_index,day=day,price=price,reserve_id=reserve_id[0])
+            bot.send_message(chat_id=ADMIN_ID_LIST[0],text=text,reply_markup=markup,reply_to_message_id=forwarded_msg.message_id)
+            bot.send_message(chat_id=msg.from_user.id,text=forward_banner_text)
+        else:
+            #todo problem
+            reserve_id=int(get_id_with_time_date_reserve(time=dayClockArray[time_index],date=date))
+            transactions_admin_accept_banner(user_id=user_id,time_index=time_index,reserve_id=reserve_id,date=date)
+            bot.send_message(chat_id=user_id,text=msg_banner_is_accepted) 
 
-        markup=InlineKeyboardMarkup()
-        btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
-        btn2=InlineKeyboardButton(text="رد کردن",callback_data="banner_deny")
-        btn3=InlineKeyboardButton(text="تغییر بنر",callback_data="banner_custom")
-        markup.add(btn1,btn2)
-        markup.add(btn3)
-        forwarded_msg=bot.forward_message(chat_id=ADMIN_ID_LIST[0],from_chat_id=msg.chat.id,message_id=msg.message_id)
-        reserve_id=get_id_with_time_date_reserve(time=time_of_day[time_index],date=date)
-        text=make_banner_acc_msg_to_admin(username=username,user_id=user_id,time=time_index,day=day,price=price,reserve_id=reserve_id[0])
-        bot.send_message(chat_id=ADMIN_ID_LIST[0],text=text,reply_markup=markup,reply_to_message_id=forwarded_msg.message_id)
-        bot.send_message(chat_id=msg.from_user.id,text=forward_banner_text)
 
     else:
         bot.send_message(msg.from_user.id,text=banner_not_mach)
@@ -512,17 +515,15 @@ def admin_deny(call :CallbackQuery):
     except Error as e:
         logging.error(f"error 'admin_deny' banner:  {e} ")
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"مشکلی پیش امد دوباره تلاش کنید \n {make_line} \n{text}")
-
-
-
     text=call.message.text
     markup=InlineKeyboardMarkup()
     btn=InlineKeyboardButton(text="این رزرو رد شد",callback_data="!?!?!?!")
     btn2=InlineKeyboardButton(text="علت رد کردن رزرو را بنویسید",callback_data=f"deny_message_to_{user_id}")
     markup.add(btn)
     markup.add(btn2)
-    bot.send_message(chat_id=user_id,text=f"رزرو شما از سمت ادمین رد شد \n درصورت نیاز میتوانید با استفاده از دکمه '{support_btn}' با ادمین ارتباط برقرار کنید")
+    bot.send_message(chat_id=user_id,text=f"رزرو شما از سمت ادمین رد شد \n درصورت نیاز میتوانید با استفاده از دکمه '{btn_support}' با ادمین ارتباط برقرار کنید")
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text,reply_markup=markup)
+
 #######
 #accept reserve btn
 @bot.callback_query_handler(func= lambda m:m.data =="banner_accept")
@@ -538,9 +539,9 @@ def admin_accept_banner_btn(call :CallbackQuery):
     btn=InlineKeyboardButton(text="این رزرو تایید شد",callback_data="!?!?!?!")
     markup.add(btn)
     try:
-        admin_accept_banner(user_id=user_id,time_index=time_index,reserve_id=reserve_id,date=date)
+        transactions_admin_accept_banner(user_id=user_id,time_index=time_index,reserve_id=reserve_id,date=date)
         bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=f"{info_text} \n {make_line} \n بنر تایید شد",reply_markup=markup)
-        bot.send_message(chat_id=user_id,text="بنر شما تایید و در ساعت انتخاب شده گذاشته میشود") 
+        bot.send_message(chat_id=user_id,text=msg_banner_is_accepted) 
     except Error as e:
         logging.error(f" Error admin_accept_banner_btn: {e} ")
         btn=InlineKeyboardButton(text="تایید مجدد",callback_data="banner_accept")
@@ -572,19 +573,6 @@ def make_banner(msg : Message):
 
      bot.set_state(state=banner_state.link,user_id=msg.chat.id,chat_id=msg.chat.id)
 
-
-# #################
-# @bot.message_handler(state =banner_state.description)
-# def make_banner(msg : Message):
-#      with bot.retrieve_data(msg.from_user.id,msg.chat.id) as data :
-#         des=data['description']=msg.text
-#      if len(des) > max_len_des:
-#         bot.send_message(text=f"تعداد کارکتر وارد شده برای نام : {len(des)} \n حداکثر مجاز :{max_len_des} \n لطفا دوباره تلاش کنید",chat_id=msg.chat.id)
-#         return
-#      bot.send_message(text="لینک خصوصی گروه خود را ارسال کنید",chat_id=msg.chat.id)
-#      bot.set_state(state=banner_state.link,user_id=msg.chat.id,chat_id=msg.chat.id)
-
-
 #################
 @bot.message_handler(state =banner_state.link)
 def make_banner(msg : Message):
@@ -606,14 +594,74 @@ def make_banner(msg : Message):
     bot.send_message(text=banner,chat_id=msg.chat.id)
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
-#?#######################################################################
-@bot.message_handler(func=lambda m:m.text == back_btn)
-def account(msg : Message):
-     bot.send_message(chat_id=msg.chat.id,text=back_btn_msg,reply_markup=markup_main)
-
 ########################################################################
+#* convert scores
+@bot.message_handler(func=lambda m:m.text == btn_convert_score)
+def convert_score(msg: Message):
+    user_id=int(msg.from_user.id)
+    user_score=get_user_score(user_id)
+    user_score_convert_able=divide_by_ten_mul_ten(user_score)
+    user_score_converted=convert_scoreToValue(score=user_score_convert_able)
+    if user_score_convert_able == 0 :
+        btn = InlineKeyboardButton(text="امتیاز کافی ندارید", callback_data="!@!@!@!@!")
+    else :
+        btn =InlineKeyboardButton(text="تبدیل تمام امتیاز",callback_data=f"convertScore_{user_id}")
+    
+    markup=InlineKeyboardMarkup()
+    markup.add(btn)
+    text=f"{msg_change_score} \n {make_line} \n {make_change_score_text(score=user_score,convert_able=user_score_convert_able,value=user_score_converted)}"
+    bot.send_message(chat_id=user_id,text=text,reply_markup=markup)
+
+@bot.callback_query_handler(func= lambda m:m.data.startswith("convertScore_"))
+def convert_scores(call:CallbackQuery):
+    user_id=int(call.data.split('_')[1])
+    user_score=get_user_score(user_id)
+    score_to_change=divide_by_ten_mul_ten(user_score)
+    value=convert_scoreToValue(score=score_to_change)
+    db_convert_score(user_id=user_id,score_to_decrease=score_to_change,balance_to_increase=value)
+    text=msg_score_is_converted
+    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text)
+
+ 
+##########################
+#* see reserve users
+@bot.message_handler(func=lambda m:m.text == btn_user_find_reserve)
+def admin_btn_reserve(msg : Message):
+    markup=InlineKeyboardMarkup()
+    user_id=int(msg.from_user.id)
+    is_not_any_reserve=True
+    for i in range(-1,7):
+        date=cal_date(i)
+        reserve_id=get_id_with_user_id_date_reserve(user_id=user_id,date=date)
+        if reserve_id is not None:
+            is_any=False
+
+            reserve_id=int(reserve_id[0])
+            time = str(get_info_with_reserve_id(reserve_id)[3])[:5]
+            btn=InlineKeyboardButton(text=f"{cal_day(i)} : {time}, {gregorian_to_jalali(date)}",callback_data=f"user_reserveID_{reserve_id}")
+            markup.add(btn)
+    if is_not_any_reserve:
+            btn=InlineKeyboardButton(text=f"شما هیچ لینک رزور شده ای ندارید",callback_data=f"!!!!!!!")
+            markup.add(btn)
+
+    temp_date=get_current_date()
+    text=f'برای مشاهده رزرو های خود روز مد نظر خود را انتخاب کنید\nامروز:  {cal_day(0)} , {gregorian_to_jalali(temp_date)} \n {make_line}'
+    bot.send_message(chat_id=msg.from_user.id,text=text,reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: call.data.startswith("user_reserveID_"))
+def handle_button_press(call :CallbackQuery):
+    reserve_id=int(call.data.split('_')[2])
+    markup=InlineKeyboardMarkup()
+    btn1=InlineKeyboardButton(text=admin_btn_cancel_reserve,callback_data=f"{admin_btn_cancel_reserve}_{reserve_id}")
+    btn2=InlineKeyboardButton(text=admin_btn_change_banner,callback_data=f"{admin_btn_change_banner}_{reserve_id}")
+    markup.add(btn1,btn2)
+    text=get_banner_with_id_reserve(reserve_id=reserve_id)
+    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
+
+
+
 #!#######################################################################
-#! admin part  
+#* admin part  
 
 # /admin
 @bot.message_handler(commands=['admin'])
@@ -631,11 +679,31 @@ def user_list(msg : Message):
             bot.send_message(chat_id=msg.chat.id,text=not_admin_text,reply_markup=markup_main)
             return False
      users=get_all_users()
-     markup = InlineKeyboardMarkup()
-     for user in users:
-         btn= InlineKeyboardButton(text=f"{user[3]}:{user[0]}",callback_data=f"users_{user[0]}")
-         markup.add(btn)
-     bot.send_message(chat_id=msg.chat.id,text="لیست کاربر ها",reply_markup=markup)
+     markup = create_pagination(users, 0)
+     bot.send_message(chat_id=msg.chat.id,text=msg_userList,reply_markup=markup)
+
+###########
+@bot.callback_query_handler(func=lambda call: call.data.startswith(('prev', 'next')))
+def paginate(call):
+    page = int(call.data.split('_')[1])
+    users=get_all_users()
+    bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=create_pagination(users, page))
+###########
+@bot.callback_query_handler(func=lambda call: call.data.startswith("users_"))
+def handle_button_press(call :CallbackQuery):
+    if not check_is_admin(int(call.from_user.id)):
+            bot.send_message(call.message.chat.id,text=not_admin_text,reply_markup=markup_main)
+            return False
+    user_id=int(call.data.split('_')[1])
+    username=get_username(user_id=user_id)
+    balance=get_user_balance(user_id=user_id)
+    score=get_user_score(user_id=user_id)
+    text=f"id: {user_id}\n{make_user_info(user_id=user_id,balance=balance,score=score,username=username)}"
+
+    markup=make_admin_markup_user_info()
+
+    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
+
 ##########################
 #* find user
 @bot.message_handler(func=lambda m:m.text == admin_btn_find_user_info)
@@ -672,7 +740,6 @@ def handle_button_press(call :CallbackQuery):
     except Error as e:
         logging.error(f"error delete a user: {e}")
         bot.send_message(call.message.from_user.id,text="مجدد تلاش کنید کاربر پاک نشد")
-#todo: increase and decrease balance and score
 
 ##########################
 #* bot info
@@ -687,25 +754,6 @@ def bot_info(msg : Message):
      سازنده ربات : <a href='tg://user?id={ADMIN_ID_LIST[0]}'>{creator_username}</a>
 """
      bot.send_message(msg.from_user.id,text=text)
-##########################
-#users #todo need work
-@bot.callback_query_handler(func=lambda call: call.data.startswith("users_"))
-def handle_button_press(call :CallbackQuery):
-    try:
-        if not check_is_admin(int(call.from_user.id)):
-                bot.send_message(call.message.chat.id,text=not_admin_text,reply_markup=markup_main)
-                return False
-        user_id=int(call.data.split('_')[1])
-        username=get_username(user_id=user_id)
-        balance=get_user_balance(user_id=user_id)
-        score=get_user_score(user_id=user_id)
-        text=f"id: {user_id}\n{make_user_info(user_id=user_id,balance=balance,score=score,username=username)}"
-
-        markup=make_admin_markup_user_info()
-
-        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
-    except Error as e:
-        logging.error(e)
 ##########################
 #?send msg to all
 @bot.message_handler(func=lambda m:m.text == admin_btn_send_msg_to_all)
@@ -729,41 +777,6 @@ def get_message_to_send(msg : Message):
     bot.send_message(chat_id=msg.chat.id,text="پیام شما ارسال شد", )
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
-##########################
-#* see reserve users
-@bot.message_handler(func=lambda m:m.text == user_find_reserve)
-def admin_btn_reserve(msg : Message):
-    markup=InlineKeyboardMarkup()
-    user_id=int(msg.from_user.id)
-    is_not_any_reserve=True
-    for i in range(-1,7):
-        date=cal_date(i)
-        reserve_id=get_id_with_user_id_date_reserve(user_id=user_id,date=date)
-        if reserve_id is not None:
-            is_any=False
-
-            reserve_id=int(reserve_id[0])
-            time = str(get_info_with_reserve_id(reserve_id)[3])[:5]
-            btn=InlineKeyboardButton(text=f"{cal_day(i)} : {time}, {gregorian_to_jalali(date)}",callback_data=f"user_reserveID_{reserve_id}")
-            markup.add(btn)
-    if is_not_any_reserve:
-            btn=InlineKeyboardButton(text=f"شما هیچ لینک رزور شده ای ندارید",callback_data=f"!!!!!!!")
-            markup.add(btn)
-
-    temp_date=current_date()
-    text=f'برای مشاهده رزرو های خود روز مد نظر خود را انتخاب کنید\nامروز:  {cal_day(0)} , {gregorian_to_jalali(temp_date)} \n {make_line}'
-    bot.send_message(chat_id=msg.from_user.id,text=text,reply_markup=markup)
-
-@bot.callback_query_handler(func=lambda call: call.data.startswith("user_reserveID_"))
-def handle_button_press(call :CallbackQuery):
-    reserve_id=int(call.data.split('_')[2])
-    markup=InlineKeyboardMarkup()
-    btn1=InlineKeyboardButton(text=admin_btn_cancel_reserve,callback_data=f"{admin_btn_cancel_reserve}_{reserve_id}")
-    btn2=InlineKeyboardButton(text=admin_btn_change_banner,callback_data=f"{admin_btn_change_banner}_{reserve_id}")
-    markup.add(btn1,btn2)
-    text=get_banner_with_id_reserve(reserve_id=reserve_id)
-    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
-
    
 ##########################
 #* see reserve admin
@@ -775,7 +788,7 @@ def admin_btn_reserve(msg : Message):
     for i in range(7):
         btn=InlineKeyboardButton(text=f"{cal_day(i)} : {gregorian_to_jalali(cal_date(i))}",callback_data=f"admin_time_btn_{i}")
         markup.add(btn)
-    temp_date=current_date()
+    temp_date=get_current_date()
     text=f'برای مشاهده رزرو ها روز مد نظر خود را انتخاب کنید\nامروز:  {cal_day(0)}\n{temp_date} , {gregorian_to_jalali(temp_date)} \n {make_line}'
     bot.send_message(chat_id=msg.from_user.id,text=text,reply_markup=markup)
 
@@ -785,7 +798,7 @@ def handle_button_press(call :CallbackQuery):
     user_id=call.from_user.id
     date=cal_date(date_index)
     markup=InlineKeyboardMarkup()
-    for  time in time_of_day:
+    for  time in dayClockArray:
         reserve_id= get_id_with_time_date_reserve(date=date,time=time)
         if reserve_id is not None :
             reserve_id=reserve_id[0]
@@ -872,7 +885,7 @@ def msg_to_all(msg : Message):
           buttons.append(btn)
      for i in range(0, len(buttons), 3):
           markup.row(*buttons[i:i+3])
-     bot.send_message(msg.chat.id,text=check_income_msg,reply_markup=markup)
+     bot.send_message(msg.chat.id,text=msg_check_income,reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("month_"))
 def handle_button_press(call :CallbackQuery):
@@ -956,7 +969,7 @@ def handle_non_photo(msg: Message):
     after=get_user_balance(user_id)
     text=f'تغییرات لازم انجام شد \n before: {before} \n after:{after}'
     bot.send_message(chat_id=msg.from_user.id,text=text)
-
+###########
 @bot.message_handler(state=admin_state.decrease_balance)
 def handle_non_photo(msg: Message):
     with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
@@ -971,8 +984,7 @@ def handle_non_photo(msg: Message):
     after=get_user_balance(user_id)
     text=f'تغییرات لازم انجام شد \n before: {before} \n after:{after}'
     bot.send_message(chat_id=msg.from_user.id,text=text)
-
-
+###########
 @bot.message_handler(state=admin_state.increase_score)
 def handle_non_photo(msg: Message):
     with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
@@ -984,7 +996,7 @@ def handle_non_photo(msg: Message):
     after=get_user_score(user_id)
     text=f'تغییرات لازم انجام شد \n before: {before} \n after:{after}'
     bot.send_message(chat_id=msg.from_user.id,text=text)
-
+###########
 @bot.message_handler(state=admin_state.decrease_score)
 def handle_non_photo(msg: Message):
     with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
@@ -1027,21 +1039,26 @@ def test(msg : Message):
     # bot.send_message(msg.from_user.id,text=chat_info)
 
 
-################################################
-def send_scheduled_message():
-    # bot.send_message(chat_id=ADMIN_ID_LIST[0],text=f"schedule_jobs : {get_current_time()}")
+#!#########################
+#any message from users
+@bot.message_handler(func=lambda message: True)
+def handle_non_photo(msg: Message):
+    bot.send_message(msg.chat.id, "\n /start لطفا برای استفاده از ربات یا از دکمه های ربات استفاده کنید یا مجدد ربات را راه اندازی کنید")
 
+########################################
+def send_scheduled_message():
+    #set time
     time=datetime.now().strftime('%H:%M')
-    time_index=find_index(time,time_of_day)
+
+    # set date
     if compare_time("00:00",add_time(initial_time=time,duration="00:01")) and compare_time(time,"02:15"):
         date=cal_date(-1)
     else:
-        date=current_date()
-    # print(date)
+        date=get_current_date()
+
     user_id=get_id_reserver_channel_timing(time=time,date=date)
     if user_id is not None :
         user_id=int(user_id[0])
-        # bot.send_message(ADMIN_ID_LIST[0],text=f"time:{time} : date:{date}\n user_id:{user_id}")
         if user_id != 1 :
             reserve_id=get_id_with_time_date_reserve(time=time,date=date)[0]
             banner=get_banner_with_id_reserve(reserve_id)[0]
@@ -1049,52 +1066,52 @@ def send_scheduled_message():
                 bot.send_message(chat_id=channel,text=banner,disable_web_page_preview=True,link_preview_options=False)
                 bot.send_message(ADMIN_ID_LIST[0],text="یک بنر ارسال شد")
             
+ 
+########################################
+#* restart  msg
+def startMessageToAdmin(enable=True,disable_notification=True):
+    if not enable:
+        return False
 
-##############################################
-def schedule_jobs():
-    schedule.clear()
-    for i in range(len(time_of_day)):
-        schedule.every().day.at(time_of_day[i]).do(send_scheduled_message)
-#################################################
-def schedule_jobs_test():
-    schedule.clear()
-    for i in range(10):
-        schedule.every().day.at(f"23:1{i}").do(send_scheduled_message)
+    text=f'{msg_restart} \n 🚫{get_current_datetime()}🚫'
 
-#################################################
-# تابع برای اجرای زمان‌بندی
-def run_scheduler():
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
+    #get last log    
+    latest_log_file = get_latest_log_file()
 
-def start_scheduler():
-    schedule_jobs()
-    scheduler_thread = threading.Thread(target=run_scheduler)
-    scheduler_thread.daemon = True  # این کار باعث می‌شود Thread با بستن برنامه اصلی بسته شود
-    scheduler_thread.start()
-
-#!#########################
-#هر پیامی از کاربر
-@bot.message_handler(func=lambda message: True)
-def handle_non_photo(msg: Message):
-    bot.send_message(msg.chat.id, "\n /start لطفا برای استفاده از ربات یا از دکمه های ربات استفاده کنید یا مجدد ربات را راه اندازی کنید")
-
-
-# for making bot running
+    for admin in ADMIN_ID_LIST:#send for all admins
+        if latest_log_file:
+            last_3_errors=get_last_errors(latest_log_file)
+            error_message = "\n".join(last_3_errors)
+            with open(latest_log_file, 'rb') as log_file:
+                bot.send_document(admin, log_file,caption=f"{text}\n{error_message}")
+                logging.info(f"send last log to admin : {latest_log_file}")
+        else:
+            logging.info("هیچ فایل لاگی پیدا نشد.")
+            bot.send_message(chat_id=admin,text=f"{text}\n ⛔️فایل log وجود ندارد⛔️",disable_notification=disable_notification)  
+    
+#*#######################################################################################################
 if __name__ == "__main__":
     try:
-        # تنظیمات اولیه لاگ‌گیری
+        #log init
         log_filename = f"./logs/output_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        
         logging.basicConfig(filename=log_filename,
                     level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.info("ربات در حال اجراست...")
-        create_database() # DATA BASE
-        restartMessageToAdmins() # hello message
+        logging.info("bot is running")
+        remove_old_logs()
+        
+        #basic setting
         start_scheduler() # auto send post 
+        create_database() # DATA BASE
         bot.add_custom_filter(custom_filters.StateFilter(bot))
+        
+        #basic functions
+        startMessageToAdmin() # hello message
+        
+        
         bot.polling() # keep bot running
+
     except Exception as e:
         logging.error(f"error in main : {e}")
 

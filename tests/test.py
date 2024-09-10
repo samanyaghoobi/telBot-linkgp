@@ -1,6 +1,6 @@
 
 import mysql.connector # type: ignore
-from configs.config import *
+from configs.basic_info import *
 from datetime import datetime,timedelta
 # from custom_functions import *
 from functions.custom_functions import compare_time, convert_to_time, extract_link, is_banner_ok, parse_text_for_acc_admin_banner

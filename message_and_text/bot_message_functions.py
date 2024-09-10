@@ -24,3 +24,7 @@ def select_plan_msg(index):
 برای ارسال عکس رسید از دکمه زیر استفاده کنید"""
      return text
 ################################3
+def make_change_score_text(score:int,convert_able:int,value:int):
+     text=f"""کل امتیاز شما : {score} ✨
+امتیاز قابل تبدیل : {convert_able} ♻️ معادل : {value} هزار تومان💵"""
+     return text

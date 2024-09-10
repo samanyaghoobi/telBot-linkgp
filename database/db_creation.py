@@ -2,7 +2,7 @@ import logging
 import mysql.connector # type: ignore
 from mysql.connector import Error
 from configs.auth import DB_CONFIG
-from configs.config import *
+from configs.basic_info import *
 #!###################################################
 def create_database():
     try:

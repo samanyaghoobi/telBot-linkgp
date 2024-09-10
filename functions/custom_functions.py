@@ -1,12 +1,13 @@
+from telebot import  types
 import mysql.connector # type: ignore
 from datetime import datetime,timedelta
 from configs.auth import ADMIN_ID_LIST, CHANNELS_USERNAME, DB_CONFIG
-from configs.config import *
-from convertdate import persian
+from configs.basic_info import *
 from database.db_reserve import get_link_with_date_reserve
 from database.db_transactions import get_all_transactions, get_transactions_of_month
 from database.db_users import get_user_balance, get_username
-from main import bot, isMemberOf
+from functions.calender_functions import cal_date, cal_day, gregorian_to_jalali
+from main import  isMemberOf
 from message_and_text.bot_messages import make_line
 import re
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
@@ -14,6 +15,7 @@ from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboa
 ##############################################
 def make_timing_of_day_msg(results,day,from_admin=False):
     time=[]
+    date=gregorian_to_jalali(cal_date(day))
     for index in range(len(results)):
         if index !=0:
             if results[index] == 0:
@@ -27,117 +29,71 @@ def make_timing_of_day_msg(results,day,from_admin=False):
                 else:
                     time.append(f"رزرو شده است")
 
-    text=f"""اخرین بروز رسانی : \n{get_current_datetime()}
+    text=f"""ساعت های خالی برای : <u>{cal_day(day)}</u> : 📆<u>{date}</u>📆
 {make_line}
-روز رزرو : {cal_day(day)}
-🩵🩵🩵🩵🩵🩵🩵طرح یک🩵🩵🩵🩵🩵🩵
-حداقل یک ساعت پست اخر
-💵 قیمت = {price_1} هزارتومان
-13:00 ⬅️ {time[0]}
-14:00 ⬅️ {time[1]}
-15:00 ⬅️ {time[2]}
-16:00 ⬅️ {time[3]}
-17:00 ⬅️ {time[4]}
+🩵طرح یک🩵
+⏰حداقل یک ساعت پست اخر⏰
+💵 قیمت = {price_1} هزارتومان💵
+    13:00 ⬅️ {time[0]}
+    14:00 ⬅️ {time[1]}
+    15:00 ⬅️ {time[2]}
+    16:00 ⬅️ {time[3]}
+    17:00 ⬅️ {time[4]}
 {make_line}
-✨✨✨✨✨✨✨طرح دو ✨✨✨✨✨✨
-حداقل نیم ساعت پست اخر
-💵 قیمت = {price_2} هزارتومان
-18:00 ⬅️ {time[5]}
-18:30 ⬅️ {time[6]}
-19:00 ⬅️ {time[7]}
-19:30 ⬅️ {time[8]}
-20:00 ⬅️ {time[9]}
-20:30 ⬅️ {time[10]}
-21:00 ⬅️ {time[11]}
-21:30 ⬅️ {time[12]}
-22:00 ⬅️ {time[13]}
-22:30 ⬅️ {time[14]}
-23:00 ⬅️ {time[15]}
-23:30 ⬅️ {time[16]}
-00:00 ⬅️ {time[17]}
-00:30 ⬅️ {time[18]}
-01:00 ⬅️ {time[19]}
-01:30 ⬅️ {time[20]}
+✨طرح دو ✨
+⏰حداقل نیم ساعت پست اخر⏰
+💵 قیمت = {price_2} هزارتومان💵
+    18:00 ⬅️ {time[5]}
+    18:30 ⬅️ {time[6]}
+    19:00 ⬅️ {time[7]}
+    19:30 ⬅️ {time[8]}
+    20:00 ⬅️ {time[9]}
+    20:30 ⬅️ {time[10]}
+    21:00 ⬅️ {time[11]}
+    21:30 ⬅️ {time[12]}
+    22:00 ⬅️ {time[13]}
+    22:30 ⬅️ {time[14]}
+    23:00 ⬅️ {time[15]}
+    23:30 ⬅️ {time[16]}
+    00:00 ⬅️ {time[17]}
+    00:30 ⬅️ {time[18]}
+    01:00 ⬅️ {time[19]}
+    01:30 ⬅️ {time[20]}
 {make_line}
-💎💎💎💎💎💎💎پست ویژه💎💎💎💎💎💎
-💵 قیمت = {price_3} هزارتومان
-حداقل تا ساعت 13:00  پست اخر
-02:00 ⬅️ {time[21]}
+💎پست ویژه💎
+💵 قیمت = {price_3} هزارتومان💵
+⏰حداقل تا ساعت 13:00  پست اخر⏰
+    02:00 ⬅️ {time[21]}
 """
     return text
 ###################################################
-
+def divide_by_ten_mul_ten(number :int):
+    return (number // 10)*10  # تقسیم صحیح
+def convert_scoreToValue(score :int):
+    return (score // 10 ) * base_score_value
 ###################################################
+# تابعی برای ساخت صفحه‌بندی
+def create_pagination(users_list, page, per_page=10):
+    start = page * per_page
+    end = start + per_page
+    users_in_page = users_list[start:end]
 
-def current_date():
-     return datetime.now().strftime("%Y-%m-%d")
+    # ایجاد دکمه‌های شیشه‌ای برای کاربران
+    keyboard = types.InlineKeyboardMarkup()
+    for user in users_in_page:
+        button = types.InlineKeyboardButton(f"{user[3]}:{user[0]}", callback_data=f"users_{user[0]}")
+        keyboard.add(button)
 
-def cal_date(days):
-    """make date of day
-    get (-1 to 6 ) return like 2024-08-05
-    -1 means yesterday 
-    0 mean today 
-    1 mean tomorrow
-    """
-    return (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
-
-def cal_day(days):
-    """get a number and return it day like
-    1 => دوشنبه
-    0 => یکشنبه"""
-    tomorrow_date = datetime.now() + timedelta(days=days)
-    tomorrow_weekday = tomorrow_date.weekday()
-    tomorrow_persian = days_of_week[tomorrow_weekday]
-    return tomorrow_persian
-
-def get_current_datetime():
-    """ return : %Y-%m-%d %H:%M:%S """
-    # دریافت تاریخ و ساعت لحظه‌ای
-    now = datetime.now()
-    # تبدیل به رشته با فرمت YYYY-MM-DD HH:MM:SS
-    date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
-    return date_time_str
-def get_current_date():
-    """ return : %Y-%m-%d """
-    # دریافت تاریخ و ساعت لحظه‌ای
-    now = datetime.now()
-    # تبدیل به رشته با فرمت YYYY-MM-DD HH:MM:SS
-    date_time_str = now.strftime("%Y-%m-%d")
-    return date_time_str
-
-def get_current_time():
-    """ return : %H:%M """
-
-    # بدست آوردن زمان کنونی
-    now = datetime.now()
+    # دکمه‌های "قبلی" و "بعدی"
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(types.InlineKeyboardButton("⬅️ قبلی", callback_data=f'prev_{page-1}'))
+    if end < len(users_list):
+        nav_buttons.append(types.InlineKeyboardButton("➡️ بعدی", callback_data=f'next_{page+1}'))
     
-    # قالب‌بندی زمان به صورت رشته‌ای با فرمت 'HH:MM:SS'
-    current_time = now.strftime("%H:%M")
+    keyboard.row(*nav_buttons)
     
-    return current_time
-
-###################################################
-def gregorian_to_jalali(gregorian_date_str):
-    """
-    Convert Gregorian date from string format 'YYYY-MM-DD' to Jalali (Shamsi) date.
-    :param gregorian_date_str: Date in Gregorian calendar in 'YYYY-MM-DD' format
-    :return: Date in Jalali calendar in 'YYYY-MM-DD' format
-    """
-    # Parse the input date string into a datetime object
-    gregorian_date = datetime.strptime(gregorian_date_str, '%Y-%m-%d')
-    
-    # Extract year, month, and day from the datetime object
-    year = gregorian_date.year
-    month = gregorian_date.month
-    day = gregorian_date.day
-    
-    # Convert Gregorian date to Jalali date
-    jalali_date = persian.from_gregorian(year, month, day)
-    
-    # Format Jalali date into 'YYYY-MM-DD' string
-    jalali_date_str = f"{jalali_date[2]}-{jalali_date[1]:02d}-{jalali_date[0]:02d}"
-    
-    return jalali_date_str
+    return keyboard
 
 ###################################################
 def make_reserve_info_text(time,date,day,price):
@@ -193,10 +149,6 @@ lιnĸ: {link}
     return banner
 
 
-def send_test_msg_to_admin():
-    bot.send_message(chat_id=ADMIN_ID_LIST[1],text="this is test msg")
-
-
 def extract_link(banner):
     # الگوی regex برای پیدا کردن لینک
     # این الگو به دنبال رشته‌هایی می‌گردد که با http:// یا https:// شروع شده و پس از آن کاراکترهای معتبر URL قرار دارند
@@ -243,50 +195,9 @@ def get_month_income_approved(year,month):
           if(reserve[1] is True):
             amount=amount+reserve[2]
     return amount
-#########################################################
-
-def add_time(initial_time: str, duration: str) -> str:
-    """
-    Add a duration to a given time.
-
-    Parameters:
-    - initial_time (str): The initial time in "HH:MM" format.
-    - duration (str): The duration to add in "HH:MM" format.
-
-    Returns:
-    - str: The new time in "HH:MM" format after adding the duration.
-    """
-    # Define the time format
-    time_format = "%H:%M"
-    
-    # Convert the initial time string to a datetime object
-    time_obj = datetime.strptime(initial_time, time_format)
-    
-    # Parse the duration string to extract hours and minutes
-    hours, minutes = map(int, duration.split(":"))
-    
-    # Create a timedelta object for the duration
-    time_delta = timedelta(hours=hours, minutes=minutes)
-    
-    # Add the timedelta to the initial time
-    new_time = time_obj + time_delta
-    
-    # Format the new time as a string
-    new_time_str = new_time.strftime(time_format)
-    
-    return new_time_str
 
 #########################################################
-def compare_time(time1,time2):
-    """return true if time1 < time2"""
-    time_format = "%H:%M"
-    time_A = datetime.strptime(time1, time_format).time()
-    time_B = datetime.strptime(time2, time_format).time()
-    if time_A<time_B :
-        return True
-    else:
-        return False
-  #########################################################
+
 def is_banner_ok(banner):
     # print(banner)
     regex = re.compile(default_banner_pattern, re.MULTILINE | re.VERBOSE)
@@ -297,7 +208,7 @@ def make_banner_acc_msg_to_admin(user_id,username,time, day, price,reserve_id):
      text=f"""id: {user_id} 
 username: @{username} 
 user_balance: {get_user_balance(user_id=user_id)}
-time: {time} = {time_of_day[time]} 
+time: {time} = {dayClockArray[time]} 
 day: {day} = {cal_day(day)} 
 date: {cal_date(day)}
 price: {price}

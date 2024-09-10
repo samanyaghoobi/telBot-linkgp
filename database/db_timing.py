@@ -2,7 +2,7 @@ import logging
 import mysql.connector # type: ignore
 from mysql.connector import Error
 from configs.auth import DB_CONFIG
-from configs.config import *
+from configs.basic_info import *
 from functions.custom_functions import find_index
 ###############################################################333
 def create_channel_timing(date):
@@ -56,7 +56,7 @@ WHERE record_date = '{date}';"""
 #################################################################
 def get_id_reserver_channel_timing(date,time):
     """return id of who reserved the time , none for not reserved time"""
-    time_index=find_index(time,time_of_day)
+    time_index=find_index(time,dayClockArray)
     db_column_time_name=db_hour_name[time_index]
     sql=f"""select hour_{db_column_time_name} from channel_timing
 WHERE record_date = '{date}' AND hour_{db_column_time_name} <> 0;"""
