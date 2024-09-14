@@ -8,7 +8,6 @@ CART_NUMBER_STRING='6037 9974 9354 2279'
 max_len_name=20
 max_len_member=8
 max_len_des=30
-link_pattern=''
 ##############################################################
 days_of_week_name = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه", "یک‌شنبه"]
 months = ["January",   "February",  "March",     "April",     "May",       "June",      "July",      "August",    "September", "October",   "November",  "December"   ]
@@ -43,12 +42,3 @@ default_banner_pattern=r"""^Super\ GP\n
         lιnĸ:\ .+\n
         \n
         @LinkGP$"""
-################
-# channel_main="@linkGP"
-# channel_main_id="1007477494"
-# channel_t="@linkGP_t"
-# channel_t_id="1140510739"
-
-# bot =telebot.TeleBot(TOKEN)
-# API=f"https://api.telegram.org/bot{TOKEN}/"
-##############################################################
