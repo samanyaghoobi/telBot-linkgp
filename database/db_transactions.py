@@ -40,6 +40,60 @@ WHERE YEAR(record_date) = '{year}' AND MONTH(record_date) = '{month}';
      except Error as e:
         logging.error(f" error get_transactions_of_month:   {e} ")
 #########################################################
+def get_transactions_of_month_approved(year,month):
+     sql=f"""SELECT *
+FROM transactions
+WHERE YEAR(record_date) = '{year}' AND MONTH(record_date) = '{month}' AND  approved = 1;
+"""
+     try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                     cursor.execute(sql)
+                    #  connection.commit()
+                     transactions=cursor.fetchall()
+                     cursor.close()
+                     connection.close()
+                     return transactions
+     except Error as e:
+        logging.error(f" error get_transactions_of_month:   {e} ")
+#########################################################
+def get_transactions_of_month_income(year,month):
+     sql=f"""SELECT SUM(amount)
+FROM transactions
+WHERE YEAR(record_date) = '{year}' AND MONTH(record_date) = '{month}';
+"""
+     try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                     cursor.execute(sql)
+                    #  connection.commit()
+                     income=cursor.fetchone()
+                     cursor.close()
+                     connection.close()
+                     return income
+     except Error as e:
+        logging.error(f" error get_transactions_of_month:   {e} ")
+#########################################################
+def get_transactions_of_month_approved_income(year,month):
+     sql=f"""SELECT SUM(amount)
+FROM transactions
+WHERE YEAR(record_date) = '{year}' AND MONTH(record_date) = '{month}' AND  approved = 1;
+"""
+     try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                     cursor.execute(sql)
+                    #  connection.commit()
+                     income=cursor.fetchone()
+                     cursor.close()
+                     connection.close()
+                     return income[0]
+     except Error as e:
+        logging.error(f" error get_transactions_of_month:   {e} ")
+#########################################################
 def approve_a_transactions(id):
      sql=f"""UPDATE transactions
 SET approved = 1

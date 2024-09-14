@@ -10,6 +10,7 @@ class admin_state(StatesGroup):
     increase_score=State()
     decrease_score=State()
     change_banner=State()
+    change_amount_pic=State()
 class user_state(StatesGroup): 
     pic_receipt = State()
     plan= State()

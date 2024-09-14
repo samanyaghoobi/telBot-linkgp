@@ -4,25 +4,39 @@ from mysql.connector import Error
 from configs.auth import DB_CONFIG
 from configs.basic_info import *
 #!###################################################
-def create_database():
+def dbCreateDatabases():
     try:
-        logging.info(f"connect to :{DB_CONFIG}")
+        logging.info(f"checking tables")
         # create_data_base()
-        result= create_table_channel_timing()
+
+        result= db_create_table_channel_timing()
+        if not result:
+            return False
+        
+        result=db_create_table_reserve()
         if result:
-            result=create_table_reserve()
-            if result:
-                result= create_table_transactions()
-                if result:
-                    result=create_table_users()
-                    if result:
-                        logging.info("data base and tables are ok")
+            return False
+        
+        result= db_create_table_transactions()
+        if result:
+            return False
+        
+        result=db_create_table_users()
+        if result:
+            return False
+        
+        result=db_create_table_bot_info()
+        if result:
+            return False
+        
+
+        logging.info("data base and tables are ok")
 
     except Error as e:
         logging.error(e)
         return False
 #!###################################################
-def create_data_base():
+def db_create_data_base():
     sql="CREATE DATABASE IF NOT EXISTS linkGP;"
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
@@ -36,7 +50,7 @@ def create_data_base():
         logging.error(f"error from create database: {e}")
 ####################################################
 #* transactions : save each payment of each user 
-def create_table_transactions():
+def db_create_table_transactions():
     """
     transactions (id,approved,amount,username,user_id,record_data,record_time)
     Like (1,true or false,15,saaman_pc,1054820423,2024-08-01,"13:00")
@@ -65,7 +79,7 @@ def create_table_transactions():
         return False
 #!###################################################
 #* users table: user info table 
-def create_table_users():
+def db_create_table_users():
     """
     users (userid,balance,score,username)
     users (1054820423,10,5,saaman_pc)
@@ -91,7 +105,7 @@ def create_table_users():
         return False
 #!###################################################
 #* reserve table : make a reservation connected to time date and user and price
-def create_table_reserve():
+def db_create_table_reserve():
     """
     """
     sql=f"""CREATE TABLE IF NOT EXISTS reserve (
@@ -121,7 +135,7 @@ def create_table_reserve():
 
 #!###################################################
 #* channel_timing : which time is available
-def create_table_channel_timing():
+def db_create_table_channel_timing():
     """
     channel_timing see what is it
     each hour show userId that's reserved 
@@ -162,4 +176,25 @@ def create_table_channel_timing():
 
     except Error as e:
         logging.error(f"error from create channel_timing: {e} ")
+        return False
+#!###################################################
+#* bot_info
+def db_create_table_bot_info():
+    """
+    """
+    sql=f"""CREATE TABLE IF NOT EXISTS info (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULl DEFAULT 0,
+    value VARCHAR(255) NOT NULL);"""
+    try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                     cursor.execute(sql)
+                     connection.commit()
+                     cursor.close()
+                     connection.close()
+                     return True
+    except Error as e:
+        logging.error(f"error from create db_create_table_bot_info: {e} ")
         return False

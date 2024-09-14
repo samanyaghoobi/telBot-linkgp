@@ -1,9 +1,8 @@
 import logging
-import json
 from datetime import datetime
 from telebot import TeleBot , custom_filters
 from configs.auth import *
-from database.db_creation import create_database
+from database.db_creation import dbCreateDatabases
 from database.db_functions import transactions_admin_accept_banner, admin_deny_banner, db_convert_score, make_reserve_transaction
 from database.db_timing import *
 from database.db_transactions import *
@@ -21,12 +20,9 @@ from telebot.storage import StateMemoryStorage
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
 from functions.custom_functions import *
 ###################################################################################
-#todo: aprrove work
-#todo : all user remain mony
-#todo custom payment
 #todo reserve a week
 #todo :reserve custom for admin
-
+# todo : cant canncel if is past
 ###################################################################################
 state_storage=StateMemoryStorage()
 bot =TeleBot(token = TOKEN,state_storage=state_storage, parse_mode="HTML")
@@ -204,9 +200,7 @@ def forward(msg : Message):
     markup=InlineKeyboardMarkup()
     btn1=InlineKeyboardButton(text="تایید",callback_data="pic_receipt_accept")
     btn2=InlineKeyboardButton(text="رد کردن",callback_data="pic_receipt_deny")
-    btn3=InlineKeyboardButton(text="تغییر مبلغ",callback_data="pic_receipt_custom")
     markup.add(btn1,btn2)
-    markup.add(btn3)
     with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
         index = int(data.get('plan'))
     forwarded_msg=bot.forward_message(chat_id=ADMIN_ID_LIST[0],from_chat_id=msg.chat.id,message_id=msg.message_id)
@@ -218,7 +212,6 @@ balance increase amount:‌ {plans[index]}  H T 💵
 """,reply_markup=markup,reply_to_message_id=forwarded_msg.message_id)
     bot.send_message(msg.chat.id,text=text)
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
-
 
 #?#######################################################################
 #accept pic btn 
@@ -309,15 +302,17 @@ def account(msg : Message):
         return False
     markup_free_time=InlineKeyboardMarkup(row_width=2) 
     current_time=get_current_time()
-    # print(current_time)
     if compare_time("00:00",current_time) and compare_time(current_time,"02:00"):
         batten_test=InlineKeyboardButton(text=f"{cal_day(-1)} : {gregorian_to_jalali(cal_date(-1))}",callback_data=f"time_btn_-1")
         markup_free_time.add(batten_test)
     for i in range(7):
         batten_test=InlineKeyboardButton(text=f"{cal_day(i)} : {gregorian_to_jalali(cal_date(i))}",callback_data=f"time_btn_{i}")
         markup_free_time.add(batten_test)
+    batten_test=InlineKeyboardButton(text=f"رزرو یک هفته",callback_data=f"hi_week_reserve")
+    batten_test1=InlineKeyboardButton(text=f"رزرو یک ماه",callback_data=f"hi_month_reserve")
+    markup_free_time.add(batten_test,batten_test1)
 
-    text=f" امروز : <u>{cal_day(0)}</u>معادل : 📆<u>{gregorian_to_jalali(cal_date(0))}</u>📆\n {msg_select_day} "
+    text=f" امروز : <u>{cal_day(0)}</u> معادل : 📆<u>{gregorian_to_jalali(cal_date(0))}</u>📆\n {msg_select_day} "
     bot.send_message(chat_id=msg.chat.id,text=text,reply_markup=markup_free_time)
 
 ########
@@ -410,6 +405,21 @@ def handle_button_press(call:CallbackQuery):
             markup=markup_balance_low
             # bot.send_message(chat_id=user_id,text=f"برای شارژ حساب خود از دکمه '{user_acc_btn}' استفاده کنید")
         bot.edit_message_text(text=text,chat_id=call.message.chat.id,message_id=call.message.message_id,reply_markup=markup)
+#*###########
+# reserve_month
+@bot.callback_query_handler(func=lambda call: call.data.startswith("hi_week_reserve"))
+def handle_button_press(call :CallbackQuery):
+    buttons=[]
+    markup=InlineKeyboardMarkup()
+    for i in range (len(dayClockArray)):
+        btn_day_reserve=InlineKeyboardButton(text=dayClockArray[i],callback_data=f"day_{day}_{i}")
+        buttons.append(btn_day_reserve)
+    for i in range(0, len(buttons), 3):
+        markup.row(*buttons[i:i+3])
+    text="test"
+    bot.edit_message_text(text=text,chat_id=call.message.chat.id,message_id=call.message.message_id,reply_markup=markup)
+    
+
 #?##############################################
 # ساخت بنر
 @bot.callback_query_handler(func=lambda call: call.data== "make_banner")
@@ -672,7 +682,6 @@ def start(msg : Message):
             bot.send_message(chat_id=msg.chat.id,text=not_admin_text,reply_markup=markup_main)
 ##########################
 #* user list
-#todo : page limit 10 user 
 @bot.message_handler(func=lambda m:m.text == admin_btn_user_list)
 def user_list(msg : Message):
      if not check_is_admin(msg.from_user.id):
@@ -727,7 +736,7 @@ def get_user_info_admin(msg:Message):
     text=f"id: {user_id}\n{make_user_info(user_id=user_id,balance=balance,score=score,username=username)}"
     markup=make_admin_markup_user_info()
     bot.send_message(chat_id=msg.chat.id,text=text, reply_markup=markup)
-
+############3
 @bot.callback_query_handler(func=lambda call: call.data== admin_btn_delete_user)
 def handle_button_press(call :CallbackQuery):
     text=call.message.text
@@ -764,7 +773,7 @@ def msg_to_all(msg : Message):
     bot.send_message(chat_id=msg.chat.id,text="پیامی برای ارسال به همه برای من بنویسید")
     bot.set_state(user_id=msg.from_user.id,state=admin_state.message_to_all,chat_id=msg.chat.id)
 
-
+######
     
 @bot.message_handler(state =admin_state.message_to_all)
 def get_message_to_send(msg : Message):
@@ -791,7 +800,7 @@ def admin_btn_reserve(msg : Message):
     temp_date=get_current_date()
     text=f'برای مشاهده رزرو ها روز مد نظر خود را انتخاب کنید\nامروز:  {cal_day(0)}\n{temp_date} , {gregorian_to_jalali(temp_date)} \n {make_line}'
     bot.send_message(chat_id=msg.from_user.id,text=text,reply_markup=markup)
-
+#########3
 @bot.callback_query_handler(func=lambda call: call.data.startswith("admin_time_btn_"))
 def handle_button_press(call :CallbackQuery):
     date_index=int(call.data.split('_')[3])
@@ -896,12 +905,12 @@ def handle_button_press(call :CallbackQuery):
     btn2=InlineKeyboardButton(text="تمام تراکنش ها",callback_data=f"income_all_{month}")
     markup.add(btn1,btn2)
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
-
+#########3
 @bot.callback_query_handler(func=lambda call: call.data.startswith("income_approved_"))
 def handle_button_press(call :CallbackQuery):
 
     month=int(call.data.split('_')[2])
-    income=get_month_income_approved(year="2024",month=f"{month}")
+    income=get_transactions_of_month_approved_income(year="2024",month=f"{month}")
     text=f"""درامد شما در ماه {months[month]},{month} 
 برابر است با : <a>{income}</a> هزار تومان
     """
@@ -910,7 +919,7 @@ def handle_button_press(call :CallbackQuery):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("income_all_"))
 def handle_button_press(call :CallbackQuery):
     month=int(call.data.split('_')[2])
-    income=get_month_income(year="2024",month=f"{month}")
+    income=get_transactions_of_month_income(year="2024",month=f"{month}")
     text=f"""درامد شما در ماه 
     {months[month]},{month} 
 برابر است با : <a>{income}</a>
@@ -1103,7 +1112,7 @@ if __name__ == "__main__":
         
         #basic setting
         start_scheduler() # auto send post 
-        create_database() # DATA BASE
+        dbCreateDatabases() # DATA BASE
         bot.add_custom_filter(custom_filters.StateFilter(bot))
         
         #basic functions

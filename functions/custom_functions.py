@@ -172,34 +172,10 @@ def get_total_income():
     for reserve in reservations:
           amount=amount+reserve[2]
     return amount
-#########################################################
-def get_total_income_approved():
-    reservations=get_all_transactions()
-    amount=0;
-    for reserve in reservations:
-          if(reserve[1] is  True):
-            amount=amount+reserve[2]
-    return amount
-#########################################################
-def get_month_income(year,month): 
-    reservations=get_transactions_of_month(year=year,month=month)
-    amount=0;
-    for reserve in reservations:
-            amount=amount+reserve[2]
-    return amount
-#########################################################
-def get_month_income_approved(year,month):
-    reservations=get_transactions_of_month(year=year,month=month)
-    amount=0;
-    for reserve in reservations:
-          if(reserve[1] is True):
-            amount=amount+reserve[2]
-    return amount
 
 #########################################################
 
 def is_banner_ok(banner):
-    # print(banner)
     regex = re.compile(default_banner_pattern, re.MULTILINE | re.VERBOSE)
     return bool(regex.match(banner))
 
