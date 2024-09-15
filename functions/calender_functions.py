@@ -93,6 +93,24 @@ def compare_date(lower_eq,than):
     else:
         return False
 #########################################################
+def compare_date_is_eq(date1,date2):
+    time_format = "%Y-%m-%d"
+    time_A = datetime.strptime(date1, time_format).date()
+    time_B = datetime.strptime(date2, time_format).date()
+    if time_A==time_B :
+        return True
+    else:
+        return False
+#########################################################
+def date_is_past(past,than):
+    time_format = "%Y-%m-%d"
+    time_A = datetime.strptime(past, time_format).date()
+    time_B = datetime.strptime(than, time_format).date()
+    if time_A<time_B :
+        return True
+    else:
+        return False
+#########################################################
 def get_current_date():
     """ return : %Y-%m-%d """
     # دریافت تاریخ و ساعت لحظه‌ای

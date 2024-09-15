@@ -9,7 +9,7 @@ from database.db_transactions import *
 from database.db_info import *
 from database.db_reserve import *
 from database.db_users import create_user, decrease_balance, decrease_score, delete_user, get_all_users, get_users_count, user_exist, get_user_score, increase_balance, increase_score
-from functions.calender_functions import add_date, add_time, compare_date, compare_time, date_isEq, get_current_date, get_current_datetime, get_current_time
+from functions.calender_functions import add_date, add_time, compare_date, compare_time, date_is_past, date_isEq, get_current_date, get_current_datetime, get_current_time
 from functions.format_patern import text_is_cart_number
 from functions.log_functions import get_last_errors, get_latest_log_file, remove_old_logs, test_logError
 from functions.sched_functions import start_scheduler
@@ -384,7 +384,7 @@ def handle_button_press(call:CallbackQuery):
      user_id=call.from_user.id
      result_member = isInDB(user_id=user_id)
      if result_member:
-     #todo: make sure time is available
+    
         day=int(call.data.split('_')[1]) # it is a number in range(0 to 6)
         time=int(call.data.split('_')[2]) # its number , use 'time_of_day[time]'
         user_balance=int(get_user_balance(user_id=user_id))
@@ -551,50 +551,53 @@ def get_banner(msg : Message):    # Split the text into lines
     banner=msg.text
     user_id=msg.from_user.id
     username=msg.from_user.username
-    if is_banner_ok(banner=banner):
-        link=extract_link(banner)
-        is_duplicate=is_duplicate_link(link=link,date=date)
-        if is_duplicate:
-            bot.send_message(chat_id=msg.from_user.id,text="لینک شما تکراری است \n هر گروه فقط یک بار در روز اجازه تبلیغ دارد")
-            return False
-        #check time and day
-        currentDate=get_current_date()
-        if compare_date(lower_eq=date,than=currentDate): # date id past
-            logging.error("reserve date is past")
-            bot.send_message(chat_id=msg.from_user.id,text=msg_time_is_past)
-            return False
-        current_time=get_current_time()
-        current_time=add_time(initial_time=current_time,duration=time_duration_def)
-        banner_time=dayClockArray[time_index]
-        if compare_time(lower=banner_time,than=current_time) and date_isEq(date,currentDate):# time is past
-            logging.error("reserve time is past")
-            bot.send_message(chat_id=msg.from_user.id,text=msg_time_is_past)
-            return False
-        #end 
-        make_reserve_transaction(user_id=user_id,price=price,time_index=time_index,date=date,banner=banner,link=link)
-        if banner_need_approve:
-            markup=InlineKeyboardMarkup()
-            btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
-            btn2=InlineKeyboardButton(text="رد کردن",callback_data="banner_deny")
-            btn3=InlineKeyboardButton(text="تغییر بنر",callback_data="banner_custom")
-            markup.add(btn1,btn2)
-            markup.add(btn3)
-            forwarded_msg=bot.forward_message(chat_id=ADMIN_ID_LIST[0],from_chat_id=msg.chat.id,message_id=msg.message_id)
-            reserve_id=int(get_id_with_time_date_reserve(time=dayClockArray[time_index],date=date)[0])
-            text=make_banner_acc_msg_to_admin(username=username,user_id=user_id,time=time_index,day=day,price=price,reserve_id=reserve_id[0])
-            bot.send_message(chat_id=ADMIN_ID_LIST[0],text=text,reply_markup=markup,reply_to_message_id=forwarded_msg.message_id)
-            bot.send_message(chat_id=msg.from_user.id,text=forward_banner_text)
-        else:
-            #todo problem
-            result=get_id_with_time_date_reserve(time=dayClockArray[time_index],date=date)[0]
-            print(result)
-            reserve_id=int(result)
-            transactions_admin_accept_banner(user_id=user_id,time_index=time_index,reserve_id=reserve_id,date=date)
-            bot.send_message(chat_id=user_id,text=msg_banner_is_accepted) 
-
-
-    else:
+    if  not is_banner_ok(banner=banner):
         bot.send_message(msg.from_user.id,text=msg_banner_not_mach)
+        return False
+    
+    link=extract_link(banner)
+    is_duplicate=is_duplicate_link(link=link,date=date)
+    if is_duplicate:
+        bot.send_message(chat_id=msg.from_user.id,text="لینک شما تکراری است \n هر گروه فقط یک بار در روز اجازه تبلیغ دارد")
+        return False
+    
+    #? check time and day
+    currentDate=get_current_date()
+
+    if date_is_past(past=date,than=currentDate) : # date id past
+        logging.error("reserve date is past (date ,single)")
+        bot.send_message(chat_id=msg.from_user.id,text=msg_time_is_past)
+        return False
+    current_time=get_current_time()
+    current_time=add_time(initial_time=current_time,duration=time_duration_def)
+    banner_time=dayClockArray[time_index]
+    if compare_time(lower=banner_time,than=current_time) and date_isEq(date,currentDate):# time is past
+        logging.error("reserve time is past(time, single)")
+        bot.send_message(chat_id=msg.from_user.id,text=msg_time_is_past)
+        return False
+    #? end 
+    make_reserve_transaction(user_id=user_id,price=price,time_index=time_index,date=date,banner=banner,link=link)
+    if banner_need_approve:
+        markup=InlineKeyboardMarkup()
+        btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
+        btn2=InlineKeyboardButton(text="رد کردن",callback_data="banner_deny")
+        btn3=InlineKeyboardButton(text="تغییر بنر",callback_data="banner_custom")
+        markup.add(btn1,btn2)
+        markup.add(btn3)
+        forwarded_msg=bot.forward_message(chat_id=ADMIN_ID_LIST[0],from_chat_id=msg.chat.id,message_id=msg.message_id)
+        reserve_id=int(get_id_with_time_date_reserve(time=dayClockArray[time_index],date=date)[0])
+        text=make_banner_acc_msg_to_admin(username=username,user_id=user_id,time=time_index,day=day,price=price,reserve_id=reserve_id[0])
+        bot.send_message(chat_id=ADMIN_ID_LIST[0],text=text,reply_markup=markup,reply_to_message_id=forwarded_msg.message_id)
+        bot.send_message(chat_id=msg.from_user.id,text=forward_banner_text)
+    else:
+        #todo problem
+        result=get_id_with_time_date_reserve(time=dayClockArray[time_index],date=date)[0]
+        print(result)
+        reserve_id=int(result)
+        transactions_admin_accept_banner(user_id=user_id,time_index=time_index,reserve_id=reserve_id,date=date)
+        bot.send_message(chat_id=user_id,text=msg_banner_is_accepted) 
+
+
 ###
 #deny btn 
 @bot.callback_query_handler(func= lambda m:m.data =="banner_deny")
@@ -986,7 +989,7 @@ def handle_button_press(call :CallbackQuery):
         #*  check time
         current_date=get_current_date()
         current_time=get_current_time()
-        current_time=add_date(current_time,"00:30")
+        current_time=add_time(current_time,"00:30")
         cancel_able=True
         if compare_time(lower=reserve_time,than="02:01"):
             current_date=cal_date(1)
