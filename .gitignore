@@ -1,2 +1,2 @@
-# /configs/auth.py
-/logs
+logs/*
+!logs/.gitkeep
