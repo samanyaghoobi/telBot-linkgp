@@ -993,7 +993,7 @@ def handle_button_press(call :CallbackQuery):
         cancel_able=True
         if compare_time(lower=reserve_time,than="02:01"):
             current_date=cal_date(1)
-        if compare_date(lower_eq=current_date,than=date):
+        if compare_date(lower_eq=str(current_date),than=str(date)):
             if compare_time(lower=reserve_time,than="23:59") :
                 #? reserve time between 13:00 to 23:59
                 if compare_time(lower=current_time,than="23:59"):
