@@ -3,6 +3,7 @@ import mysql.connector # type: ignore
 from mysql.connector import Error
 from configs.auth import DB_CONFIG
 from configs.basic_info import *
+from database.db_functions import db_set_basic_info
 #!###################################################
 def dbCreateDatabases():
     try:
@@ -29,6 +30,9 @@ def dbCreateDatabases():
         if result:
             return False
         
+        result=db_set_basic_info()
+        if result:
+            return False
 
         logging.info("data base and tables are ok")
 

@@ -286,11 +286,18 @@ def is_duplicate_link(link,date):
         links=get_link_with_date_reserve(date)
         if links is None:
             return False
-        for l in links:
-            print(f"test : {link} : {l[0]}")
-            if link == l[0]:
+        for link in links:
+            if link == link[0]:
                 return True
         return False
     except (KeyError,TypeError) as e:
         print (f"is_duplicate_link : {e}")
         return True
+    
+###############3
+def format_cart_number_with_space(number):
+    # تبدیل عدد به رشته برای سهولت در دستکاری
+    number_str = str(number)
+    # افزودن فاصله به ازای هر ۴ رقم
+    formatted_number = ' '.join([number_str[i:i+4] for i in range(0, len(number_str), 4)])
+    return formatted_number

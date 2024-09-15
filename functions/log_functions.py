@@ -13,7 +13,7 @@ def get_latest_log_file():
     log_files.sort(key=os.path.getmtime)
     
     #last file
-    return log_files[-1]
+    return log_files[-2]
 
 #####################
 def remove_old_logs():

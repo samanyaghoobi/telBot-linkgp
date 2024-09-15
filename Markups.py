@@ -24,7 +24,7 @@ markup_main_admin.add(admin_btn_reserves)
 markup_main_admin.add(admin_btn_user_list,admin_btn_find_user_info)
 markup_main_admin.add(admin_btn_send_msg_to_all,admin_btn_check_income)
 
-def make_admin_markup_user_info():
+def markup_make_admin_user_info():
     markup=InlineKeyboardMarkup()
     btn1=InlineKeyboardButton(text=admin_btn_increase_balance,callback_data=admin_btn_increase_balance)
     btn2=InlineKeyboardButton(text=admin_btn_decrease_balance,callback_data=admin_btn_decrease_balance)
@@ -36,3 +36,13 @@ def make_admin_markup_user_info():
     markup.add(btn3,btn4)
     markup.add(btn5,btn6)
     return markup
+
+def markup_bot_info():
+    markup=InlineKeyboardMarkup()
+    btn1=InlineKeyboardButton(text=admin_btn_bot_info_change_cart,callback_data=admin_btn_bot_info_change_cart)
+    btn2=InlineKeyboardButton(text=admin_btn_restart_bot,callback_data=admin_btn_restart_bot)
+    markup.add(btn1)
+    markup.add(btn2)
+    return markup
+
+    

@@ -34,6 +34,22 @@ def db_info_getValue(name:str):
     except Error as e:
         logging.error(f" error db_info_getValue:  {e}  ")
 #######################################
+def db_info_exist(name:str):
+    sql= f"SELECT * FROM info WHERE name = '{name}' ;"
+    try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                    cursor.execute(sql)
+                    value=cursor.fetchone()
+                    cursor.close()
+                    connection.close()
+                    if value is not None:
+                        return True
+                    return False
+    except Error as e:
+        logging.error(f" error db_info_getValue:  {e}  ")
+#######################################
 def db_info_getAll():
     sql= f"SELECT * FROM info;"
     try:

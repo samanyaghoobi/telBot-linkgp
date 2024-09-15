@@ -56,6 +56,15 @@ def add_time(initial_time: str, duration: str) -> str:
     return new_time_str
 
 #########################################################
+def add_date(date_str:str, days:int):
+    # تبدیل رشته تاریخ به شیء datetime
+    date = datetime.strptime(date_str, '%Y-%m-%d')
+    # اضافه کردن تعداد روزهای مورد نظر
+    new_date = date + timedelta(days=days)
+    # تبدیل نتیجه به فرمت رشته ای
+    return new_date.strftime('%Y-%m-%d')
+
+#########################################################
 def date_isEq(time,eqTime):
     time_format = "%Y-%m-%d"
     time_A = datetime.strptime(time, time_format).date()
@@ -103,10 +112,10 @@ def get_current_datetime():
 #########################################################
 def cal_date(days):
     """make date of day
-    get (-1 to 6 ) return like 2024-08-05
-    -1 means yesterday 
-    0 mean today 
-    1 mean tomorrow
+    get (-1 to 6 ) return like 2024-08-05 
+    [-1 means yesterday ]
+    [0 mean today ]
+    [1 mean tomorrow]
     """
     return (datetime.now() + timedelta(days=days)).strftime("%Y-%m-%d")
 

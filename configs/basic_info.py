@@ -1,9 +1,4 @@
 
-CART_NUMBER=6037997493542279
-CART_NAME="سامان یعقوبی"
-CART_BANK="بانک ملی"
-CART_NUMBER_STRING='6037 9974 9354 2279'
-##############################################################
 #vars
 max_len_name=20
 max_len_member=8

@@ -11,6 +11,9 @@ class admin_state(StatesGroup):
     decrease_score=State()
     change_banner=State()
     change_amount_pic=State()
+    change_cart_name=State()
+    change_cart_number=State()
+    change_cart_bank_name=State()
 class user_state(StatesGroup): 
     pic_receipt = State()
     plan= State()
@@ -21,3 +24,4 @@ class banner_state(StatesGroup):
     description=State()
     link=State()
     banner=State()
+    week_reserve_get_banner=State()

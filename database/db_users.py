@@ -51,6 +51,20 @@ def get_all_users():
                      return users
     except Error as e:
         logging.error(f" error get_all_users:  {e}  ")
+############################
+def get_users_count():
+    sql=f"SELECT  COUNT(*) FROM users;"
+    try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+                     cursor.execute(sql)
+                     users=cursor.fetchone()
+                     cursor.close()
+                     connection.close()
+                     return users
+    except Error as e:
+        logging.error(f" error get_all_users:  {e}  ")
 ##################################################
 
 def get_user_balance(user_id):

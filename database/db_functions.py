@@ -4,6 +4,7 @@ from mysql.connector import Error
 
 from configs.auth import DB_CONFIG
 from configs.basic_info import db_hour_name,dayClockArray
+from database.db_info import db_info_exist, db_info_getValue, db_info_insert
 ###
 #! 
 def make_reserve_transaction(user_id,price,time_index,date,banner,link):
@@ -108,3 +109,39 @@ def db_convert_score(user_id:int,score_to_decrease:int,balance_to_increase:int):
         if connection.is_connected():
             cursor.close()
             connection.close()
+##############################################################333
+def db_set_new_cart(number:int,bank_name:int,owner:int):
+    try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor()  as cursor:
+
+                    connection.start_transaction()
+                    sql_number= f"UPDATE info SET value = '{number}' WHERE name = 'CART_NUMBER' ;"
+                    cursor.execute(sql_number)
+
+                    sql_name= f"UPDATE info SET value = '{owner}' WHERE name = 'CART_NAME' ;"
+                    cursor.execute(sql_name)
+
+                    sql_bank_name= f"UPDATE info SET value = '{bank_name}' WHERE name = 'CART_BANK' ;"
+                    cursor.execute(sql_bank_name)
+                    connection.commit()
+
+                    logging.info(" Transaction committed successfully")
+    except Error as e:
+        connection.rollback()
+        logging.error(f" Error occurred, rolling back - db_convert_score:  {e} ")
+    finally:
+        if connection.is_connected():
+            cursor.close()
+            connection.close()
+
+##############################################################333
+def db_set_basic_info():
+    find_any=db_info_exist(name='CART_NUMBER')
+    if not find_any:
+        db_info_insert(name='CART_NUMBER',value='6037997493542279')
+        db_info_insert(name='CART_NAME',value="سامان یعقوبی")
+        db_info_insert(name='CART_BANK',value="بانک ملی")
+        db_info_insert(name='banner_need_approve',value="0")
+    return True
