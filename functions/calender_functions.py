@@ -65,10 +65,10 @@ def add_date(date_str:str, days:int):
     return new_date.strftime('%Y-%m-%d')
 
 #########################################################
-def date_isEq(time,eqTime):
+def date_isEq(date_A,date_B):
     time_format = "%Y-%m-%d"
-    time_A = datetime.strptime(time, time_format).date()
-    time_B = datetime.strptime(eqTime, time_format).date()
+    time_A = datetime.strptime(date_A, time_format).date()
+    time_B = datetime.strptime(date_B, time_format).date()
     if time_A==time_B :
         return True
     else:

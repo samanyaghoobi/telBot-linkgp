@@ -439,7 +439,8 @@ def handle_button_press(call :CallbackQuery):
     bot.edit_message_text(text=text,chat_id=call.message.chat.id,message_id=call.message.message_id)
     with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
         data['time_index']=time_index
-        data['action_time']=current_time()
+        data['action_time']=current_time
+        data['action_date']=get_current_date()
     
 #get banner from user
 @bot.message_handler(state =banner_state.week_reserve_get_banner)
@@ -447,6 +448,7 @@ def get_banner(msg : Message):    # Split the text into lines
     with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
         time_index=data['time_index']
         action_time=data['action_time']
+        action_date=data['action_date']
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
     banner=msg.text
@@ -455,10 +457,11 @@ def get_banner(msg : Message):    # Split the text into lines
     
     date=get_current_date()
     current_time=get_current_time()
-    action_time=add_time(initial_time=action_time,duration="00:15")
-    if compare_time(lower=action_time,than=current_time):
-        bot.send_message(user_id,text=msg_to_late_to_reserve)
-        return False
+    current_time=add_time(initial_time=action_time,duration="00:05")
+    if date_isEq(action_date,action_date):
+        if compare_time(lower=action_time,than=current_time):
+            bot.send_message(user_id,text=msg_to_late_to_reserve)
+            return False
     if not is_banner_ok(banner=banner):
         bot.send_message(user_id,text=msg_banner_not_mach)
         return False
@@ -496,6 +499,7 @@ def get_banner(msg : Message):    # Split the text into lines
         markup.add(btn3)
         forwarded_msg=bot.forward_message(chat_id=ADMIN_ID_LIST[0],from_chat_id=msg.chat.id,message_id=msg.message_id)
         reserve_id=int(get_id_with_time_date_reserve(time=dayClockArray[time_index],date=date))
+        day=cal_day()#todo : what to do
         text=make_banner_acc_msg_to_admin(username=username,user_id=user_id,time=time_index,day=day,price=price,reserve_id=reserve_id[0])
         bot.send_message(chat_id=ADMIN_ID_LIST[0],text=text,reply_markup=markup,reply_to_message_id=forwarded_msg.message_id)
         bot.send_message(chat_id=msg.from_user.id,text=forward_banner_text)
@@ -1250,7 +1254,7 @@ def startMessageToAdmin(enable=True,disable_notification=True):
             last_3_errors=get_last_errors(latest_log_file)
             error_message = "\n".join(last_3_errors)
             with open(latest_log_file, 'rb') as log_file:
-                bot.send_document(admin, log_file,caption=f"{text}\n{error_message}")
+                bot.send_document(admin, log_file,caption=f"{text}\n{error_message}",disable_notification=disable_notification)
             logging.info(f"send last log to admin [{admin}] : {latest_log_file}")
         else:
             logging.info("هیچ فایل لاگی پیدا نشد.")
