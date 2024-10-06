@@ -6,7 +6,7 @@ from configs.basic_info import *
 ###############################################################333
 def create_channel_timing(date):
     sql= f"INSERT INTO channel_timing(record_date) VALUES ('{date}');"
-    timing=time_exist(date=date)
+    timing=db_channel_timing_time_exist(date=date)
     if not timing:
       try:
           with mysql.connector.connect(**DB_CONFIG) as connection:
@@ -18,6 +18,39 @@ def create_channel_timing(date):
                       connection.close()
       except Error as e:
           logging.error(f" error create_channel_timing:   {e} ")
+####################################################################
+def insert_channel_timing_for_custom_period(start_date, duration=7):# just 7 day
+    sql = f"""
+    INSERT INTO channel_timing (record_date)
+    SELECT date_add('{start_date}', INTERVAL n DAY)
+    FROM (SELECT 0 as n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6) AS days
+    WHERE date_add('{start_date}', INTERVAL n DAY) NOT IN (SELECT record_date FROM channel_timing)
+    LIMIT {duration};
+    """
+    
+    try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor() as cursor:
+                    cursor.execute(sql)
+                    connection.commit()
+    except Error as e:
+        logging.error(f"Error in insert_channel_timing_for_custom_period: {e}")
+
+####################################################################
+def db_channel_timing_time_exist(date):
+    # تابعی که بررسی می‌کند آیا رکورد برای آن تاریخ وجود دارد یا خیر
+    sql = f"SELECT COUNT(*) FROM channel_timing WHERE record_date = '{date}'"
+    try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor() as cursor:
+                    cursor.execute(sql)
+                    result = cursor.fetchone()
+                    return result[0] > 0  # اگر رکوردی وجود دارد، True برمی‌گرداند
+    except Error as e:
+        logging.error(f"Error in time_exist: {e}")
+        return False
 ####################################################################
 def update_channel_timing(time_index,userid,date):
     time=db_hour_name[time_index]
@@ -53,7 +86,7 @@ WHERE record_date = '{date}';"""
     except Error as e:
         logging.error(f" error get_channel_timing:   {e} ")
 #################################################################
-def time_exist(date):
+def db_channel_timing_time_exist(date):
     sql=f"""select record_date from channel_timing
 WHERE record_date = '{date}';"""
     try:

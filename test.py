@@ -1,14 +1,30 @@
-# import logging
-# import mysql.connector # type: ignore
-# from mysql.connector import Error
-# from configs.auth import DB_CONFIG
-# from configs.basic_info import dayClockArray
-# from database.db_creation import db_create_table_bot_info, dbCreateDatabases
-# from database.db_functions import db_set_basic_info
-# from database.db_timing import create_channel_timing, db_timing_get_free_time_for_period, get_is_free_time_for_days
-# from functions.calender_functions import add_time, cal_date, compare_time
-# from database.db_info import *
-# from functions.custom_functions import format_cart_number_with_space
-# # 
-# action_time=add_time(initial_time="23:20",duration="00:15")
-# if compare_time(lower=action_time,than="23:22"):
+from datetime import datetime, timedelta
+
+from database.db_reserve import db_reserve_get_links_within_week_reserve
+from database.db_timing import insert_channel_timing_for_custom_period
+from functions.calender_functions import cal_date
+date=cal_date(1)
+test=insert_channel_timing_for_custom_period(start_date=date,duration=9)
+# print(test)
+
+
+
+def compare_dates(time1: str, time2: str, add_minutes: int = None) -> bool:
+    # تبدیل رشته‌های ورودی به شیء datetime
+    format_str = "%Y-%m-%d %H:%M:%S"  # فرمت تاریخ و زمان
+    datetime1 = datetime.strptime(time1, format_str)
+    datetime2 = datetime.strptime(time2, format_str)
+
+    # اگر ورودی سوم (دقیقه) داده شده باشد، به datetime1 اضافه شود
+    if add_minutes is not None:
+        datetime1 += timedelta(minutes=add_minutes)
+
+    # مقایسه تاریخ‌ها و زمان‌ها
+    return datetime1 < datetime2
+
+# مثال استفاده
+time1 = "2024-02-01 12:29:00"
+time2 = "2024-02-01 13:00:00"
+
+result = compare_dates(time1, time2, 30)
+print(result) 

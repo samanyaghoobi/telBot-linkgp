@@ -174,7 +174,23 @@ WHERE id = {reserve_id};
                      return link
      except Error as e:
         logging.error(f" error:   {e}  ")
-###############################
+#########################################
+def db_reserve_get_links_within_week_reserve(interval:int=0,period:int=7):
+    sql = f"""
+    SELECT link 
+    FROM reserve 
+    WHERE date BETWEEN CURDATE()+ INTERVAL {interval} DAY AND CURDATE() + INTERVAL {period} DAY
+    """
+    try:
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor() as cursor:
+                    cursor.execute(sql)
+                    links = cursor.fetchall()
+                    return links
+    except Error as e:
+        logging.error(f"Error in get_links_within_week_reserve: {e}")
+
 #########################################
 #* get links of day with date 
 def get_link_with_date_reserve(date):
@@ -194,7 +210,7 @@ WHERE date = '{date}';
                      return link
      except Error as e:
         logging.error(f" error get_link_with_id_reserve:   {e}  ")
-####################################3
+####################################
 #* get  all 
 def get_all_reserves():
      sql=f"SELECT * FROM reserve;"

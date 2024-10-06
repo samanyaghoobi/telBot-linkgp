@@ -19,7 +19,7 @@ def get_pic_receipt_msg(index):
     return text
 
 def select_plan_msg(index):
-     text=select_plan_text=f"""{get_cart_info()}
+     text=f"""{get_cart_info()}
 💵 مبلغ انتخاب شده: {plans[index]} هزار تومان
 {make_line}
 برای ارسال عکس رسید از دکمه زیر استفاده کنید"""
@@ -40,12 +40,29 @@ def get_cart_info()->str:
      🏦 بانک : {CART_BANK}"""
      return cart_info_text
 ################################3
-def msg_week_msg_reservation_info(time:str,start_date:str,end_date:str)->str:
-
+def msg_week_msg_reservation_info(time:str,start_date:str,end_date:str,price,user_balance)->str:
      text=f"""<b>مشخصات رزرو هفتگی شما</b>
-⏰ساعت انتخاب شده : <u>{time}</u>
-📆تاریخ ارسال اولین لینک : <u>{start_date}</u>
-📆تاریخ ارسال اخرین لینک : <u>{end_date}</u>
+⏰ساعت انتخاب شده = <u>{time}</u>
+📆تاریخ ارسال اولین لینک = <u>{start_date}</u>
+📆تاریخ ارسال اخرین لینک = <u>{end_date}</u>
 {make_line}
-📝بنر خود را ارسال کنید📝"""
+💵 قیمت                = {price} هزار تومان
+💰 موجودی حساب = {user_balance} هزار تومان"""
+     return text
+################################3
+def make_reserve_info_text(time,date,day,price,user_balance):
+    return f"""
+📝 مشخصات پیش فاکتور رزرو شما:
+📅 روز     = {day}
+📆 تاریخ  = {date} 
+⏰ ساعت = {time}
+{make_line}
+💵 قیمت                = {price} هزار تومان
+💰 موجودی حساب = {user_balance} هزار تومان"""
+################################3
+def msg_create_income_info(income,month)->str:
+     text=f""" درامد شما در ماه 
+     📆{months[month]} ({month})📆 
+     💵 <b>{income}</b> هزار تومان 💵
+    """
      return text

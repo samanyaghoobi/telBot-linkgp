@@ -65,14 +65,17 @@ def add_date(date_str:str, days:int):
     return new_date.strftime('%Y-%m-%d')
 
 #########################################################
-def date_isEq(date_A,date_B):
-    time_format = "%Y-%m-%d"
-    time_A = datetime.strptime(date_A, time_format).date()
-    time_B = datetime.strptime(date_B, time_format).date()
-    if time_A==time_B :
-        return True
-    else:
-        return False
+def is_difference_less_than_15_minutes(date1_str, date2_str):
+    # تبدیل رشته‌ها به اشیاء datetime
+    format_str = "%Y-%m-%d %H:%M:%S"
+    date1 = datetime.strptime(date1_str, format_str)
+    date2 = datetime.strptime(date2_str, format_str)
+    
+    # محاسبه‌ی تفاوت زمانی
+    time_difference = abs(date1 - date2)
+    
+    # بررسی اینکه آیا اختلاف کمتر از ۱۵ دقیقه است
+    return time_difference <= timedelta(minutes=15)
 #########################################################
 def compare_time(lower,than):
     """return true if time1 < time2"""
@@ -83,6 +86,32 @@ def compare_time(lower,than):
         return True
     else:
         return False
+#########################################################
+def compare_dates(time1: str, time2: str, add_minutes: int = 30) -> bool:
+    # تبدیل رشته‌های ورودی به شیء datetime
+    format_str = "%Y-%m-%d %H:%M:%S"  # فرمت تاریخ و زمان
+    datetime1 = datetime.strptime(time1, format_str)
+    datetime2 = datetime.strptime(time2, format_str)
+
+    # اگر ورودی سوم (دقیقه) داده شده باشد، به datetime1 اضافه شود
+    if add_minutes is not None:
+        datetime1 += timedelta(minutes=add_minutes)
+
+    # مقایسه تاریخ‌ها و زمان‌ها
+    return datetime1 < datetime2
+
+#########################################################
+def get_next_day(date_str):
+    # تبدیل رشته تاریخ به شیء datetime
+    date_format = "%Y-%m-%d"
+    date_obj = datetime.strptime(date_str, date_format)
+    
+    # اضافه کردن یک روز به تاریخ
+    next_day = date_obj + timedelta(days=1)
+    
+    # تبدیل تاریخ جدید به رشته با فرمت اولیه
+    return next_day.strftime(date_format)
+
 #########################################################
 def compare_date(lower_eq,than):
     time_format = "%Y-%m-%d"

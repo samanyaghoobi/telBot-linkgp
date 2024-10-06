@@ -72,7 +72,7 @@ WHERE YEAR(record_date) = '{year}' AND MONTH(record_date) = '{month}';
                      income=cursor.fetchone()
                      cursor.close()
                      connection.close()
-                     return income
+                     return income[0]
      except Error as e:
         logging.error(f" error get_transactions_of_month:   {e} ")
 #########################################################

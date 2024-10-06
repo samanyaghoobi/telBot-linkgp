@@ -96,13 +96,6 @@ def create_pagination(users_list, page, per_page=10):
     return keyboard
 
 ###################################################
-def make_reserve_info_text(time,date,day,price):
-    return f"""مشخصات پیش فاکتور رزرو شما:
-    روز = {day}
-    تاریخ = {date} 
-    ساعت = {time}
-    قیمت = {price} هزار تومان
-    """
 def get_day_reserves(day):
     sql= f"SELECT * from channel_timing where record_date = '{cal_date(day)}'"
     with mysql.connector.connect(**DB_CONFIG) as connection:
