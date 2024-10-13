@@ -430,7 +430,7 @@ def handle_button_press(call :CallbackQuery):
 
     bot.edit_message_text(text=msg_available_time_for_week,chat_id=call.message.chat.id,message_id=call.message.message_id,reply_markup=markup)
     
-#set a temp reservation
+#set a temp reservation for weak
 @bot.callback_query_handler(func=lambda call: call.data.startswith("WeakReservations_"))
 def handle_button_press(call :CallbackQuery):
     bot.set_state(user_id=call.message.chat.id,state=banner_state.week_reserve_get_banner,chat_id=call.message.chat.id)
@@ -530,7 +530,7 @@ def handle_button_press(call:CallbackQuery):
 
      
 #?##############################################
-# تایید و ارسال بنر
+# make reserve
 @bot.callback_query_handler(func=lambda call: call.data.startswith("get_banner_"))
 def get_banner_from_user(call:CallbackQuery):
     user_id=call.from_user.id
@@ -552,7 +552,7 @@ def get_banner_from_user(call:CallbackQuery):
           data['time'] = time_index
           data['price'] = price
 #################
-#دریافت بنر و ایجاد رزرو
+#get banner
 @bot.message_handler(state =banner_state.banner)
 def get_banner(msg : Message):    # Split the text into lines
     with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
@@ -574,15 +574,17 @@ def get_banner(msg : Message):    # Split the text into lines
         bot.send_message(chat_id=msg.from_user.id,text=msg_link_isDuplicated)
         return False
     
-    #? check time and day
+    print('test')
+    #? check time and day 
     currentDateTime=get_current_datetime()
-    banner_DateTime=f"{date} {dayClockArray[time_index]}"
-    timeIsPast=compare_dates(time1=currentDateTime,time2=banner_DateTime)
+    banner_DateTime=f"{date} {dayClockArray[time_index]}:00"
+
+    timeIsPast=compare_dates(time1=banner_DateTime,time2=currentDateTime)
     if timeIsPast:
         bot.send_message(chat_id=user_id,text=msg_time_is_past)
         return False
     #? end 
-    make_reserve_transaction(user_id=user_id,price=price,time_index=time_index,start_date=date,banner=banner,link=link)
+    make_reserve_transaction(user_id=user_id,price=price,time_index=time_index,date=date,banner=banner,link=link)
     if banner_need_approve:
         markup=InlineKeyboardMarkup()
         btn1=InlineKeyboardButton(text="تایید",callback_data="banner_accept")
@@ -728,7 +730,8 @@ def convert_scores(call:CallbackQuery):
 
  
 ##########################
-#* see reserve users
+#* see reserve users 
+# #todo: have problem
 @bot.message_handler(func=lambda m:m.text == btn_user_find_reserve)
 def admin_btn_reserve(msg : Message):
     markup=InlineKeyboardMarkup()
@@ -739,7 +742,6 @@ def admin_btn_reserve(msg : Message):
         reserve_id=get_id_with_user_id_date_reserve(user_id=user_id,date=date)
         if reserve_id is not None:
             is_any=False
-
             reserve_id=int(reserve_id[0])
             time = str(get_info_with_reserve_id(reserve_id)[3])[:5]
             btn=InlineKeyboardButton(text=f"{cal_day(i)} : {time}, {gregorian_to_jalali(date)}",callback_data=f"user_reserveID_{reserve_id}")
@@ -978,6 +980,7 @@ def handle_button_press(call :CallbackQuery):
     text=get_banner_with_id_reserve(reserve_id=reserve_id)
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
 
+#cancel banner
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith(admin_btn_cancel_reserve))
 def handle_button_press(call :CallbackQuery):
@@ -990,32 +993,10 @@ def handle_button_press(call :CallbackQuery):
         time_index=DATA[4]
         reserve_time=dayClockArray[time_index]        
         #*  check time
-        current_date=get_current_date()
-        current_time=get_current_time()
-        current_time=add_time(current_time,"00:30")
-        cancel_able=True
-        if compare_time(lower=reserve_time,than="02:01"):
-            current_date=cal_date(1)
-        if compare_date(lower_eq=str(current_date),than=str(date)):
-            if compare_time(lower=reserve_time,than="23:59") :
-                #? reserve time between 13:00 to 23:59
-                if compare_time(lower=current_time,than="23:59"):
-                    #current time is between 13:00 to 02:00
-                    cancel_able= compare_time(lower=current_time,than=reserve_time)
-                else:
-                    #current time is between 00:00 to 02:00
-                    cancel_able=True
-            else:
-                #? reserve_time is between 00:00 to 02:00
-                if compare_time(lower=current_time,than="23:59"):
-                    #current time is between 13:00 to 00:00
-                    cancel_able=True #todo :is it ok?
-                else:
-                    #current time is between 00:00 to 02:00
-                    cancel_able= compare_time(lower=current_time,than=reserve_time)
-        else:
-            #date is past 
-            cancel_able=False
+        current_dateTime=get_current_datetime()
+        banner_dateTime=f"{date} {dayClockArray[time_index]}:00"
+        
+        cancel_able=compare_dates(time1=current_dateTime,time2=banner_dateTime)
 
         if not cancel_able:
             bot.send_message(call.message.chat.id,text=msg_to_late_to_cancel)
