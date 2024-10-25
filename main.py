@@ -25,7 +25,7 @@ from functions.custom_functions import *
 #todo reserve a month
 ###################################################################################
 state_storage=StateMemoryStorage()
-bot =TeleBot(token = TOKEN,state_storage=state_storage, parse_mode="HTML")
+bot =TeleBot(token = BOT_TOKEN,state_storage=state_storage, parse_mode="HTML")
 banner_need_approve=True
 disable_notification=True
 ########################################
@@ -450,7 +450,7 @@ def handle_button_press(call :CallbackQuery):
     if   user_balance<price*7:
         markup_balance_low=InlineKeyboardMarkup()
         btn=InlineKeyboardButton(text=balance_inc_btn,callback_data="user_balance_inc")
-        btn1=InlineKeyboardButton(text="موجودی حساب شما کافی نیست",callback_data=f"??????")
+        btn1=InlineKeyboardButton(tCext="موجودی حساب شما کافی نیست",callback_data=f"??????")
         markup_balance_low.add(btn1)
         markup_balance_low.add(btn)
         bot.edit_message_text(text=text,chat_id=call.message.chat.id,message_id=call.message.message_id,reply_markup=markup_balance_low)
@@ -1245,7 +1245,9 @@ if __name__ == "__main__":
         logging.basicConfig(filename=log_filename,
                     level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        logging.info("bot is running")
+        
+        logging.info("bot is Started")
+
         remove_old_logs()
         
         #basic setting
@@ -1265,3 +1267,6 @@ if __name__ == "__main__":
 
 
 
+#todo : disable bot
+#todo : change price
+#todo : time check
