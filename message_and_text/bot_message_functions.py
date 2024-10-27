@@ -1,4 +1,4 @@
-from database.db_info import db_info_getValue
+from database.db_setting import db_info_getValue
 from message_and_text.text import *
 from message_and_text.bot_messages import *
 ##############

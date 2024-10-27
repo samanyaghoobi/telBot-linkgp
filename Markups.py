@@ -10,16 +10,16 @@ markup_join=InlineKeyboardMarkup()
 button=InlineKeyboardButton(text="برسی عضویت",callback_data="proceed")
 markup_join.add(button)
 ###!user
-markup_main=ReplyKeyboardMarkup(resize_keyboard=True,row_width=2)
-markup_main.add(btn_free_rime)
-markup_main.add(btn_user_find_reserve)
-markup_main.add(btn_user_account_btn,btn_convert_score)
-markup_main.add(btn_support,btn_make_banner)
+markup_user_main=ReplyKeyboardMarkup(resize_keyboard=True,row_width=2)
+markup_user_main.add(markup_user_free_rime)
+markup_user_main.add(markup_user_find_reserve)
+markup_user_main.add(markup_user_account_btn,btn_convert_score)
+markup_user_main.add(btn_support,markup_user_make_banner)
 
 
 ###!admin
 markup_main_admin=ReplyKeyboardMarkup(resize_keyboard=True,row_width=2)
-markup_main_admin.add(btn_free_rime,admin_btn_bot_info)
+markup_main_admin.add(markup_user_free_rime,admin_btn_bot_setting)
 markup_main_admin.add(admin_btn_reserves)
 markup_main_admin.add(admin_btn_user_list,admin_btn_find_user_info)
 markup_main_admin.add(admin_btn_send_msg_to_all,admin_btn_check_income)
@@ -37,12 +37,17 @@ def markup_make_admin_user_info():
     markup.add(btn5,btn6)
     return markup
 
-def markup_bot_info():
+def markup_bot_setting(bot_is_enable:bool=True):
     markup=InlineKeyboardMarkup()
     btn1=InlineKeyboardButton(text=admin_btn_bot_info_change_cart,callback_data=admin_btn_bot_info_change_cart)
     btn2=InlineKeyboardButton(text=admin_btn_restart_bot,callback_data=admin_btn_restart_bot)
+    text_bot_is_enable="فعال ✅" if bot_is_enable else "غیرفعال ❌"
+    btn_enable_disable=InlineKeyboardButton(text=f"🤖 ربات {text_bot_is_enable}",callback_data=f"change_bot_enable_disable")
+
+
     markup.add(btn1)
     markup.add(btn2)
+    markup.add(btn_enable_disable)
     return markup
 
     

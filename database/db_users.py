@@ -4,7 +4,7 @@ from mysql.connector import Error
 from configs.auth import DB_CONFIG
 from configs.basic_info import *
 ########################################################################
-def create_user(userid,username):
+def db_user_insert(userid,username):
     user_exists=get_user_info(user_id=userid)
     if not user_exists:
         sql= f"INSERT INTO users(userid,username) VALUES ({userid},'{username}')"
@@ -208,3 +208,39 @@ def delete_user(user_id):
     except Error as e:
         logging.error(f" error delete_user:  {e}  ")
 
+##########################
+
+def db_user_is_exist(user_id:int):
+    """
+    Checks if a user with the given user_id exists in the 'users' table.
+    
+    Parameters:
+        user_id (int): The ID of the user to be checked.
+
+    Returns:
+        bool: True if the user exists, False otherwise.
+    """
+    try:
+        # Establish a database connection using your DB_CONFIG
+        with mysql.connector.connect(**DB_CONFIG) as connection:
+            if connection.is_connected():
+                with connection.cursor() as cursor:
+                    # Define the SQL query to check if the user exists
+                    sql_query = "SELECT COUNT(*) FROM users WHERE userid = %s"
+                    cursor.execute(sql_query, (user_id,))
+                    result = cursor.fetchone()
+                    
+                    # If the count is greater than 0, the user exists
+                    if result[0] > 0:
+                        return True
+                    return False
+
+    except Error as e:
+        # Log any database errors
+        logging.error(f"Database error in isInDB function: {e}")
+        return False
+
+    except Exception as e:
+        # Log any unexpected errors
+        logging.error(f"Unexpected error in isInDB function: {e}")
+        return False

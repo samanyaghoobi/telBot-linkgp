@@ -13,7 +13,7 @@ DB_CONFIG = {
 }
 
 ##############################################################
-CHANNELS_USERNAME=['@test12test123s']
+CHANNELS_USERNAME=['@linkGaweqP']
 SUPPORT_USERNAME='@linkgp_admin'
 SUPPORT_ID=340500740
 ADMIN_ID_LIST=[340500740,1054820423]

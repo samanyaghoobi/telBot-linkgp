@@ -21,7 +21,7 @@ def db_info_insert(name:str,value:str):
 
 #######################################
 def db_info_getValue(name:str):
-    sql= f"SELECT value FROM info WHERE name = '{name}' ;"
+    sql= f"SELECT value FROM bot_setting WHERE name = '{name}' ;"
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
             if connection.is_connected():
@@ -35,7 +35,7 @@ def db_info_getValue(name:str):
         logging.error(f" error db_info_getValue:  {e}  ")
 #######################################
 def db_info_exist(name:str):
-    sql= f"SELECT * FROM info WHERE name = '{name}' ;"
+    sql= f"SELECT * FROM bot_setting WHERE name = '{name}' ;"
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
             if connection.is_connected():
@@ -65,8 +65,8 @@ def db_info_getAll():
         logging.error(f" error db_info_getValue:  {e}  ")
 
 #######################################
-def db_info_changeValue(name:str,newValue:str):
-    sql= f"UPDATE info SET value = '{newValue}' WHERE name = 'name' ;"
+def db_info_updateValue(name:str,newValue:str):
+    sql= f"UPDATE bot_setting SET value = '{newValue}' WHERE name = 'name' ;"
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
             if connection.is_connected():
@@ -79,7 +79,7 @@ def db_info_changeValue(name:str,newValue:str):
         logging.error(f" error db_info_changeValue:  {e}  ")
 #######################################
 def db_info_delete(name:str):
-    sql= f"DELETE FROM info WHERE name = '{name}';"
+    sql= f"DELETE FROM bot_setting WHERE name = '{name}';"
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
             if connection.is_connected():
