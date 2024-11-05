@@ -1,7 +1,7 @@
-logs/*
-!logs/.gitkeep
-################################3
+/logs/*.log
 
+
+/test.py
 ########################## { https://github.com/github/gitignore/blob/main/Python.gitignore }
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -166,5 +166,3 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 test.py
-# /test.py
-./test.py

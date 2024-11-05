@@ -7,7 +7,7 @@ from database.db_reserve import get_link_with_date_reserve
 from database.db_transactions import get_all_transactions, get_transactions_of_month
 from database.db_users import get_user_balance, get_username
 from functions.calender_functions import cal_date, cal_day, gregorian_to_jalali
-from message_and_text.bot_messages import make_line
+from message_and_text.basic import make_line
 import re
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
 
@@ -240,9 +240,8 @@ def makeJoinChannelMarkup(user_id):
     markup=InlineKeyboardMarkup()
     channels = [item.replace('@', '') for item in CHANNELS_USERNAME]
     for index,channel in enumerate(CHANNELS_USERNAME,start=0):#make btn for plans
-        if not isMemberOf(user_id=user_id,channel=channel):
-            btn=InlineKeyboardButton(text=f"عضو شدن در {channels[index]}",url=f"https://t.me/{channels[index]}")
-            markup.add(btn)
+        btn=InlineKeyboardButton(text=f"عضو شدن در {channels[index]}",url=f"https://t.me/{channels[index]}")
+        markup.add(btn)
     button=InlineKeyboardButton(text="برسی عضویت",callback_data="proceed")
     markup.add(button)
     return markup

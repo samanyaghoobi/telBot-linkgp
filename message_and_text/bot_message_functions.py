@@ -1,6 +1,6 @@
 from database.db_setting import db_botSetting_getValue
-from message_and_text.text import *
 from message_and_text.bot_messages import *
+from message_and_text.basic import make_line
 ##############
 def make_user_info (username,user_id,balance,score):
      text=f"""👤 نام کاربری : <a href='tg://user?id={user_id}'>{username}</a>
