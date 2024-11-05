@@ -7,7 +7,6 @@ from database.db_reserve import get_link_with_date_reserve
 from database.db_transactions import get_all_transactions, get_transactions_of_month
 from database.db_users import get_user_balance, get_username
 from functions.calender_functions import cal_date, cal_day, gregorian_to_jalali
-from main import  isMemberOf
 from message_and_text.bot_messages import make_line
 import re
 from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove

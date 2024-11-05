@@ -3,7 +3,7 @@ from datetime import datetime
 from telebot import TeleBot , custom_filters,apihelper
 from configs.auth import *
 from database.db_creation import dbCreateDatabases
-from database.db_functions import db_set_new_cart, make_reserve_transaction_weak_reserve, transactions_admin_accept_banner, admin_deny_banner, db_convert_score, make_reserve_transaction, transactions_admin_accept_banner_weak_reserve
+from database.db_functions import db_set_basic_info, db_set_new_cart, make_reserve_transaction_weak_reserve, transactions_admin_accept_banner, admin_deny_banner, db_convert_score, make_reserve_transaction, transactions_admin_accept_banner_weak_reserve
 from database.db_timing import *
 from database.db_transactions import *
 from database.db_setting import *
@@ -11,7 +11,7 @@ from database.db_reserve import *
 from database.db_users import db_user_insert, db_user_is_exist, decrease_balance, decrease_score, delete_user, get_all_users, get_users_count, user_exist, get_user_score, increase_balance, increase_score
 from functions.calender_functions import add_date, add_time, compare_date, compare_dates, compare_time, date_is_past, compare_date_is_eq, get_current_date, get_current_datetime, get_current_time, is_difference_less_than_15_minutes
 from functions.format_patern import text_is_cart_number
-from functions.log_functions import get_last_errors, get_latest_log_file, remove_old_logs, test_logError
+from functions.log_functions import get_last_errors, get_latest_log_file, remove_old_logs
 from functions.sched_functions import start_scheduler
 from message_and_text.bot_message_functions import *
 from message_and_text.bot_messages import *
@@ -28,6 +28,10 @@ bot_is_enable=True
 #######################################
 banner_need_approve=True
 disable_notification=True
+#######################################* function 
+def toggle_bot_status():
+    global bot_is_enable
+    bot_is_enable = not bot_is_enable
 #######################################* function for Management
 def user_check_DB_and_membership(user_id, username, channels=CHANNELS_USERNAME, admin_id=SUPPORT_ID):
     """
@@ -44,16 +48,19 @@ def user_check_DB_and_membership(user_id, username, channels=CHANNELS_USERNAME, 
                     # User is not a member of the channel
                     markup = makeJoinChannelMarkup(user_id=user_id)
                     bot.send_message(chat_id=user_id, text=msg_not_member, reply_markup=markup)
+
                     return False
 
             except apihelper.ApiTelegramException as e:
+                bot.send_message(chat_id=user_id, text=msg_error_to_user)
+                
                 # Handle all Telegram API exceptions
                 if e.result.status_code == 403:  # Forbidden: Bot has no access to the channel
                     bot.send_message(chat_id=admin_id, 
                                      text=f"❗️ The bot has no access to channel {channel}. Please check the access.")
                 elif e.result.status_code == 400:  # Bad Request (e.g., invalid chat_id)
                     bot.send_message(chat_id=admin_id, 
-                                     text=f"⚠️ Error: Channel {channel} is invalid or user ID {user_id} is incorrect.")
+                                     text=f"⚠️ Error: Channel {channel} is invalid or user ID <code>{user_id}</code>is incorrect.")
                 else:
                     # Handle other API-related errors
                     bot.send_message(chat_id=admin_id, 
@@ -63,6 +70,9 @@ def user_check_DB_and_membership(user_id, username, channels=CHANNELS_USERNAME, 
                 return False
 
             except Exception as e:
+                bot.send_message(chat_id=user_id, text=msg_error_to_user)
+
+
                 # Handle general exceptions (e.g., network errors, system resource access issues)
                 bot.send_message(chat_id=admin_id, 
                                  text=f"⚠️ A system error occurred while checking channel {channel}: {str(e)}")
@@ -149,15 +159,16 @@ def user_check_DB_and_membership(user_id, username, channels=CHANNELS_USERNAME, 
 # /start
 @bot.message_handler(commands=['start'])
 def start(msg : Message):
-        bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
-        
-        username=msg.from_user.username
-        user_id=msg.from_user.id
-        user_check= user_check_DB_and_membership(user_id=user_id,username=username)
-        if not user_check:
-            return False
-        else:
-            bot.send_message(chat_id=msg.chat.id,text=msg_start_command,reply_markup=markup_user_main)
+    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
+    
+    username=msg.from_user.username
+    user_id=msg.from_user.id
+    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
+    if not user_check:
+        print('test')
+        return False
+    else:
+        bot.send_message(chat_id=msg.chat.id,text=msg_start_command,reply_markup=markup_user_main)
 ###############
 #callback query for join
 @bot.callback_query_handler(func=lambda call:call.data=="proceed")
@@ -833,9 +844,7 @@ def handle_button_press(call :CallbackQuery):
 
 
 
-#!#######################################################################
-#* admin part  
-
+#######################################* admin section  
 # /admin
 @bot.message_handler(commands=['admin'])
 def start(msg : Message):
@@ -843,22 +852,79 @@ def start(msg : Message):
             bot.send_message(chat_id=msg.chat.id,text="خوش امدی ادمین",reply_markup=markup_main_admin)
         else:
             bot.send_message(chat_id=msg.chat.id,text=not_admin_text,reply_markup=markup_user_main)
-##########################
+#########* bot setting 
+@bot.message_handler(func=lambda m:m.text == admin_btn_bot_setting)
+def bot_info(msg : Message):
+    if not check_is_admin(msg.from_user.id):
+           bot.send_message(chat_id=msg.chat.id,text=not_admin_text,reply_markup=markup_user_main)
+           return False
+    count_users=get_users_count()[0]
+    text=f"""تعداد کل کاربر های ربات : {count_users}
+    سازنده ربات : <a href='tg://user?id={ADMIN_ID_LIST[0]}'>{creator_username}</a>"""
+    markup=markup_bot_setting(bot_is_enable=bot_is_enable)
+    bot.send_message(msg.from_user.id,text=text,reply_markup=markup)
+###* change price 
+#todo working on it 
+@bot.callback_query_handler(func= lambda m:m.data ==admin_btn_bot_setting_change_price)
+def convertUserID(call:CallbackQuery):
+    bot.send_message(chat_id=call.message.chat.id,text=msg_change_price_min)
+    bot.set_state(user_id=call.message.chat.id,state=admin_state.change_price_min,chat_id=call.message.chat.id)
+## price min
+@bot.message_handler(state=admin_state.change_price_min)
+def message_handler(msg: Message):
+    try:
+        price_min = int(msg.text)  
+    except ValueError:
+        bot.send_message(chat_id=msg.chat.id, text=msg_not_a_int)
+        return 
+
+    bot.send_message(chat_id=msg.chat.id, text=msg_change_price_mid)
+    with bot.retrieve_data(msg.from_user.id, msg.chat.id) as data:
+        data['price_min'] = price_min
+    bot.set_state(user_id=msg.chat.id, state=admin_state.change_price_mid, chat_id=msg.chat.id)
+
+## price mid
+@bot.message_handler(state=admin_state.change_price_min)
+def message_handler(msg: Message):
+    try:
+        price_mid = int(msg.text)  
+    except ValueError:
+        bot.send_message(chat_id=msg.chat.id, text=msg_not_a_int)
+        return 
+
+    bot.send_message(chat_id=msg.chat.id, text=msg_change_price_max)
+    with bot.retrieve_data(msg.from_user.id, msg.chat.id) as data:
+        data['price_mid'] = price_mid
+    bot.set_state(user_id=msg.chat.id, state=admin_state.change_price_max, chat_id=msg.chat.id)
+
+## price max
+@bot.message_handler(state=admin_state.change_price_min)
+def message_handler(msg: Message):
+    try:
+        price_max = int(msg.text)  
+    except ValueError:
+        bot.send_message(chat_id=msg.chat.id, text=msg_not_a_int)
+        return 
+
+    bot.send_message(chat_id=msg.chat.id, text=msg_change_price_max)
+    with bot.retrieve_data(msg.from_user.id, msg.chat.id) as data:
+        price_mid= data['price_mid']
+        price_min=data['price_min']
+#todo save info in db
+###*bot enable/disable
 @bot.callback_query_handler(func= lambda m:m.data ==("change_bot_enable_disable"))
 def convertUserID(call:CallbackQuery):
     value= "0" if bot_is_enable else "1"
-    db_info_updateValue(name="bot_is_enable",newValue=value)
+    result=db_botSetting_updateValue(name="bot_is_enable",newValue=value)
+    if not result:
+        bot.send_message(chat_id=call.message.chat.id,text=msg_error_to_user)
+        return 
     toggle_bot_status()
     bot_status =['غیرفعال ❌','فعال ✅']
     text=f'ربات برای کاربران عادی {bot_status[int(value)]} شد'
     markup = markup_bot_setting(bot_is_enable=bot_is_enable)
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.id,text=text , reply_markup=markup)
-#########################
-def toggle_bot_status():
-    global bot_is_enable
-    bot_is_enable = not bot_is_enable
-##########################
-#* user list
+###* bot user_list
 @bot.message_handler(func=lambda m:m.text == admin_btn_user_list)
 def user_list(msg : Message):
      if not check_is_admin(msg.from_user.id):
@@ -868,13 +934,13 @@ def user_list(msg : Message):
      markup = create_pagination(users, 0)
      bot.send_message(chat_id=msg.chat.id,text=msg_userList,reply_markup=markup)
 
-###########
+#see other users
 @bot.callback_query_handler(func=lambda call: call.data.startswith(('prev', 'next')))
 def paginate(call):
     page = int(call.data.split('_')[1])
     users=get_all_users()
     bot.edit_message_reply_markup(chat_id=call.message.chat.id, message_id=call.message.message_id, reply_markup=create_pagination(users, page))
-###########
+#see a user
 @bot.callback_query_handler(func=lambda call: call.data.startswith("users_"))
 def handle_button_press(call :CallbackQuery):
     if not check_is_admin(int(call.from_user.id)):
@@ -890,67 +956,8 @@ def handle_button_press(call :CallbackQuery):
 
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text, reply_markup=markup)
 
-##########################
-#* restart_msg
-@bot.callback_query_handler(func=lambda call: call.data== admin_btn_restart_bot)
-def restart(call : CallbackQuery):
-    text=msg_bot_need_reboot
-    markup=ReplyKeyboardMarkup()
-    markup.add("/start")
-    users=get_all_users()
-    for user in users:
-        bot.send_message(user[0],text=text,reply_markup=markup)
-##########################
-#* find user
-@bot.message_handler(func=lambda m:m.text == admin_btn_find_user_info)
-def find_user(msg : Message):
-    admin_id=msg.from_user.id
-    bot.send_message(admin_id,"user_id کاربر مد نظر را ارسال کنید")
-    bot.set_state(user_id=msg.from_user.id,state=admin_state.find_user,chat_id=msg.chat.id)
-####
-@bot.message_handler(state=admin_state.find_user)
-def get_user_info_admin(msg:Message):
-    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
-    user_id = convert_to_english_number(msg.text)
-    result=user_exist(user_id=user_id)
-    if not result:
-        bot.send_message(chat_id=msg.from_user.id,text='کاربر در ربات وجود ندارد')
-        return False
-    user_id=int(msg.text)
-    balance=get_user_balance(user_id)
-    score=get_user_score(user_id)
-    username=get_username(user_id=user_id)
-    text=f"id: {user_id}\n{make_user_info(user_id=user_id,balance=balance,score=score,username=username)}"
-    markup=markup_make_admin_user_info()
-    bot.send_message(chat_id=msg.chat.id,text=text, reply_markup=markup)
-############3
-@bot.callback_query_handler(func=lambda call: call.data== admin_btn_delete_user)
-def handle_button_press(call :CallbackQuery):
-    text=call.message.text
-    try:
-        user_id=find_pattern_id(text)
-        delete_user(user_id)
-        markup=InlineKeyboardMarkup()
-        markup.add(InlineKeyboardButton(text="کاربر پاک شد",callback_data="2134"))
-        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text)
-    except Error as e:
-        logging.error(f"error delete a user: {e}")
-        bot.send_message(call.message.from_user.id,text="مجدد تلاش کنید کاربر پاک نشد")
-
-##########################
-#* bot setting
-@bot.message_handler(func=lambda m:m.text == admin_btn_bot_setting)
-def bot_info(msg : Message):
-    if not check_is_admin(msg.from_user.id):
-           bot.send_message(chat_id=msg.chat.id,text=not_admin_text,reply_markup=markup_user_main)
-           return False
-    count_users=get_users_count()[0]
-    text=f"""تعداد کل کاربر های ربات : {count_users}
-    سازنده ربات : <a href='tg://user?id={ADMIN_ID_LIST[0]}'>{creator_username}</a>"""
-    markup=markup_bot_setting(bot_is_enable=bot_is_enable)
-    bot.send_message(msg.from_user.id,text=text,reply_markup=markup)
-#######
-@bot.callback_query_handler(func=lambda call: call.data== admin_btn_bot_info_change_cart)
+#######* change card number
+@bot.callback_query_handler(func=lambda call: call.data== admin_btn_bot_setting_change_cart)
 def handle_button_press(call :CallbackQuery):
     user_id=call.from_user.id
     text=f"اطلاعت فعلی کارت \n{get_cart_info()}"
@@ -964,7 +971,7 @@ def msg_to_all(msg : Message):
     user_id=msg.from_user.id
 
     if not text_is_cart_number(text):
-        bot.send_message(user_id,"شماره کارت وارد شده صحیح نسیت دوباره تلاش کنید")
+        bot.send_message(user_id,msg_card_number_is_not_valid)
         return False
     bot.send_message(user_id,"نام مالک کارت را وارد کنید")
     bot.set_state(user_id=msg.from_user.id,state=admin_state.change_cart_name,chat_id=msg.chat.id)
@@ -1017,7 +1024,53 @@ def get_message_to_send(msg : Message):
     bot.send_message(chat_id=msg.chat.id,text="پیام شما ارسال شد", )
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
 
-   
+##########################
+#* restart_msg
+@bot.callback_query_handler(func=lambda call: call.data== admin_btn_restart_bot)
+def restart(call : CallbackQuery):
+    text=msg_bot_need_reboot
+    markup=ReplyKeyboardMarkup()
+    markup.add("/start")
+    users=get_all_users()
+    for user in users:
+        bot.send_message(user[0],text=text,reply_markup=markup)
+##########################
+#* find user
+@bot.message_handler(func=lambda m:m.text == admin_btn_find_user_info)
+def find_user(msg : Message):
+    admin_id=msg.from_user.id
+    bot.send_message(admin_id,"user_id کاربر مد نظر را ارسال کنید")
+    bot.set_state(user_id=msg.from_user.id,state=admin_state.find_user,chat_id=msg.chat.id)
+####
+@bot.message_handler(state=admin_state.find_user)
+def get_user_info_admin(msg:Message):
+    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
+    user_id = convert_to_english_number(msg.text)
+    result=user_exist(user_id=user_id)
+    if not result:
+        bot.send_message(chat_id=msg.from_user.id,text='کاربر در ربات وجود ندارد')
+        return False
+    user_id=int(msg.text)
+    balance=get_user_balance(user_id)
+    score=get_user_score(user_id)
+    username=get_username(user_id=user_id)
+    text=f"id: {user_id}\n{make_user_info(user_id=user_id,balance=balance,score=score,username=username)}"
+    markup=markup_make_admin_user_info()
+    bot.send_message(chat_id=msg.chat.id,text=text, reply_markup=markup)
+############3
+@bot.callback_query_handler(func=lambda call: call.data== admin_btn_delete_user)
+def handle_button_press(call :CallbackQuery):
+    text=call.message.text
+    try:
+        user_id=find_pattern_id(text)
+        delete_user(user_id)
+        markup=InlineKeyboardMarkup()
+        markup.add(InlineKeyboardButton(text="کاربر پاک شد",callback_data="2134"))
+        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=text)
+    except Error as e:
+        logging.error(f"error delete a user: {e}")
+        bot.send_message(call.message.from_user.id,text="مجدد تلاش کنید کاربر پاک نشد")
+
 ##########################
 #* see reserve admin
 @bot.message_handler(func=lambda m:m.text == admin_btn_reserves)
@@ -1332,14 +1385,16 @@ if __name__ == "__main__":
         logging.info("bot is Started")
 
         remove_old_logs()
-        bot_is_enable = True if db_info_getValue(name="bot_is_enable") == "1" else False
         
         #basic setting
         dbCreateDatabases() # DATA BASE
-
+        db_set_basic_info()
+     
         start_scheduler() # auto send post 
         bot.add_custom_filter(custom_filters.StateFilter(bot))
-        banner_need_approve=bool(db_info_getValue(name="banner_need_approve"))
+
+        bot_is_enable = True if db_botSetting_getValue(name="bot_is_enable") == "1" else False
+        banner_need_approve=bool(db_botSetting_getValue(name="banner_need_approve"))
         
         #basic functions
         startMessageToAdmin() # hello message
@@ -1354,6 +1409,9 @@ if __name__ == "__main__":
 
 #* todo : disable bot
 #* todo : reorder all of code
+#* todo :bot enable disable start every time with disable
+#todo : test bot all things
+
 #todo: move all info to db
 #todo : change price
 #todo : time check

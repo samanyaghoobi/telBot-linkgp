@@ -30,9 +30,6 @@ def dbCreateDatabases():
         if not result:
             return False
         
-        result=db_set_basic_info()
-        if not result:
-            return False
 
         logging.info("data base and tables are ok")
 

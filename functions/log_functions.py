@@ -37,10 +37,3 @@ def get_last_errors(log_file,errorLines=3):
     #get last errors
     return error_lines[-errorLines:] if len(error_lines) >= 3 else error_lines
 #####################
-def test_logError():
-    logging.error("test1")
-    logging.error("test2")
-    logging.error("test3")
-    logging.error("test4")
-    logging.error("test5")
-    logging.error("test6")

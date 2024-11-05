@@ -57,9 +57,11 @@ admin_btn_msg_user='ارسال پیام به کاربر'
 admin_btn_cancel_reserve='کنسل کردن رزرو'
 admin_btn_change_banner='تغییر بنر'
 #?###########################33
-#markup for bot info
-admin_btn_bot_info_change_cart="تغییر شماره کارت"
+#markup for bot setting
+admin_btn_bot_setting_change_cart="تغییر شماره کارت"
+admin_btn_bot_setting_change_price="تغییر قیمت"
 admin_btn_restart_bot="راه اندازی مجدد ربات"
+msg_card_number_is_not_valid="شماره کارت وارد شده صحیح نیست دوباره تلاش کنید"
 #?###########################33
 
 
@@ -83,3 +85,4 @@ msg_banner_not_mach=f"""🚫بنر ارسالی شما با الگوی کانا�
 restart_markup_text="/start"
 
 text_bot_is_disable="ربات غیر فعال است لطفا بعدا تلاش کنید"
+msg_error_to_user="مشکلی پیش آمده است لطفا دوباره تلاش کنید"
