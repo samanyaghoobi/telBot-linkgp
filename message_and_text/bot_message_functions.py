@@ -1,6 +1,6 @@
-from database.db_info import db_info_getValue
-from message_and_text.text import *
+from database.db_setting import db_botSetting_getValue
 from message_and_text.bot_messages import *
+from message_and_text.basic import make_line
 ##############
 def make_user_info (username,user_id,balance,score):
      text=f"""👤 نام کاربری : <a href='tg://user?id={user_id}'>{username}</a>
@@ -32,9 +32,9 @@ def make_change_score_text(score:int,convert_able:int,value:int):
 
 ################################3
 def get_cart_info()->str:
-     CART_NUMBER=db_info_getValue(name='CART_NUMBER')[0]
-     CART_NAME=db_info_getValue(name='CART_NAME')[0]
-     CART_BANK=db_info_getValue(name='CART_BANK')[0]
+     CART_NUMBER=db_botSetting_getValue(name='CART_NUMBER')[0]
+     CART_NAME=db_botSetting_getValue(name='CART_NAME')[0]
+     CART_BANK=db_botSetting_getValue(name='CART_BANK')[0]
      cart_info_text=f"""💳 شماره کارت : <code>{CART_NUMBER}</code>
      👤 مالک کارت : {CART_NAME} 
      🏦 بانک : {CART_BANK}"""

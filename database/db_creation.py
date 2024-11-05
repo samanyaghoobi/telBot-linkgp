@@ -15,24 +15,21 @@ def dbCreateDatabases():
             return False
         
         result=db_create_table_reserve()
-        if result:
+        if not result:
             return False
         
         result= db_create_table_transactions()
-        if result:
+        if not result:
             return False
         
         result=db_create_table_users()
-        if result:
+        if not result:
             return False
         
         result=db_create_table_bot_info()
-        if result:
+        if not result:
             return False
         
-        result=db_set_basic_info()
-        if result:
-            return False
 
         logging.info("data base and tables are ok")
 
@@ -186,10 +183,10 @@ def db_create_table_channel_timing():
 def db_create_table_bot_info():
     """
     """
-    sql=f"""CREATE TABLE IF NOT EXISTS info (
+    sql=f"""CREATE TABLE IF NOT EXISTS bot_setting (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULl DEFAULT 0,
-    value VARCHAR(255) NOT NULL);"""
+    value TEXT);"""
     try:
         with mysql.connector.connect(**DB_CONFIG) as connection:
             if connection.is_connected():

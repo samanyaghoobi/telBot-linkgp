@@ -4,7 +4,7 @@ from mysql.connector import Error
 
 from configs.auth import DB_CONFIG
 from configs.basic_info import db_hour_name,dayClockArray
-from database.db_info import db_info_exist, db_info_getValue, db_info_insert
+from database.db_setting import db_botSetting_exist, db_botSetting_getValue, db_botSetting_insert
 from functions.calender_functions import cal_date, get_next_day
 ###
 #! 
@@ -242,10 +242,15 @@ def db_set_new_cart(number:int,bank_name:int,owner:int):
 
 ##############################################################333
 def db_set_basic_info():
-    find_any=db_info_exist(name='CART_NUMBER')
-    if not find_any:
-        db_info_insert(name='CART_NUMBER',value='6037997493542279')
-        db_info_insert(name='CART_NAME',value="سامان یعقوبی")
-        db_info_insert(name='CART_BANK',value="بانک ملی")
-        db_info_insert(name='banner_need_approve',value="0")
+    find_any=db_botSetting_exist(name='CART_NUMBER')
+    if not find_any or find_any is None:
+        db_botSetting_insert(name='CART_NUMBER',value='6037997493542279')
+        db_botSetting_insert(name='CART_NAME',value="سامان یعقوبی")
+        db_botSetting_insert(name='CART_BANK',value="بانک ملی")
+
+        db_botSetting_insert(name='banner_need_approve',value="0")
+        
+        db_botSetting_insert(name="bot_is_enable",value="1")
+        db_botSetting_insert(name="main_admin",value="340500740")#@saaman
     return True
+
