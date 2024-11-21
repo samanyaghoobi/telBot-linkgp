@@ -1,6 +1,11 @@
 import logging
 from datetime import datetime
 from telebot import TeleBot , custom_filters,apihelper
+from telebot.storage import StateMemoryStorage
+from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
+from bot_functions.basic_command import command_admin, command_start
+from bot_functions.log import startMessageToAdmin
+from bot_functions.user_check import user_check_DB_and_membership
 from configs.auth import *
 from database.db_creation import dbCreateDatabases
 from database.db_functions import db_set_basic_info, db_set_new_cart, make_reserve_transaction_weak_reserve, transactions_admin_accept_banner, admin_deny_banner, db_convert_score, make_reserve_transaction, transactions_admin_accept_banner_weak_reserve
@@ -13,12 +18,11 @@ from functions.calender_functions import add_date, add_time, compare_date, compa
 from functions.format_patern import text_is_cart_number
 from functions.log_functions import get_last_errors, get_latest_log_file, remove_old_logs
 from functions.sched_functions import start_scheduler
+from functions.setting import init_logger
 from message_and_text.bot_message_functions import get_cart_info, get_pic_receipt_msg, make_change_score_text, make_reserve_info_text, make_user_info, msg_create_income_info, msg_week_msg_reservation_info, select_plan_msg
 from message_and_text.bot_messages import *
 from message_and_text.Markups import *
 from states import *
-from telebot.storage import StateMemoryStorage
-from telebot.types import InlineKeyboardButton ,InlineKeyboardMarkup,ReplyKeyboardMarkup,KeyboardButton,Message,CallbackQuery,ReplyKeyboardRemove
 from functions.custom_functions import *
 #######################################
 state_storage=StateMemoryStorage()
@@ -31,150 +35,18 @@ disable_notification=True
 def toggle_bot_status():
     global bot_is_enable
     bot_is_enable = not bot_is_enable
-#######################################* function for Management
-def user_check_DB_and_membership(user_id, username, channels=CHANNELS_USERNAME, admin_id=SUPPORT_ID):
-    """
-    Checks if the user is a member of required channels and if the user exists in the database.
-    Sends appropriate messages and markup in case of issues.
-    """
-    try:
-        # Step 1: Check if the user is a member of the specified channels
-        for channel in channels:
-            try:
-                # Check if the user is a member of the current channel
-                is_member = bot.get_chat_member(chat_id=channel, user_id=user_id)
-                if is_member.status in ['left', 'kicked']:
-                    # User is not a member of the channel
-                    markup = makeJoinChannelMarkup(user_id=user_id)
-                    bot.send_message(chat_id=user_id, text=msg_error_not_member, reply_markup=markup)
-
-                    return False
-
-            except apihelper.ApiTelegramException as e:
-                bot.send_message(chat_id=user_id, text=msg_error_to_user)
-                
-                # Handle all Telegram API exceptions
-                if e.result.status_code == 403:  # Forbidden: Bot has no access to the channel
-                    bot.send_message(chat_id=admin_id, 
-                                     text=f"❗️ The bot has no access to channel {channel}. Please check the access.")
-                elif e.result.status_code == 400:  # Bad Request (e.g., invalid chat_id)
-                    bot.send_message(chat_id=admin_id, 
-                                     text=f"⚠️ Error: Channel {channel} is invalid or user ID <code>{user_id}</code>is incorrect.")
-                else:
-                    # Handle other API-related errors
-                    bot.send_message(chat_id=admin_id, 
-                                     text=f"⚠️ Error checking channel {channel} for user {user_id}: {e.description}")
-                    logging.error(f"Error checking channel {channel} for user {user_id}: {e}")
-
-                return False
-
-            except Exception as e:
-                bot.send_message(chat_id=user_id, text=msg_error_to_user)
-
-
-                # Handle general exceptions (e.g., network errors, system resource access issues)
-                bot.send_message(chat_id=admin_id, 
-                                 text=f"⚠️ A system error occurred while checking channel {channel}: {str(e)}")
-                logging.error(f"Unexpected error checking channel {channel} for user {user_id}: {e}")
-                return False
-
-        # Step 2: Check if the user is already in the database
-        if not db_user_is_exist(user_id=user_id):
-            # If not in the database, attempt to create a new user entry
-            db_user_insert(userid=user_id, username=username)
-            result = db_user_is_exist(user_id=user_id)
-            if not result:
-                # User creation failed; send appropriate message with restart option
-                markup = ReplyKeyboardMarkup(resize_keyboard=True)
-                markup.add(markup_restart_text)
-                bot.send_message(chat_id=user_id, text=msg_error_not_in_db, reply_markup=markup)
-                return False
-
-        return True
-
-    except Exception as e:
-        # Catch any unexpected errors and log them
-        logging.error(f"Unexpected error in user check and membership function for user {user_id}: {e}")
-        bot.send_message(chat_id=admin_id, 
-                         text=f"⚠️ An unexpected error occurred for user {user_id}: {str(e)}")
-        return False
-#######################################
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ########################################* USER Section ( markup and call back data and .. )
 # /start
 @bot.message_handler(commands=['start'])
 def start(msg : Message):
-    bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
-    
-    username=msg.from_user.username
-    user_id=msg.from_user.id
-    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
-    if not user_check:
-        print('test')
-        return False
-    else:
-        bot.send_message(chat_id=msg.chat.id,text=msg_start_command,reply_markup=markup_user_main)
+    command_start(bot=bot,msg=msg)
 ###############
 #callback query for join
 @bot.callback_query_handler(func=lambda call:call.data=="proceed")
 def proceed (call :CallbackQuery):
     user_id=call.message.chat.id
     username=call.from_user.username
-    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
+    user_check= user_check_DB_and_membership(bot=bot,user_id=user_id,username=username)
     if user_check:
         bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.message_id)
         bot.send_message(chat_id=user_id,text=msg_joined,reply_markup=markup_user_main)
@@ -186,7 +58,7 @@ def start(msg : Message):
 
     user_id=msg.chat.id
     username=msg.from_user.username
-    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
+    user_check= user_check_DB_and_membership(bot=bot,user_id=user_id,username=username)
 
     if not user_check:
         return False
@@ -275,7 +147,7 @@ def account(msg : Message):
 
     user_id=msg.from_user.id
     username=msg.from_user.username
-    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
+    user_check= user_check_DB_and_membership(bot=bot,user_id=user_id,username=username)
     if not user_check:
         return False
 
@@ -298,7 +170,7 @@ def user_balance_inc(call : CallbackQuery):
 
     user_id=call.from_user.id
     username=call.from_user.username
-    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
+    user_check= user_check_DB_and_membership(bot=bot,user_id=user_id,username=username)
     if not user_check:
         return False
     markup=InlineKeyboardMarkup()
@@ -312,7 +184,7 @@ def user_balance_inc(call : CallbackQuery):
 def handle_button_press(call :CallbackQuery):
     user_id=call.from_user.id
     username=call.from_user.username
-    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
+    user_check= user_check_DB_and_membership(bot=bot,user_id=user_id,username=username)
     if not user_check:
         return False
     index=int(call.data.split('_')[1])
@@ -327,7 +199,7 @@ def handle_button_press(call :CallbackQuery):
 def handle_button_press(call:CallbackQuery):
     user_id=call.from_user.id
     username=call.from_user.username
-    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
+    user_check= user_check_DB_and_membership(bot=bot,user_id=user_id,username=username)
     if not user_check:
         return False
     index=int(call.data.split('_')[2])
@@ -344,7 +216,7 @@ def handle_button_press(call:CallbackQuery):
 def forward(msg : Message):
     user_id=msg.from_user.id
     username=msg.from_user.username
-    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
+    user_check= user_check_DB_and_membership(bot=bot,user_id=user_id,username=username)
     if not user_check:
         return False
     text=f"رسید شما برای ادمین ارسال شد و تا ساعاتی دیگر مورد تایید قرار میگرد \n و پس از ان حساب شما شارژ می شود"
@@ -453,7 +325,7 @@ def account(msg : Message):
 
     user_id=msg.from_user.id
     username=msg.from_user.username
-    user_check= user_check_DB_and_membership(user_id=user_id,username=username)
+    user_check= user_check_DB_and_membership(bot=bot,user_id=user_id,username=username)
     if not user_check:
         return False
     markup_free_time=InlineKeyboardMarkup(row_width=2) 
@@ -691,44 +563,49 @@ def get_banner_from_user(call:CallbackQuery):
     bot.send_message(text=msg_pls_send_banner,chat_id=call.message.chat.id)
 
     bot.set_state(user_id=call.message.chat.id,state=banner_state.banner,chat_id=call.message.chat.id)
-
+    current_time_date=get_current_datetime()
     with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
         data['day'] = day
         data['date'] = cal_date(day)
         data['time'] = time_index
         data['price'] = price
+        data['current_time_date']=current_time_date
 #################
 #get banner
 @bot.message_handler(state =banner_state.banner)
 def get_banner(msg : Message):    # Split the text into lines
     with bot.retrieve_data(msg.chat.id, msg.chat.id) as data:
-          day=data['day'] 
-          date=data['date'] 
-          time_index=data['time'] 
-          price=data['price'] 
+        day=data['day'] 
+        date=data['date'] 
+        time_index=data['time'] 
+        price=data['price'] 
+        selection_time_date=data['current_time_date']
+
+
     bot.delete_state(user_id= msg.from_user.id,chat_id=msg.chat.id)
     banner=msg.text
     user_id=msg.from_user.id
     username=msg.from_user.username
+
     if  not is_banner_ok(banner=banner):
         bot.send_message(msg.from_user.id,text=msg_error_banner_not_mach)
         return False
     
     link=extract_link(banner)
     is_duplicate=is_duplicate_link(link=link,date=date)
+
     if is_duplicate:
         bot.send_message(chat_id=msg.from_user.id,text=msg_error_link_isDuplicated)
         return False
     
-    print('test')
     #? check time and day 
     currentDateTime=get_current_datetime()
-    banner_DateTime=f"{date} {dayClockArray[time_index]}:00"
+    # banner_DateTime=f"{date} {dayClockArray[time_index]}:00"
 
-    timeIsPast=compare_dates(time1=banner_DateTime,time2=currentDateTime)
+    timeIsPast=compare_dates(time1=selection_time_date,time2=currentDateTime)
     if timeIsPast:
         bot.send_message(chat_id=user_id,text=msg_error_time_is_past)
-        return False
+        return False  
     #? end 
     make_reserve_transaction(user_id=user_id,price=price,time_index=time_index,date=date,banner=banner,link=link)
     if banner_need_approve:
@@ -853,10 +730,7 @@ def make_banner(msg : Message):
 # /admin
 @bot.message_handler(commands=['admin'])
 def start(msg : Message):
-        if check_is_admin(msg.from_user.id):
-            bot.send_message(chat_id=msg.chat.id,text="خوش امدی ادمین",reply_markup=markup_main_admin)
-        else:
-            bot.send_message(chat_id=msg.chat.id,text=msg_error_not_admin,reply_markup=markup_user_main)
+    command_admin(bot=bot,msg=msg)
 #########* bot setting 
 @bot.message_handler(func=lambda m:m.text == markup_admin_bot_setting)
 def bot_info(msg : Message):
@@ -872,6 +746,7 @@ def bot_info(msg : Message):
 #todo working on it 
 @bot.callback_query_handler(func= lambda m:m.data == markup_admin_bot_setting_change_price)
 def convertUserID(call:CallbackQuery):
+    bot.send_message(chat_id=call.message.chat.id)
     bot.send_message(chat_id=call.message.chat.id,text=msg_change_price_min)
     bot.set_state(user_id=call.message.chat.id,state=admin_state.change_price_min,chat_id=call.message.chat.id)
 ## price min
@@ -916,6 +791,7 @@ def message_handler(msg: Message):
         price_mid= data['price_mid']
         price_min=data['price_min']
 #todo save info in db
+
 ###*bot enable/disable
 @bot.callback_query_handler(func= lambda m:m.data ==("change_bot_enable_disable"))
 def convertUserID(call:CallbackQuery):
@@ -1354,60 +1230,36 @@ def send_scheduled_message():
             
  
 ########################################
-#* restart  msg
-def startMessageToAdmin(enable=True,disable_notification=disable_notification):
-    if not enable:
-        return False
 
-    text=f'{msg_restart} \n 🚫{get_current_datetime()}🚫'
-
-    #get last log    
-    latest_log_file = get_latest_log_file()
-
-    for admin in ADMIN_ID_LIST:#send for all admins
-        if latest_log_file:
-            last_3_errors=get_last_errors(latest_log_file)
-            error_message = "\n".join(last_3_errors)
-            with open(latest_log_file, 'rb') as log_file:
-                bot.send_document(admin, log_file,caption=f"{text}\n{error_message}",disable_notification=disable_notification)
-            logging.info(f"send last log to admin [{admin}] : {latest_log_file}")
-        else:
-            logging.info("هیچ فایل لاگی پیدا نشد.")
-            bot.send_message(chat_id=admin,text=f"{text}\n ⛔️فایل log وجود ندارد⛔️",disable_notification=disable_notification)  
 #################################
 def send_bot_is_disable_text_to_user(user_id):
     bot.send_message(chat_id=user_id,text=msg_error_bot_is_disable)
 #*#######################################################################################################
 if __name__ == "__main__":
     try:
-        #log init
-        log_filename = f"./logs/output_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
-        
-        logging.basicConfig(filename=log_filename,
-                    level=logging.INFO,
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        
-        logging.info("bot is Started")
+        init_logger()
 
         remove_old_logs()
-        
+
         #basic setting
         dbCreateDatabases() # DATA BASE
         db_set_basic_info()
      
         start_scheduler() # auto send post 
+        
         bot.add_custom_filter(custom_filters.StateFilter(bot))
 
         bot_is_enable = True if db_botSetting_getValue(name="bot_is_enable") == "1" else False
         banner_need_approve=True if db_botSetting_getValue(name="banner_need_approve") == "1" else False
-        print(f"banner_need_approve:{banner_need_approve}")
+      
         #basic functions
-        startMessageToAdmin() # hello message
+        startMessageToAdmin(disable_notification=disable_notification,bot=bot) # hello message
         
         
         bot.polling() # keep bot running
 
     except Exception as e:
+        print(f"error in main : {e}")
         logging.error(f"error in main : {e}")
 
 
@@ -1415,8 +1267,10 @@ if __name__ == "__main__":
 #* todo : disable bot
 #* todo : reorder all of code
 #* todo :bot enable disable start every time with disable
-#todo : test bot all things
 
+# todo :bot setting have problem
+#todo : test bot all things
+# todo : organizing the code 
 #todo: move all info to db
 #todo : change price
 #todo : time check

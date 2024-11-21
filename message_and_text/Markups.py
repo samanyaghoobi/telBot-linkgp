@@ -43,16 +43,16 @@ def markup_make_admin_user_info():
 def markup_bot_setting(bot_is_enable:bool=True):
     markup=InlineKeyboardMarkup()
     change_card_number=InlineKeyboardButton(text=markup_admin_bot_setting_change_cart,callback_data=markup_admin_bot_setting_change_cart)
-    restart_bot=InlineKeyboardButton(text=markup_admin_bot_setting_restart_bot,callback_data=markup_admin_bot_setting_restart_bot)
+    # restart_bot=InlineKeyboardButton(text=markup_admin_bot_setting_restart_bot,callback_data=markup_admin_bot_setting_restart_bot)
     text_bot_is_enable="فعال ✅" if bot_is_enable else "غیرفعال ❌"
     btn_enable_disable=InlineKeyboardButton(text=f"🤖 ربات {text_bot_is_enable}",callback_data=f"change_bot_enable_disable")
 
-    change_card_number=InlineKeyboardButton(text=markup_admin_bot_setting_change_price,callback_data=markup_admin_bot_setting_change_price)
+    change_price=InlineKeyboardButton(text=markup_admin_bot_setting_change_price,callback_data=markup_admin_bot_setting_change_price)
 
     markup.add(change_card_number)
-    markup.add(restart_bot)
+    markup.add(change_price)
     markup.add(btn_enable_disable)
-    markup.add(change_card_number)
+    # markup.add(restart_bot)
     return markup
 
     

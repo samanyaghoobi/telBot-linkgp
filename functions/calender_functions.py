@@ -88,6 +88,7 @@ def compare_time(lower,than):
         return False
 #########################################################
 def compare_dates(time1: str, time2: str, add_minutes: int = 30) -> bool:
+    """%Y-%m-%d %H:%M:%S"""
     # تبدیل رشته‌های ورودی به شیء datetime
     format_str = "%Y-%m-%d %H:%M:%S"  # فرمت تاریخ و زمان
     datetime1 = datetime.strptime(time1, format_str)
