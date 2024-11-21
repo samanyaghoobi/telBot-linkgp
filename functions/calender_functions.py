@@ -150,12 +150,22 @@ def get_current_date():
     return date_time_str
 
 #########################################################
-def get_current_datetime():
-    """ return : %Y-%m-%d %H:%M:%S """
+def get_current_datetime(minutes_to_add=0):
+    """
+    Get the current date and time with an optional addition of minutes.
+    
+    Args:
+        minutes_to_add (int): Number of minutes to add to the current time. Default is 0.
+    
+    Returns:
+        str: Current date and time as a string in the format "%Y-%m-%d %H:%M:%S".
+    """
     # دریافت تاریخ و ساعت لحظه‌ای
     now = datetime.now()
+    # افزودن دقیقه‌های مشخص شده به زمان فعلی
+    adjusted_time = now + timedelta(minutes=minutes_to_add)
     # تبدیل به رشته با فرمت YYYY-MM-DD HH:MM:SS
-    date_time_str = now.strftime("%Y-%m-%d %H:%M:%S")
+    date_time_str = adjusted_time.strftime("%Y-%m-%d %H:%M:%S")
     return date_time_str
 #########################################################
 def cal_date(days):

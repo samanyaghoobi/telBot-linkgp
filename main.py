@@ -599,10 +599,9 @@ def get_banner(msg : Message):    # Split the text into lines
         return False
     
     #? check time and day 
-    currentDateTime=get_current_datetime()
+    currentDateTime=get_current_datetime(minutes_to_add=30)
     # banner_DateTime=f"{date} {dayClockArray[time_index]}:00"
-
-    timeIsPast=compare_dates(time1=selection_time_date,time2=currentDateTime)
+    timeIsPast=compare_dates(time1=currentDateTime,time2= selection_time_date)
     if timeIsPast:
         bot.send_message(chat_id=user_id,text=msg_error_time_is_past)
         return False  
@@ -1008,14 +1007,16 @@ def handle_button_press(call :CallbackQuery):
         time_index=DATA[4]
         reserve_time=dayClockArray[time_index]        
         #*  check time
-        current_dateTime=get_current_datetime()
-        banner_dateTime=f"{date} {dayClockArray[time_index]}:00"
-        
-        cancel_able=compare_dates(time1=current_dateTime,time2=banner_dateTime)
+        is_admin=check_is_admin(user_id=call.message.chat.id)
+        if not  is_admin:
+            current_dateTime=get_current_datetime()
+            banner_dateTime=f"{date} {dayClockArray[time_index]}:00"
+            
+            cancel_able=compare_dates(time1=current_dateTime,time2=banner_dateTime)
 
-        if not cancel_able:
-            bot.send_message(call.message.chat.id,text=msg_error_to_late_to_cancel)
-            return False
+            if not cancel_able:
+                bot.send_message(call.message.chat.id,text=msg_error_to_late_to_cancel)
+                return False
         #* end check time
         admin_deny_banner(user_id=user_id,price=price,time_index=time_index,date=date,reserve_id=reserve_id)
         markup=InlineKeyboardMarkup()
