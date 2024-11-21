@@ -1,4 +1,4 @@
-markup_restart_text="/start"
+text_markup_restart="/start"
 make_line="-----------------------------------------------------------------------"
 
 ############ markup text's
@@ -26,6 +26,12 @@ markup_admin_bot_setting_change_cart = "💳 تغییر شماره کارت"
 markup_admin_bot_setting_restart_bot = "🔄 راه‌اندازی مجدد ربات"
 markup_admin_bot_setting_change_price = "💲 تغییر مبلغ بنرها"
 
+#for start message 
+MSG_NO_LOG_FILE = "⛔️فایل log وجود ندارد⛔️"
+MSG_LOG_SENT = "Log file sent to admin"
+MSG_NO_ERRORS_FOUND = "هیچ فایل لاگی پیدا نشد."
+MSG_RESTART = "ربات ری‌استارت شده است:"
+MSG_ERROR_CAPTION = "خطاهای اخیر:"
 
 
 

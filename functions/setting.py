@@ -1,5 +1,7 @@
 
+from datetime import datetime
 import json
+import logging
 #######################
 SETTINGS_FILE_NAME = "settings.json"
 defaultSetting = {
@@ -21,3 +23,13 @@ def load_settings():
     except FileNotFoundError:
         save_settings(defaultSetting)
         return defaultSetting
+#######################
+def init_logger():
+        #log init
+        log_filename = f"./logs/output_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.log"
+        
+        logging.basicConfig(filename=log_filename,
+                    level=logging.INFO,
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        
+        logging.info("bot is Started")
