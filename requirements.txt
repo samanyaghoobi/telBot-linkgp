@@ -1,5 +1,6 @@
 schedule
-telebot
+# telebot # removed
 mysql-connector-python
 convertdate
 python-dotenv
+pyTelegramBotAPI
