@@ -1,6 +1,6 @@
 import mysql.connector
 from mysql.connector import Error
-from bot.config import DB_CONFIG
+from config import DB_CONFIG
 
 def db_execution(sql:str):
     try:

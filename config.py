@@ -1,7 +1,8 @@
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
+
 
 TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
 TELEGRAM_PROXY_URL = os.getenv("TELEGRAM_PROXY_URL", "")

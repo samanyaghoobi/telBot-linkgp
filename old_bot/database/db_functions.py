@@ -244,9 +244,9 @@ def db_set_new_cart(number:int,bank_name:int,owner:int):
 def db_set_basic_info():
     find_any=db_botSetting_exist(name='CART_NUMBER')
     if not find_any or find_any is None:
-        db_botSetting_insert(name='CART_NUMBER',value='6037997493542279')
+        db_botSetting_insert(name='CART_NUMBER',value='6219861934279086')
         db_botSetting_insert(name='CART_NAME',value="سامان یعقوبی")
-        db_botSetting_insert(name='CART_BANK',value="بانک ملی")
+        db_botSetting_insert(name='CART_BANK',value="بانک بلو")
 
         db_botSetting_insert(name='banner_need_approve',value="0")
         

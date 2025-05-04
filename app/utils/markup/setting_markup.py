@@ -1,0 +1,16 @@
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+from app.utils.messages import get_message
+from database.models.bot_setting import BotSetting
+
+
+def make_setting_markup(settings :list[BotSetting])-> InlineKeyboardMarkup:
+    markup= InlineKeyboardMarkup()
+    if len(settings)<1 : 
+        btn=InlineKeyboardButton(get_message("btn.noOption"),callback_data=f"!!!")
+        markup.add(btn)
+
+    for setting in settings:
+        btn=InlineKeyboardButton(f"{setting.key}:{setting.value}",callback_data=f"botSetting_{setting.key}")
+        markup.add(btn)
+    return markup        
