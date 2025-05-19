@@ -11,5 +11,8 @@ class Banner(Base):
     title = Column(String(255))
     text = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
+    link=Column(Text, nullable=False)
+    
+    user = relationship("User", back_populates="banners")
+    reservations = relationship("Reservation", back_populates="banner")
 
-    user = relationship("User", backref="banners")

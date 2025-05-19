@@ -1,11 +1,14 @@
-from sqlalchemy import Column, BigInteger, Integer, String, DateTime
+from sqlalchemy import Column, BigInteger, Integer, String
 from database.base import Base
-from datetime import datetime
+from sqlalchemy.orm import relationship
 
 class User(Base):
     __tablename__ = "users"
 
     userid = Column(BigInteger, primary_key=True, index=True)
-    username = Column(String(255), nullable=False)
     balance = Column(Integer, default=0)
     score = Column(Integer, default=0)
+    username = Column(String(255), nullable=False)
+
+    reservations = relationship("Reservation", back_populates="user", cascade="all, delete-orphan")
+    banners = relationship("Banner", back_populates="user", cascade="all, delete-orphan")

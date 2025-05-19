@@ -22,7 +22,7 @@ def ask_new_setting_value(call: CallbackQuery):
     key = call.data.replace("botSetting_", "")
     db = SessionLocal()
     repo = BotSettingRepository(db)
-    value = repo.get(key)
+    value = repo.bot_setting_get(key)
 
     bot.send_message(
         call.message.chat.id,
@@ -48,7 +48,7 @@ def receive_new_setting_value(msg: Message):
 
     db = SessionLocal()
     repo = BotSettingRepository(db)
-    repo.set(key, msg.text)
+    repo.bot_setting_set(key, msg.text)
 
     bot.send_message(msg.chat.id, f"✅ مقدار جدید برای `{key}` ذخیره شد: `{msg.text}`", parse_mode="Markdown")
     bot.delete_state(msg.from_user.id, msg.chat.id)

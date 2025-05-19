@@ -12,7 +12,7 @@ def user_main_keyboard() -> ReplyKeyboardMarkup:
         KeyboardButton(get_message("btn.my_reservations")),
         KeyboardButton(get_message("btn.convert_points")),
         KeyboardButton(get_message("btn.profile")),
-        KeyboardButton(get_message("btn.banner")),
+        KeyboardButton(get_message("btn.user.make_banner")),
         KeyboardButton(get_message("btn.support"))
     )
     return markup

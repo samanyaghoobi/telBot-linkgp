@@ -7,3 +7,6 @@ pyTelegramBotAPI
 sqlalchemy
 pymysql 
 coloredlogs
+watchdog
+psutil
+jdatetime

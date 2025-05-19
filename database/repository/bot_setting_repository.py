@@ -5,11 +5,11 @@ class BotSettingRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get(self, key: str, default: str = "") -> str:
+    def bot_setting_get(self, key: str, default: str = "") -> str:
         setting = self.db.query(BotSetting).filter_by(key=key).first()
         return setting.value if setting else default
 
-    def set(self, key: str, value: str):
+    def bot_setting_set(self, key: str, value: str):
         try:
             setting = self.db.query(BotSetting).filter_by(key=key).first()
             if setting:
