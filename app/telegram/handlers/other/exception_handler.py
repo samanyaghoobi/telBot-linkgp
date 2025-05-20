@@ -3,7 +3,7 @@
 from telebot.types import Message, CallbackQuery
 from telebot import TeleBot
 
-from app.utils import notify_admin
+from app.utils.notify_admin import notify_admins_error
 
 
 
@@ -18,18 +18,18 @@ def catch_errors(bot: TeleBot):
                 if isinstance(message_or_call, Message):
                     user = message_or_call.from_user
                     user_info = f"{user.first_name} ({user.id})"
-                    context = f"Message: {message_or_call.text}"
+                    text = f"Message: {message_or_call.text}"
                     chat_id = message_or_call.chat.id
                     message_id = message_or_call.message_id
                 elif isinstance(message_or_call, CallbackQuery):
                     user = message_or_call.from_user
                     user_info = f"{user.first_name} ({user.id})"
-                    context = f"Callback: {message_or_call.data}"
+                    text = f"Callback: {message_or_call.data}"
                     chat_id = message_or_call.message.chat.id
                     message_id = message_or_call.message.message_id
                 else:
                     user_info = "Unknown"
-                    context = "Unknown"
+                    text = "Unknown"
                     chat_id = None
                     message_id = None
 
@@ -49,7 +49,7 @@ def catch_errors(bot: TeleBot):
                     pass
 
                 # 4. Notify admin
-                notify_admin(bot, context, e, user_info)
+                notify_admins_error(bot, text, e, user_info)
 
                 raise e  # optional: remove if you don't want to stop execution
         return wrapper

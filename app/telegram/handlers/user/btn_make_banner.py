@@ -1,6 +1,6 @@
 from telebot.types import Message
 from app.telegram.bot_instance import bot
-from app.telegram.states.baner_state import BannerStates
+from app.telegram.states.banner_state import BannerStates
 from database.base import SessionLocal
 from app.utils.messages import get_message
 from database.models.banner import Banner

@@ -26,3 +26,12 @@ class UserRepository:
     def get_all_users(self) -> List[User]:
         return self.db.query(User).all()
 
+    def update_balance(self, user_id: int, amount: int):
+        user = self.get_user(user_id)
+        if user:
+            user.balance += amount
+
+    def update_score(self, user_id: int, amount: int):
+        user = self.get_user(user_id)
+        if user:
+            user.score += amount

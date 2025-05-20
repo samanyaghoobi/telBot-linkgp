@@ -1,13 +1,14 @@
 from datetime import date, timedelta
 import jdatetime
-from telebot import types 
+from telebot.types import InlineKeyboardMarkup,InlineKeyboardButton
 from app.telegram.bot_instance import  bot
+from app.utils.time_tools.novert_time_and_date import dateInPersian, to_persian_date_str
 from app.utils.time_tools.weekday_farsi import get_weekday_farsi
 from database.base import SessionLocal
 from database.repository.bot_setting_repository import BotSettingRepository
 
-def show_week_for_navigation(message:str, start_of_week)->types.InlineKeyboardMarkup:
-    markup = types.InlineKeyboardMarkup(row_width=3)
+def show_week_for_navigation(message:str, start_of_week)-> InlineKeyboardMarkup:
+    markup =  InlineKeyboardMarkup(row_width=3)
 
     for i in range(7):
         date = start_of_week + timedelta(days=i)
@@ -17,17 +18,53 @@ def show_week_for_navigation(message:str, start_of_week)->types.InlineKeyboardMa
         weekday_farsi = get_weekday_farsi(date.weekday())
         label = f"{weekday_farsi} {day_shamsi.strftime('%d-%m-%Y')}"
         callback = f"select_day_{date.isoformat()}"
-        markup.add(types.InlineKeyboardButton(label, callback_data=callback))
+        markup.add( InlineKeyboardButton(label, callback_data=callback))
 
     if start_of_week > date.today():  # Prevent going back more than this week
         prev_week_callback = f"week_prev_{start_of_week.isoformat()}"
-        markup.add(types.InlineKeyboardButton("⏪ هفته قبلی", callback_data=prev_week_callback))
+        markup.add( InlineKeyboardButton("⏪ هفته قبلی", callback_data=prev_week_callback))
     db = SessionLocal()
     setting_repo = BotSettingRepository(db)
     max_future_date = int(setting_repo.bot_setting_get("max_future_date", "32"))
     if start_of_week < date.today() + timedelta(days=max_future_date):
         next_week_callback = f"week_next_{start_of_week.isoformat()}"
-        markup.add(types.InlineKeyboardButton("⏩ هفته بعدی", callback_data=next_week_callback))
+        markup.add( InlineKeyboardButton("⏩ هفته بعدی", callback_data=next_week_callback))
 
     return markup
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from datetime import timedelta, date
+from collections import defaultdict
+from database.repository.reservation_repository import ReservationRepository
+from app.utils.time_tools.novert_time_and_date import to_persian_date_str
+from database.base import SessionLocal
 
+def show_reservation_day_selector(start_date: date):
+    db = SessionLocal()
+    repo = ReservationRepository(db)
+
+    end_date = start_date + timedelta(days=7)
+
+    # 📦 فقط یک کوئری برای همه رزروهای هفته
+    reservations = repo.get_reservations_between_dates(start_date, end_date)
+
+    # 🔢 شمارش تعداد رزرو به ازای هر روز
+    count_by_day = defaultdict(int)
+    for r in reservations:
+        count_by_day[r.date] += 1
+
+    markup = InlineKeyboardMarkup(row_width=2)
+
+    for i in range(7):
+        day = start_date + timedelta(days=i)
+        persian = to_persian_date_str(day)
+        count = count_by_day.get(day, 0)
+        label = f"{persian} - {count} رزرو"
+        markup.add(InlineKeyboardButton(label, callback_data=f"admin_reserve_day_{day.isoformat()}"))
+
+    prev_week = start_date - timedelta(days=7)
+    next_week = start_date + timedelta(days=7)
+    markup.add(
+        InlineKeyboardButton("⬅️ هفته قبل", callback_data=f"admin_reserve_all_dates_{prev_week.isoformat()}"),
+        InlineKeyboardButton("➡️ هفته بعد", callback_data=f"admin_reserve_all_dates_{next_week.isoformat()}")
+    )
+    return markup

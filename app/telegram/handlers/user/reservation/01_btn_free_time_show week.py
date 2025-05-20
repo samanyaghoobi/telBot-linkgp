@@ -11,7 +11,7 @@ from database.repository.bot_setting_repository import BotSettingRepository
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.user_repository import UserRepository
 from sqlalchemy.exc import SQLAlchemyError
-from app.telegram.handlers.exception_handler import catch_errors
+from app.telegram.handlers.other.exception_handler import catch_errors
 
 
 # Step 1: Display the list of days from this week (starting from today)

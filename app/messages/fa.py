@@ -15,7 +15,7 @@ MESSAGES = {
 
     # Admin Buttons 
     "btn.admin.bot_setting": "⚙️ تنظیمات ربات",
-    "btn.admin.free_time"  : "📆 مدیریت رزروها",
+    "btn.admin.reservation"  : "📆 مدیریت رزروها",
     "btn.admin.user_list"  : "👥 لیست کاربران",
     "btn.admin.income"     : "💰 درآمد",
 

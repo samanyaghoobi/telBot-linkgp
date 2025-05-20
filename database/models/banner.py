@@ -1,4 +1,4 @@
-from sqlalchemy import BigInteger, Column, Integer, String, Text, ForeignKey, DateTime
+from sqlalchemy import BigInteger, Column, Integer, String, Text, ForeignKey, DateTime,Boolean
 from sqlalchemy.orm import relationship
 from database.base import Base
 from datetime import datetime
@@ -12,7 +12,8 @@ class Banner(Base):
     text = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
     link=Column(Text, nullable=False)
-    
+    is_deleted = Column(Boolean, default=False)
+
     user = relationship("User", back_populates="banners")
     reservations = relationship("Reservation", back_populates="banner")
 

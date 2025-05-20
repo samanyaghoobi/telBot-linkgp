@@ -6,7 +6,7 @@ from app.utils.messages import get_message
 from config import ADMINS
 from database.base import SessionLocal
 from datetime import datetime, timedelta
-from app.telegram.handlers.exception_handler import catch_errors
+from app.telegram.handlers.other.exception_handler import catch_errors
 from database.models.banner import Banner
 from database.models.user import User
 from database.repository.banner_repository import BannerRepository
@@ -54,7 +54,7 @@ def show_reservation_details(call: CallbackQuery):
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(
         InlineKeyboardButton("✅ تایید رزرو", callback_data=f"confirm_reservation_{banner.id}_{selected_date}_{selected_hour}_{banner_msg.id}"),
-        InlineKeyboardButton("❌ کنسل", callback_data=f"cancel_reservation_{banner_msg.id}")
+        InlineKeyboardButton("❌ بیخیال", callback_data=f"forget_reservation_{banner_msg.id}")
     )
     
 
@@ -72,10 +72,10 @@ def show_reservation_details(call: CallbackQuery):
 # ▐▌   ▐▛▀▜▌▐▌ ▝▜▌▐▌   ▐▛▀▀▘▐▌   
 # ▝▚▄▄▖▐▌ ▐▌▐▌  ▐▌▝▚▄▄▖▐▙▄▄▖▐▙▄▄▖
 # Handler to cancel the reservation and delete the message
-@bot.callback_query_handler(func=lambda c: c.data.startswith("cancel_reservation_"))
+@bot.callback_query_handler(func=lambda c: c.data.startswith("forget_reservation_"))
 def cancel_reservation(call: CallbackQuery):
-    call.message.text
-    banner_msg_id = call.data.replace("cancel_reservation_", "")
+    
+    banner_msg_id = call.data.replace("forget_reservation_", "")
 
     # Simply delete the message if the user cancels
     bot.delete_message(chat_id=call.message.chat.id, message_id=banner_msg_id)

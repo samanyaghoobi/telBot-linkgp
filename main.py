@@ -1,7 +1,7 @@
 
 from app.telegram.bot_instance import bot
 from app.telegram.filters.is_admin import IsAdminFilter
-from app.telegram.handlers.startup import startup_message
+from app.telegram.handlers.other.startup import startup_message
 from app.telegram.loader import load_handlers
 from app.utils.logger import logger
 from database.init import init_db
