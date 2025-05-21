@@ -31,7 +31,6 @@ def ask_new_setting_value(call: CallbackQuery):
     bot.set_state(state=SettingStates.waiting_for_new_value,user_id=call.message.chat.id,chat_id=call.message.chat.id)
     with bot.retrieve_data(call.message.chat.id, call.message.chat.id) as data:
         data['key'] = key
-    print("hi")
 
 
 

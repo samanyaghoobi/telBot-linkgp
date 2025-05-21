@@ -112,3 +112,8 @@ class ReservationRepository:
                 fully_free.append(hour)
 
         return fully_free
+
+    def get_reservations_between(self, start_date: date, end_date: date) -> list[Reservation]:
+        return self.db.query(Reservation)\
+            .filter(Reservation.date >= start_date, Reservation.date < end_date)\
+            .all()

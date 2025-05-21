@@ -1,8 +1,7 @@
+import traceback
 from telebot import TeleBot
 from config import ADMINS
-import traceback
-
-
+from app.utils.logger import logger 
 
 def notify_admins_error(bot: TeleBot, context: str, error: Exception, user_info: str = ""):
     error_trace = traceback.format_exc()
@@ -16,11 +15,11 @@ def notify_admins_error(bot: TeleBot, context: str, error: Exception, user_info:
         for admin in ADMINS:
             bot.send_message(chat_id=admin, text=text, parse_mode="HTML")
     except Exception as e:
-        print("⚠️ Failed to notify admin:", e)
+        logger.warning("⚠️ Failed to notify admin: %s", e)
 
-def notify_admins(bot:TeleBot,msgText:str):
+def notify_admins(bot: TeleBot, msgText: str):
     try:
         for admin in ADMINS:
             bot.send_message(chat_id=admin, text=msgText, parse_mode="HTML")
     except Exception as e:
-        print("⚠️ Failed to notify admin:", e)
+        logger.warning("⚠️ Failed to notify admin: %s", e)

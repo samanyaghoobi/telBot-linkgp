@@ -22,8 +22,6 @@ AVAILABLE_HOURS = [
 # Step 2: Show available hours for the selected day
 @bot.callback_query_handler(func=lambda c: c.data.startswith("select_day_"))
 def show_free_hours_for_day(call: CallbackQuery):
-    print(call.data)
-
     selected_date = call.data.replace("select_day_", "")
     selected_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
 

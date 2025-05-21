@@ -38,7 +38,6 @@ def catch_errors(bot: TeleBot):
                     try:
                         # bot.delete_message(chat_id=chat_id, message_id=message_id)
                         bot.send_message(text="delete message",chat_id=chat_id,reply_to_message_id=message_id)
-                        print("delete_message")
                     except:
                         pass  # ignore if already deleted or fails
 
