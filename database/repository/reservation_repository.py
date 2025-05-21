@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from database.models.reservation import Reservation
 from typing import List, Optional
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 
 class ReservationRepository:
     def __init__(self, db: Session):
@@ -91,3 +91,24 @@ class ReservationRepository:
             .filter(Reservation.date >= start, Reservation.date < end)
             .all()
         )
+
+    def get_fully_free_hours(self, from_date: date, to_date: date, available_hours: list[str]) -> list[str]:
+        reserved = self.db.query(Reservation).filter(
+            Reservation.date >= from_date,
+            Reservation.date <= to_date
+        ).all()
+
+        date_set = set()
+        for i in range((to_date - from_date).days + 1):
+            date_set.add(from_date + timedelta(days=i))
+
+        used_by_date = {d: set() for d in date_set}
+        for r in reserved:
+            used_by_date[r.date].add(r.time.strftime("%H:%M"))
+
+        fully_free = []
+        for hour in available_hours:
+            if all(hour not in used_by_date[day] for day in date_set):
+                fully_free.append(hour)
+
+        return fully_free

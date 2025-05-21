@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from telebot.types import CallbackQuery,InlineKeyboardMarkup,InlineKeyboardButton
 from app.telegram.handlers.other.exception_handler import catch_errors
 from app.utils.markup.week_markup import show_reservation_day_selector
-from app.utils.time_tools.novert_time_and_date import to_persian_date_str
+from app.utils.time_tools.novert_time_and_date import date_to_persian
 from database.base import SessionLocal
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.banner_repository import BannerRepository
@@ -47,7 +47,7 @@ def show_reservations_for_day(call: CallbackQuery):
 
     day_str = call.data.replace("admin_reserve_day_", "")
     selected_day = date.fromisoformat(day_str)
-    selected_day_shamsi=to_persian_date_str(selected_day)
+    selected_day_shamsi=date_to_persian(selected_day)
     reservations = repo.get_reservations_for_date(selected_day)
 
     markup = InlineKeyboardMarkup(row_width=1)

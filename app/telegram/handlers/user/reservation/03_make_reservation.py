@@ -1,8 +1,9 @@
-from app.utils import notify_admin
+from app.utils.notifiers import notify_admin
 from app.utils.markup.week_markup import show_week_for_navigation
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton,Message
 from app.telegram.bot_instance import bot
 from app.utils.messages import get_message
+from app.utils.text_formatter.reservation_info import format_reservation_by_id
 from config import ADMINS
 from database.base import SessionLocal
 from datetime import datetime, timedelta
@@ -14,6 +15,8 @@ from database.repository.bot_setting_repository import BotSettingRepository
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.user_repository import UserRepository
 from sqlalchemy.exc import SQLAlchemyError
+
+from database.services.reservation_service import reserve_banner_transaction
 
 ############# show reserve information 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("banner_"))
@@ -88,63 +91,49 @@ def cancel_reservation(call: CallbackQuery):
 # ▝▚▄▄▖▝▚▄▞▘▐▌  ▐▌▐▌   ▗▄█▄▖▐▌ ▐▌▐▌  ▐▌
                                      
                                      
+
 @bot.callback_query_handler(func=lambda c: c.data.startswith("confirm_reservation_"))
 @catch_errors(bot)
 def confirm_reservation(call: CallbackQuery):
-    # Extract the banner id, date, and time from the callback data
-    banner_id, selected_date, selected_hour ,banner_msg_id= call.data.replace("confirm_reservation_", "").split("_")
+    # Extract parameters from callback data
+    banner_id, selected_date, selected_hour, banner_msg_id = call.data.replace("confirm_reservation_", "").split("_")
     selected_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
-    selected_hour = selected_hour
 
     db = SessionLocal()
     userRepo = UserRepository(db)
-    reserve_repo = ReservationRepository(db)
     setting_repo = BotSettingRepository(db)
-    bannerRepo= BannerRepository(db)
+    bannerRepo = BannerRepository(db)
 
     user = userRepo.get_user(call.from_user.id)
     banner = bannerRepo.get_by_id(banner_id=banner_id)
-    banner_link=banner.link
-    # Check if user has sufficient balance
-    price = int(setting_repo.bot_setting_get("price_per_hour", "50"))  # Default price if not found in DB #todo : makr it work
-    if user.balance < price and call.message.chat.id not in ADMINS:
-        bot.send_message(call.message.chat.id, "❌ موجودی شما کافی نیست.")
+    price = int(setting_repo.bot_setting_get("price_per_hour", "50"))
+
+    if not user or not banner:
+        bot.send_message(call.message.chat.id, "❌ اطلاعات کاربر یا بنر یافت نشد.")
         return
-    # Start the transaction block
-    try:
-        # Decrease user's balance first
-        userRepo.update_balance(user.userid, -price)
-        
-        # Create the reservation
-        new_reservation = reserve_repo.create_reservation(
-            user_id=user.userid,
-            banner_id=int(banner_id),
-            reserve_date=selected_date,
-            reserve_time=selected_hour,
-            link=banner_link,
-            price=price
-        )
 
-        # Commit the transaction
-        db.commit()
-        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
-        bot.delete_message(chat_id=call.message.chat.id, message_id=banner_msg_id)
+    # Call transactional reservation service
+    reservation = reserve_banner_transaction(
+        db=db,
+        user_id=user.userid,
+        banner_id=banner.id,
+        reserve_date=selected_date,
+        reserve_time=selected_hour,
+        price=price,
+        link=banner.link
+    )
 
-        msg=bot.send_message(
-            call.message.chat.id,
-            f"✅ رزرو شما در تاریخ :  {selected_date} -  ساعت {selected_hour}  \n با موفقیت انجام شد. \n در ادامه بنر شما ارسال خواهد شد",
-        )
-        text=banner.text
-        bot.reply_to(message=msg,text=text)
+    if not reservation:
+        bot.send_message(call.message.chat.id, "❌ رزرو انجام نشد. لطفاً دوباره تلاش کنید.")
+        return
 
-    except SQLAlchemyError as e:
-        # If an error occurs, rollback the transaction and notify the user
-        db.rollback()
-        print("rollback---------------------------")
-        notify_admin(bot, "db.rollback", e, call.message.chat.id)
-        bot.send_message(call.message.chat.id, f"❌ مشکلی در ثبت رزرو پیش آمد. لطفا دوباره تلاش کنید.")
-        bot.error(e)
-    except Exception as e:
-        # db.rollback()
-        notify_admin(bot, "db.rollback (Generic)", e, call.message.chat.id)
-        bot.send_message(call.message.chat.id, f"❌ خطایی رخ داد.")
+    # If successful, delete previous messages and send confirmation
+    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
+    bot.delete_message(chat_id=call.message.chat.id, message_id=banner_msg_id)
+
+    message = format_reservation_by_id(reservation_id=reservation.id)
+    bot.send_message(
+        call.message.chat.id,
+        f"اطلاعات رزرو شما:\n{message}\n\n✅ رزرو شما با موفقیت ثبت شد."
+    )
+

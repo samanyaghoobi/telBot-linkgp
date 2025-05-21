@@ -3,7 +3,7 @@
 from telebot.types import Message, CallbackQuery
 from telebot import TeleBot
 
-from app.utils.notify_admin import notify_admins_error
+from app.utils.notifiers.notify_admin import notify_admins_error
 
 
 

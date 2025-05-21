@@ -2,13 +2,14 @@ from datetime import date, timedelta
 import jdatetime
 from telebot.types import InlineKeyboardMarkup,InlineKeyboardButton
 from app.telegram.bot_instance import  bot
-from app.utils.time_tools.novert_time_and_date import dateInPersian, to_persian_date_str
+from app.utils.time_tools.novert_time_and_date import dateInPersian, date_to_persian
 from app.utils.time_tools.weekday_farsi import get_weekday_farsi
 from database.base import SessionLocal
 from database.repository.bot_setting_repository import BotSettingRepository
 
-def show_week_for_navigation(message:str, start_of_week)-> InlineKeyboardMarkup:
-    markup =  InlineKeyboardMarkup(row_width=3)
+def show_week_for_navigation(message:str, start_of_week,input_markup:InlineKeyboardMarkup=None)-> InlineKeyboardMarkup:
+    
+    markup = input_markup or  InlineKeyboardMarkup(row_width=3)
 
     for i in range(7):
         date = start_of_week + timedelta(days=i)
@@ -35,7 +36,7 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from datetime import timedelta, date
 from collections import defaultdict
 from database.repository.reservation_repository import ReservationRepository
-from app.utils.time_tools.novert_time_and_date import to_persian_date_str
+from app.utils.time_tools.novert_time_and_date import date_to_persian
 from database.base import SessionLocal
 
 def show_reservation_day_selector(start_date: date):
@@ -56,7 +57,7 @@ def show_reservation_day_selector(start_date: date):
 
     for i in range(7):
         day = start_date + timedelta(days=i)
-        persian = to_persian_date_str(day)
+        persian = date_to_persian(day)
         count = count_by_day.get(day, 0)
         label = f"{persian} - {count} رزرو"
         markup.add(InlineKeyboardButton(label, callback_data=f"admin_reserve_day_{day.isoformat()}"))

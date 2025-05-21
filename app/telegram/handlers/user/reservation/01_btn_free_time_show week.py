@@ -26,7 +26,9 @@ def show_week_days(msg: Message):
 
     text="📆 لطفاً یک روز را انتخاب کنید:"
     # Create the buttons for the days of the week
-    markup = show_week_for_navigation(message=text,start_of_week=start_of_week)
+    markup=InlineKeyboardMarkup(row_width=3)
+    markup.add(InlineKeyboardButton("رزرو بازه دلخواه ( مثلا یک هفته)",callback_data="customReservation"))
+    markup= show_week_for_navigation(message=text,start_of_week=start_of_week,input_markup=markup)
 
     bot.send_message(msg.chat.id, text=text, reply_markup=markup)
 

@@ -85,7 +85,7 @@ def select_banner_for_reservation(call: CallbackQuery):
 
     db = SessionLocal()
     repo = UserRepository(db)
-    user = repo.get_user(call.from_user.id)
+    user :User= repo.get_user(call.from_user.id)
 
     # If user has no banners, notify them
     if not user or not user.banners:
@@ -94,8 +94,11 @@ def select_banner_for_reservation(call: CallbackQuery):
 
     # Prepare buttons to show user their banners
     markup = InlineKeyboardMarkup(row_width=1)
-    for banner in user.banners:
-        markup.add(InlineKeyboardButton(banner.title, callback_data=f"banner_{banner.id}_{selected_date}_{selected_hour}"))
+    for b in user.banners :
+        if b : 
+            banner:Banner=b
+            if not banner.is_deleted:
+                markup.add(InlineKeyboardButton(banner.title, callback_data=f"banner_{banner.id}_{selected_date}_{selected_hour}"))
 
     bot.edit_message_text(text="📋 لطفاً بنری که می‌خواهید برای این زمان انتخاب کنید را انتخاب کنید.",
                           chat_id=call.message.chat.id,message_id= call.message.id , reply_markup=markup)
