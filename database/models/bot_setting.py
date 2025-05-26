@@ -1,5 +1,5 @@
-from sqlalchemy import Column, String, Text
 from database.base import Base
+from sqlalchemy import Column, String, Text
 
 class BotSetting(Base):
     __tablename__ = "setting"

@@ -20,7 +20,7 @@ from app.telegram.handlers.other.exception_handler import catch_errors
 @catch_errors(bot)
 def show_week_days(msg: Message):
     today = date.today()
-    weekday = today.weekday()  # 0=Monday, 6=Sunday
+    weekday = (today.weekday() + 2) % 7  #for  start from saturday and end in friday
     start_of_week = today - timedelta(days=weekday)
     print(f"start_of_week:{start_of_week} , con:{date.today() - timedelta(days=7)}")
 

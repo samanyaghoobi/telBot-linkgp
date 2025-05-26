@@ -2,7 +2,7 @@
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from app.telegram.bot_instance import bot
 from app.telegram.handlers.other.exception_handler import catch_errors
-from database.base import SessionLocal
+from database.session import SessionLocal
 from database.repository.user_repository import UserRepository
 from database.repository.bot_setting_repository import BotSettingRepository
 from database.services.balance_services import convert_score_to_balance_transaction

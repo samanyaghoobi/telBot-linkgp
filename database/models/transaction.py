@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, BigInteger, ForeignKey, String, DateTime
-from sqlalchemy.orm import relationship
 from database.base import Base
+from sqlalchemy.orm import relationship
 from datetime import datetime
 
 class Transaction(Base):
-    __tablename__ = "transactions"
+    __tablename__ = "transaction"
 
     id = Column(Integer, primary_key=True)
     user_id = Column(BigInteger, ForeignKey("users.userid"))
@@ -13,4 +13,4 @@ class Transaction(Base):
     balance_after = Column(Integer)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    user = relationship("User", backref="transactions")
+    user = relationship("User", backref="transaction")

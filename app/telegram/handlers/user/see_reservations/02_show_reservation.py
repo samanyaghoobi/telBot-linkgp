@@ -3,7 +3,7 @@ import jdatetime
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton,CallbackQuery
 from app.telegram.bot_instance import bot
 from app.utils.messages import get_message
-from database.base import SessionLocal
+from database.session import SessionLocal
 from database.models.banner import Banner
 from database.models.reservation import Reservation
 from database.repository.banner_repository import BannerRepository

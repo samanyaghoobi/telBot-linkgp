@@ -1,6 +1,6 @@
+from database.base import Base
 from sqlalchemy import BigInteger, Column, Integer, String, Text, ForeignKey, DateTime,Boolean
 from sqlalchemy.orm import relationship
-from database.base import Base
 from datetime import datetime
 
 class Banner(Base):

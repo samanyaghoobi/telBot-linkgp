@@ -1,9 +1,9 @@
+# main.py
 from app.telegram.bot_instance import bot
-from app.telegram.filters.is_admin import IsAdminFilter
-from app.telegram.handlers.admin.income.btn_income import send_admin_monthly_auto_report
-from app.telegram.handlers.other.startup import startup_message
-from app.telegram.loader import load_handlers
 from app.utils.logger import logger
+from app.telegram.loader import load_handlers
+from app.telegram.handlers.other.startup import startup_message
+from app.telegram.filters.is_admin import IsAdminFilter
 from database.init import init_db
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -20,10 +20,11 @@ if __name__ == "__main__":
     startup_message(bot)
     logger.info("🚀 Startup message sent.")
 
+    from app.telegram.handlers.admin.income.btn_income import send_admin_monthly_auto_report
     scheduler = BackgroundScheduler()
-    scheduler.add_job(send_admin_monthly_auto_report, "cron", day=1, hour=8, minute=0)
+    scheduler.add_job(send_admin_monthly_auto_report, "cron", day=1, hour=8)
     scheduler.start()
     logger.info("📅 Monthly report scheduler started.")
 
     logger.info("🤖 Bot is running...")
-    bot.infinity_polling(skip_pending=True)
+    bot.infinity_polling(skip_pending=True,restart_on_change=True)

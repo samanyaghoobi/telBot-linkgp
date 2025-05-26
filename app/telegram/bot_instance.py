@@ -3,7 +3,7 @@ from config import TELEGRAM_API_TOKEN, TELEGRAM_PROXY_URL
 
 bot = TeleBot(
     TELEGRAM_API_TOKEN,
-    colorful_logs=False,
+    colorful_logs=True,
     skip_pending=True,
     disable_web_page_preview=True
 )

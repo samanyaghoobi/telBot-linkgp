@@ -3,7 +3,7 @@ from app.utils.messages import get_message
 from app.telegram.bot_instance import bot
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from config import ADMINS
-from database.base import SessionLocal
+from database.session import SessionLocal
 from database.repository.reservation_repository import ReservationRepository
 from datetime import datetime, timedelta
 import jdatetime

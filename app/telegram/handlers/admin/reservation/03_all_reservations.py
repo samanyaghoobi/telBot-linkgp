@@ -3,7 +3,7 @@ from telebot.types import CallbackQuery,InlineKeyboardMarkup,InlineKeyboardButto
 from app.telegram.handlers.other.exception_handler import catch_errors
 from app.utils.markup.week_markup import show_reservation_day_selector
 from app.utils.time_tools.novert_time_and_date import date_to_persian
-from database.base import SessionLocal
+from database.session import SessionLocal
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.banner_repository import BannerRepository
 from app.telegram.bot_instance import bot

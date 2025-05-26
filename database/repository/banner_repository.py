@@ -34,3 +34,6 @@ class BannerRepository:
             self.db.delete(banner)
             self.db.commit()
         return banner
+
+    def get_active_banners_by_user(self, user_id: int):
+        return self.db.query(Banner).filter_by(user_id=user_id, is_deleted=False).all()

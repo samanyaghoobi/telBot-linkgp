@@ -4,8 +4,11 @@ from telebot.types import InlineKeyboardMarkup,InlineKeyboardButton
 from app.telegram.bot_instance import  bot
 from app.utils.time_tools.novert_time_and_date import dateInPersian, date_to_persian
 from app.utils.time_tools.weekday_farsi import get_weekday_farsi
-from database.base import SessionLocal
+from database.session import SessionLocal
 from database.repository.bot_setting_repository import BotSettingRepository
+from collections import defaultdict
+from database.repository.reservation_repository import ReservationRepository
+
 
 def show_week_for_navigation(message:str, start_of_week,input_markup:InlineKeyboardMarkup=None)-> InlineKeyboardMarkup:
     
@@ -32,12 +35,7 @@ def show_week_for_navigation(message:str, start_of_week,input_markup:InlineKeybo
         markup.add( InlineKeyboardButton("⏩ هفته بعدی", callback_data=next_week_callback))
 
     return markup
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from datetime import timedelta, date
-from collections import defaultdict
-from database.repository.reservation_repository import ReservationRepository
-from app.utils.time_tools.novert_time_and_date import date_to_persian
-from database.base import SessionLocal
+
 
 def show_reservation_day_selector(start_date: date):
     db = SessionLocal()

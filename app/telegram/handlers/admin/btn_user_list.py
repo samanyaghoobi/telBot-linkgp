@@ -2,7 +2,7 @@ from app.utils.messages import get_message
 from app.utils.paging_inline_btn import create_pagination
 from app.telegram.bot_instance import bot
 from telebot.types import Message
-from database.base import SessionLocal
+from database.session import SessionLocal
 from database.repository.user_repository import UserRepository 
 
 

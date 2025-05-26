@@ -3,8 +3,8 @@ from app.telegram.bot_instance import bot
 from app.telegram.states.setting_state import SettingStates
 from app.utils.markup.setting_markup import make_setting_markup
 from app.utils.messages import get_message
-from database.base import SessionLocal
 from database.repository.bot_setting_repository import BotSettingRepository
+from database.session import SessionLocal
 
 @bot.message_handler(func=lambda m: m.text == get_message("btn.admin.bot_setting"), is_admin=True)
 def show_settings(msg: Message):

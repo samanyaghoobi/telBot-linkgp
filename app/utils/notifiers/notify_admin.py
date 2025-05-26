@@ -1,7 +1,9 @@
 import traceback
 from telebot import TeleBot
 from config import ADMINS
-from app.utils.logger import logger 
+from app.utils.logger import logger
+from database.repository.bot_setting_repository import BotSettingRepository
+from database.session import SessionLocal 
 
 def notify_admins_error(bot: TeleBot, context: str, error: Exception, user_info: str = ""):
     error_trace = traceback.format_exc()

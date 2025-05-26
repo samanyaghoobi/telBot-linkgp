@@ -10,7 +10,7 @@ from database.repository.banner_repository import BannerRepository
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.user_repository import UserRepository
 from app.telegram.handlers.other.exception_handler import catch_errors
-from database.base import SessionLocal
+from database.session import SessionLocal
 from database.services.reservation_service import cancel_reservation_transaction
 
 

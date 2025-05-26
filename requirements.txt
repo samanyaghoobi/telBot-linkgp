@@ -1,7 +1,3 @@
-schedule
-mysql-connector-python
-convertdate
-
 python-dotenv
 pyTelegramBotAPI
 sqlalchemy
@@ -11,3 +7,4 @@ watchdog
 psutil
 jdatetime
 apscheduler
+SQLAlchemy==1.4.49

@@ -14,9 +14,11 @@ def unknown_callback(call: CallbackQuery):
 def unimplemented_button(call: CallbackQuery):
     bot.answer_callback_query(call.id, text="❗ این دکمه هنوز فعال نشده.", show_alert=False)
 
-@bot.message_handler(func=lambda m: True)
+
+@bot.message_handler(func=lambda m: bot.get_state(m.from_user.id, m.chat.id) is None)
 @catch_errors(bot)
 def fallback_message_handler(msg: Message):
+    print (bot.get_state(user_id=msg.from_user.id ))
     bot.send_message(msg.chat.id, "❓ این پیام توسط ربات شناسایی نشد.")
 
 @bot.callback_query_handler(func=lambda c: c.data == "cancel")

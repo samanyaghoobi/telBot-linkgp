@@ -3,7 +3,7 @@ from telebot.types import CallbackQuery,InlineKeyboardMarkup,InlineKeyboardButto
 from app.telegram.handlers.other.exception_handler import catch_errors
 from app.telegram.states.banner_state import EditBannerStates
 from app.utils.markup.banner_list import build_user_banner_list_markup
-from database.base import SessionLocal
+from database.session import SessionLocal
 from database.models.banner import Banner
 from database.repository.banner_repository import BannerRepository
 from database.repository.user_repository import UserRepository
@@ -20,14 +20,9 @@ def show_user_banners(call: CallbackQuery):
         bot.answer_callback_query(call.id, "شما هیچ بنری ثبت نکرده‌اید.")
         return
 
-    # فیلتر فقط بنرهای فعال
-    active_banners = [b for b in user.banners if not b.is_deleted]
 
-    if not active_banners:
-        bot.answer_callback_query(call.id, "شما هیچ بنری ثبت نکرده‌اید.")
-        return
 
-    markup = build_user_banner_list_markup(active_banners)
+    markup = build_user_banner_list_markup(user_id=user.userid)
     text = "📋 لیست بنرهای شما:"
     bot.edit_message_text(
         chat_id=call.message.chat.id,

@@ -1,6 +1,6 @@
+from database.base import Base
 from sqlalchemy import Column, Integer, BigInteger, Date, Time, Boolean, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import relationship
-from database.base import Base
 
 class Reservation(Base):
     __tablename__ = "reservations"
