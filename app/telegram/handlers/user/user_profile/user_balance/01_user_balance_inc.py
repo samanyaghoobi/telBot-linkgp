@@ -37,6 +37,8 @@ def handle_charge_selection(call: CallbackQuery):
         bot.set_state(state=userState.waiting_for_inc_amount,user_id=call.message.chat.id,chat_id=call.message.chat.id)
         
     else:
-        bot.set_state(call.from_user.id, call.message.chat.id, f"awaiting_receipt_{selected}")
-        send_card_info_to_user(bot,call.message.chat.id, selected)
+        send_card_info_to_user(bot,call.message.chat.id, selected,edit=True,msg_id=call.message.id)
+        bot.set_state(state=userState.waiting_for_pic,user_id=call.message.chat.id,chat_id=call.message.chat.id)
+        with bot.retrieve_data(user_id=call.message.chat.id , chat_id=call.message.chat.id) as data:
+            data["amount"]=selected
 

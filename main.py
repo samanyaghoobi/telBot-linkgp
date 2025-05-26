@@ -6,6 +6,7 @@ from app.telegram.handlers.other.startup import startup_message
 from app.telegram.filters.is_admin import IsAdminFilter
 from database.init import init_db
 from apscheduler.schedulers.background import BackgroundScheduler
+from app.telegram.handlers.admin.income.btn_income import send_admin_monthly_auto_report
 
 if __name__ == "__main__":
     init_db()
@@ -20,7 +21,6 @@ if __name__ == "__main__":
     startup_message(bot)
     logger.info("🚀 Startup message sent.")
 
-    from app.telegram.handlers.admin.income.btn_income import send_admin_monthly_auto_report
     scheduler = BackgroundScheduler()
     scheduler.add_job(send_admin_monthly_auto_report, "cron", day=1, hour=8)
     scheduler.start()
