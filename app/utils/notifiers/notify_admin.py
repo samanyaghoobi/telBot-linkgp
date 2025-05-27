@@ -1,7 +1,7 @@
 import traceback
 from telebot import TeleBot
 from config import ADMINS
-from app.utils.logger import logger
+from app.telegram.logger import logger
 from database.repository.bot_setting_repository import BotSettingRepository
 from database.session import SessionLocal 
 

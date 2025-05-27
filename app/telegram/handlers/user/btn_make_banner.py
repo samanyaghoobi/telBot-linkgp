@@ -15,7 +15,9 @@ def start_banner_creation(msg: Message):
     setting_repo = BotSettingRepository(db)
 
     user = user_repo.get_or_create_user(msg.from_user.id, msg.from_user.username)
-    user_banners_count = len(user.banners)
+    
+    # ✅ Count only active banners (not deleted)
+    user_banners_count = len([b for b in user.banners if not b.is_deleted])
     max_allowed = int(setting_repo.bot_setting_get("max_user_banners", "4"))
 
     if user_banners_count >= max_allowed:
@@ -24,6 +26,7 @@ def start_banner_creation(msg: Message):
 
     bot.set_state(msg.from_user.id, BannerStates.waiting_for_title, msg.chat.id)
     bot.send_message(msg.chat.id, get_message("prompt.banner.title"))
+
 
 @bot.message_handler(state=BannerStates.waiting_for_title)
 def get_banner_title(msg: Message):

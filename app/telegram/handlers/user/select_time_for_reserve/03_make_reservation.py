@@ -4,10 +4,11 @@ from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 from app.telegram.bot_instance import bot
 from app.utils.message import get_message
 from app.utils.text_formatter.reservation_info import format_reservation_by_id
+from app.utils.time_tools.other import is_more_than_30_minutes_left
 from config import ADMINS
 from database.session import SessionLocal
 from datetime import datetime, timedelta
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 from database.models.banner import Banner
 from database.models.user import User
 from database.repository.banner_repository import BannerRepository
@@ -103,15 +104,37 @@ def confirm_reservation(call: CallbackQuery):
     userRepo = UserRepository(db)
     setting_repo = BotSettingRepository(db)
     bannerRepo = BannerRepository(db)
+    reservationRepo = ReservationRepository(db)
 
     user = userRepo.get_user(call.from_user.id)
     banner = bannerRepo.get_by_id(banner_id=banner_id)
     price = int(setting_repo.bot_setting_get("price_per_hour", "50"))
 
+    #banner existence
     if not user or not banner:
         bot.send_message(call.message.chat.id, "❌ اطلاعات کاربر یا بنر یافت نشد.")
         return
+    
+    # link duplication
+    duplicated_link=reservationRepo.is_duplicate_link_for_date(target_date=selected_date,link=banner.link )
+    if duplicated_link:
+        bot.delete_message(call.message.chat.id,call.message.id)
+        bot.send_message(
+        chat_id=call.message.chat.id,
+        text=(
+            "⚠️ <b>امکان ثبت این رزرو وجود ندارد.</b>\n\n"
+            "برای هر روز تنها یک بار می‌توان از هر لینک استفاده کرد.\n"
+            "لینکی که وارد کرده‌اید قبلاً برای این تاریخ ثبت شده است. ❌"
+        ),
+        parse_mode="HTML")
 
+        return
+    # handle today time delay reservation rule 
+    now = datetime.now()
+    if selected_date == now.date():
+        if not is_more_than_30_minutes_left(selected_hour):
+            bot.delete_message(call.message.chat.id,call.message.id)
+            bot.send_message(call.message.chat.id,text="امکان رزرو این ساعت وجود ندارد❌")
     # Call transactional reservation service
     reservation = reserve_banner_transaction(
         db=db,
@@ -122,7 +145,6 @@ def confirm_reservation(call: CallbackQuery):
         price=price,
         link=banner.link
     )
-
     if not reservation:
         bot.send_message(call.message.chat.id, "❌ رزرو انجام نشد. لطفاً دوباره تلاش کنید.")
         return

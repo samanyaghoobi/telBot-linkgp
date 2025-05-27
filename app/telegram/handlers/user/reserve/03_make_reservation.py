@@ -7,7 +7,7 @@ from app.utils.text_formatter.reservation_info import format_reservation_by_id
 from config import ADMINS
 from database.session import SessionLocal
 from datetime import datetime, timedelta
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 from database.models.banner import Banner
 from database.models.user import User
 from database.repository.banner_repository import BannerRepository

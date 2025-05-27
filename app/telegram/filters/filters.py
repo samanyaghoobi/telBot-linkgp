@@ -13,3 +13,10 @@ class IsAdminFilter(AdvancedCustomFilter):
             else message.chat.id
         )
         return user_id in ADMINS
+
+class NoStateFilter(AdvancedCustomFilter):
+    key = 'no_state'
+
+    def check(self, message, value):
+        state = bot.get_state(message.from_user.id, message.chat.id)
+        return state is None

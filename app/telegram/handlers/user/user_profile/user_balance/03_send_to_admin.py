@@ -1,7 +1,7 @@
 import re
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from app.telegram.bot_instance import bot
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 from app.telegram.states.user_state import ChargeStates, userState
 from app.utils.notifiers.notify_admin import notify_admins_error
 from config import ADMINS

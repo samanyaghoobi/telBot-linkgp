@@ -1,7 +1,7 @@
 import os
 import importlib.util
 from os.path import join
-from app.utils.logger import logger
+from app.telegram.logger import logger
 
 def load_handlers(bot, handlers_dir="app/telegram/handlers"):
     """

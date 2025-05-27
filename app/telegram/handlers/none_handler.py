@@ -1,7 +1,7 @@
 from app.telegram.bot_instance import bot
 from telebot.types import CallbackQuery,Message
 
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 
 
 @bot.callback_query_handler(func=lambda c: True)

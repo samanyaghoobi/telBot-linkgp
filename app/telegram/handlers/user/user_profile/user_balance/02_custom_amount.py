@@ -1,6 +1,6 @@
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from app.telegram.bot_instance import bot
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 from app.telegram.states.user_state import userState
 from app.utils.notifiers.notify_user import send_card_info_to_user
 # Step 3: Enter custom amount

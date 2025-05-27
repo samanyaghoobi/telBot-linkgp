@@ -3,7 +3,7 @@ import jdatetime
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from app.telegram.bot_instance import bot
 from app.telegram.schaduled.month_income import send_admin_monthly_auto_report
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 from app.utils.message import get_message
 from database.session import SessionLocal
 from database.repository.transaction_repository import TransactionRepository

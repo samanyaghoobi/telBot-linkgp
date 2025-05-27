@@ -1,6 +1,6 @@
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from app.telegram.bot_instance import bot
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 from app.telegram.states.user_state import ChargeStates
 
 # Reject Charge Handler

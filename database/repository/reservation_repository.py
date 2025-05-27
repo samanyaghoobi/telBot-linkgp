@@ -1,13 +1,17 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from app.telegram.loader import logger
+from app.telegram.exception_handler import catch_errors
 from database.models.reservation import Reservation
 from typing import List, Optional
 from datetime import date, datetime, time, timedelta
+from app.telegram.bot_instance import bot
 
 class ReservationRepository:
     def __init__(self, db: Session):
         self.db = db
-
+        
+    @catch_errors(bot)
     def create_reservation(self, user_id: int, banner_id: int, reserve_date: date, reserve_time: time, link: str, price: int = 0, posted: bool = False) -> Optional[Reservation]:
         reservation = Reservation(
             user_id=user_id,
@@ -23,9 +27,12 @@ class ReservationRepository:
             self.db.commit()
             self.db.refresh(reservation)
             return reservation
-        except IntegrityError:
+        except IntegrityError as e:
             self.db.rollback()
-            return None
+            logger.error("❌ IntegrityError while inserting reservation") 
+        except Exception as e:
+            self.db.rollback()
+            logger.error("❌ Unexpected DB error")                   
 
     def get_by_date_time(self, reserve_date: date, reserve_time: time) -> Optional[Reservation]:
         return self.db.query(Reservation).filter_by(date=reserve_date, time=reserve_time).first()
@@ -117,3 +124,15 @@ class ReservationRepository:
         return self.db.query(Reservation)\
             .filter(Reservation.date >= start_date, Reservation.date < end_date)\
             .all()
+  
+    def is_duplicate_link_for_date(self, target_date: date, link: str) -> bool:
+        """
+        Check if a reservation with the same link already exists for the given date.
+        """
+        exists = self.db.query(Reservation).filter(
+            Reservation.date == target_date,
+            Reservation.link == link
+        ).first()
+
+
+        return exists is not None

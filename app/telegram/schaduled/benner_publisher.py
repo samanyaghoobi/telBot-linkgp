@@ -4,9 +4,10 @@ from database.session import SessionLocal
 from database.models.banner import Banner
 from database.repository.reservation_repository import ReservationRepository
 from datetime import datetime, time, date
-import logging
+from app.telegram.logger import logger
 
 def publish_approved_reservations():
+    logger.info("📅 [Scheduler] Banner publishing job triggered.")
     db = SessionLocal()
     repo = ReservationRepository(db)
     today = date.today()
@@ -15,12 +16,13 @@ def publish_approved_reservations():
     hours = AVAILABLE_HOURS  # Later: read from DB if available
     for h in hours:
         if h == now_time:
-            reservations = repo.get_approved_not_posted(today, time.fromisoformat(h))
-            for r in reservations:
-                banner :Banner = r.banner
-                # text = f"📢 رزرو جدید برای امروز:\n{banner.title}"
-                # bot.send_message(chat_id=POST_CHANNEL_ID, text=text)
-                bot.send_message(chat_id=MAIN_CHANNEL_ID, text=banner.text)
-                r.posted = True
-                db.commit()
+            reservations = repo.get_by_date_time(reserve_date=today,reserve_time=h)
+            if reservations:
+                banner :Banner = reservations.banner
+                if not reservations.posted:
+                    text = f"📢 رزرو جدید برای امروز:\n{banner.title}"
+                    # notify_admin # todo
+                    bot.send_message(chat_id=MAIN_CHANNEL_ID, text=banner.text)
+                    reservations.posted = True
+                    db.commit()
             break

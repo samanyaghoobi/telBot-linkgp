@@ -6,6 +6,9 @@ from database.models.bot_setting import BotSetting
 
 def make_setting_markup(settings :list[BotSetting])-> InlineKeyboardMarkup:
     markup= InlineKeyboardMarkup()
+    
+    btn=InlineKeyboardButton(get_message("btn.admin.get_backup"),callback_data=get_message("btn.admin.get_backup"))
+    markup.add(btn)
     if len(settings)<1 : 
         btn=InlineKeyboardButton(get_message("btn.noOption"),callback_data=f"!!!")
         markup.add(btn)

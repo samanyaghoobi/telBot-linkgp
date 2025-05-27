@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  telegram-bot:
+    container_name: linkgp-bot
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./backup/sql:/app/backups  # مسیر اشتراکی برای دسترسی به بکاپ‌ها
+      - ./logs:/logs               # اگر بخواهی لاگ‌ها رو نگه داری
+    working_dir: /bot
+    command: ["python", "main.py"]
+    networks:
+      - bot-network
+
+networks:
+  bot-network:
+    driver: bridge

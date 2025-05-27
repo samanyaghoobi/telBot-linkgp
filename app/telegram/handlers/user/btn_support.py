@@ -1,6 +1,6 @@
 from telebot.types import Message 
 from app.telegram.bot_instance import bot
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 from app.utils.message import get_message
 
 SUPPORT_ID=345490618

@@ -1,18 +1,15 @@
 from datetime import date, timedelta
 from app.telegram.bot_instance import bot
 from telebot.types import CallbackQuery,Message,InlineKeyboardButton,InlineKeyboardMarkup
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
+from config import AVAILABLE_HOURS
 from database.session import SessionLocal
 from database.repository.bot_setting_repository import BotSettingRepository
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.user_repository import UserRepository
 from database.services.reservation_service import reserve_custom_range_transaction
 
-AVAILABLE_HOURS = [
-    "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "18:30",
-    "19:00", "19:30", "20:00", "20:30", "21:00", "21:30",
-    "22:00", "22:30", "23:00", "23:30", "00:00", "00:30", "01:00", "01:30", "02:00"
-]
+
 
 # handler for starting custom range reservation
 @bot.callback_query_handler(func=lambda c: c.data == "customReservation")

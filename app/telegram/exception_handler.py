@@ -5,16 +5,21 @@ from telebot.types import Message, CallbackQuery
 from telebot import TeleBot
 
 from app.utils.notifiers.notify_admin import notify_admins_error
-from app.utils.logger import logger
+from app.telegram.logger import logger
 
 
-
+import traceback
+from telebot.types import Message, CallbackQuery
+from sqlalchemy.exc import SQLAlchemyError
+import pymysql
+from telebot import TeleBot
 
 def catch_errors(bot: TeleBot):
     def decorator(func):
         def wrapper(message_or_call, *args, **kwargs):
             try:
                 return func(message_or_call, *args, **kwargs)
+
             except Exception as e:
                 chat_id = None
                 message_id = None
@@ -36,31 +41,35 @@ def catch_errors(bot: TeleBot):
                         chat_id = message_or_call.message.chat.id
                         message_id = message_or_call.message.message_id
 
-                    # Delete user message if possible (optional)
-                    if chat_id and message_id:
-                        try:
-                            # bot.delete_message(chat_id=chat_id, message_id=message_id)
-                            pass
-                        except Exception as del_error:
-                            logger.warning(f"Failed to delete message: {del_error}")
+                    # Optional: delete user message
+                    # try:
+                    #     if chat_id and message_id:
+                    #         bot.delete_message(chat_id=chat_id, message_id=message_id)
+                    # except Exception as del_err:
+                    #     logger.warning(f"❗️ Couldn't delete message: {del_err}")
 
                     # Notify user
                     try:
                         bot.send_message(chat_id=chat_id, text="❌ خطایی رخ داد. لطفاً دوباره تلاش کنید.")
-                    except Exception as notify_error:
-                        logger.warning(f"Failed to notify user: {notify_error}")
+                    except Exception as notify_err:
+                        logger.warning(f"❗️ Couldn't notify user: {notify_err}")
 
-                    # Log and notify admin
+                    # Log & notify admin
                     error_trace = traceback.format_exc()
                     notify_admins_error(bot, user_input, e, user_info)
-                    logger.error(f"⚠️ Error from user {user_info}: {user_input}")
+
+                    if isinstance(e, (SQLAlchemyError, pymysql.MySQLError)):
+                        logger.error(f"🛑 Database error from {user_info} | {user_input}")
+                    else:
+                        logger.error(f"⚠️ Application error from {user_info} | {user_input}")
+
                     logger.error(error_trace)
 
-                except Exception as internal_error:
-                    logger.critical(f"❌ Error in error handler: {internal_error}")
+                except Exception as internal_err:
+                    logger.critical("🔥 INTERNAL ERROR in error handler")
                     logger.critical(traceback.format_exc())
 
-                # Optional: stop execution or not
+                # Optional: keep or stop execution
                 raise e
         return wrapper
     return decorator

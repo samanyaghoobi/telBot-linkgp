@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from telebot.types import CallbackQuery,InlineKeyboardMarkup,InlineKeyboardButton
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 from database.session import SessionLocal
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.banner_repository import BannerRepository

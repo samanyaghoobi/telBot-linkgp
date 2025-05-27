@@ -11,7 +11,7 @@ from database.repository.bot_setting_repository import BotSettingRepository
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.user_repository import UserRepository
 from sqlalchemy.exc import SQLAlchemyError
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 
 
 # Step 1: Display the list of days from this week (starting from today)
@@ -34,7 +34,7 @@ def show_week_days(msg: Message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith('week_prev'))
-def go_previous_week(call):
+def go_previous_week(call:CallbackQuery):
     # Extract the starting date of the previous week from the callback data
     start_of_week_str = call.data.split('_')[2]
     start_of_week = date.fromisoformat(start_of_week_str)

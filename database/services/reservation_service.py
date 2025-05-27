@@ -43,8 +43,10 @@ def reserve_banner_transaction(
         )
 
         db.commit()
+
         return reservation
-    except SQLAlchemyError:
+    except SQLAlchemyError as e:
+        print (e)
         db.rollback()
         return None
 

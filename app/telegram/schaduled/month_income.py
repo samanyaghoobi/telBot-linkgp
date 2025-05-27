@@ -7,7 +7,7 @@ from database.repository.transaction_repository import TransactionRepository
 from datetime import datetime, timedelta
 import jdatetime
 import calendar
-from app.utils.logger import logger
+from app.telegram.logger import logger
 
 def get_month_range(target_date: datetime) -> tuple[datetime, datetime]:
     start = target_date.replace(day=1)
@@ -87,6 +87,8 @@ def format_monthly_comparison(this_data, last_data, this_month_start: datetime) 
 """.strip()
 
 def send_admin_monthly_auto_report():
+    logger.info(f"📊 Monthly income report is triggered")
+
     db = SessionLocal()
     reserve_repo = ReservationRepository(db)
     payment_repo = TransactionRepository(db)

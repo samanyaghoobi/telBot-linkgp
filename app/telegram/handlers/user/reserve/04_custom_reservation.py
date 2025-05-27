@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 from app.telegram.bot_instance import bot
 from telebot.types import CallbackQuery,Message,InlineKeyboardButton,InlineKeyboardMarkup
-from app.telegram.handlers.other.exception_handler import catch_errors
+from app.telegram.exception_handler import catch_errors
 from database.session import SessionLocal
 from database.repository.bot_setting_repository import BotSettingRepository
 from database.repository.reservation_repository import ReservationRepository
