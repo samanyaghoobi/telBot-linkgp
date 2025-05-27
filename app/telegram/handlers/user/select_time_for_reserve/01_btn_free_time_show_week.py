@@ -19,6 +19,7 @@ from app.telegram.exception_handler import catch_errors
 @bot.message_handler(func=lambda m: m.text == get_message("btn.free_times"))
 @catch_errors(bot)
 def show_week_days(msg: Message):
+    bot.delete_state(msg.from_user.id, msg.chat.id)
     today = date.today()
     weekday = today.weekday()  # 0=Monday, 6=Sunday
     start_of_week = today - timedelta(days=weekday)

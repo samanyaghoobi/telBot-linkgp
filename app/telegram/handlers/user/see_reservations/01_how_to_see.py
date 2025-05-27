@@ -83,6 +83,7 @@ from database.repository.banner_repository import BannerRepository
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("show_future_reservations") or c.data.startswith("show_all_reservations"))
 def show_reservations(call: CallbackQuery):
+    bot.delete_state(msg.from_user.id, msg.chat.id)
     db = SessionLocal()
     repo = ReservationRepository(db)
     banner_repo = BannerRepository(db)

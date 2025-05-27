@@ -15,11 +15,12 @@ from database.services.banner_service import soft_delete_banner_transaction
 
 @bot.message_handler(func=lambda m:m.text == get_message("btn.profile"))
 @catch_errors(bot)
-def profile_info(message):
+def profile_info(msg :Message):
+    bot.delete_state(msg.from_user.id, msg.chat.id)
     # if not check_membership(message): return
     db = SessionLocal()
     repo = UserRepository(db)
-    user = repo.get_or_create_user(message.from_user.id, message.from_user.username)
+    user = repo.get_or_create_user(msg .from_user.id, msg .from_user.username)
 
     markup = InlineKeyboardMarkup()
     markup.add(
@@ -30,7 +31,7 @@ def profile_info(message):
     )
 
     bot.send_message(
-        message.chat.id,
+        msg .chat.id,
         text=get_message("user.profile", user_id=user.userid, username=user.username, balance=user.balance, score=user.score),
         parse_mode="HTML",
         reply_markup=markup
