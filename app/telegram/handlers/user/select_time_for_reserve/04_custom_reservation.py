@@ -77,7 +77,7 @@ def choose_banner_for_range(call: CallbackQuery):
         return
 
     markup = InlineKeyboardMarkup(row_width=1)
-    for banner in user.banners:  # type: Banner
+    for banner in user.banners:  # type: ignore # type: banner
         if banner.is_deleted:
             continue
         markup.add(InlineKeyboardButton(banner.title, callback_data=f"confirm_range_reserve_{days}_{hour_str}_{banner.id}"))
