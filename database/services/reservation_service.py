@@ -3,7 +3,7 @@ from sqlalchemy.exc import SQLAlchemyError,IntegrityError
 from typing import Optional
 from datetime import date, datetime, time, timedelta
 
-from app.utils.time_tools.novert_time_and_date import date_to_persian
+from app.utils.time_tools.covert_time_and_date import date_to_persian
 from database.models.reservation import Reservation
 from database.models.user import User
 from database.repository.banner_repository import BannerRepository

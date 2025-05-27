@@ -1,5 +1,5 @@
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
-from app.utils.messages import get_message
+from app.utils.message import get_message
 
 def user_main_keyboard() -> ReplyKeyboardMarkup:
     """

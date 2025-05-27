@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from telebot.types import CallbackQuery,InlineKeyboardMarkup,InlineKeyboardButton
 from app.telegram.handlers.other.exception_handler import catch_errors
 from app.utils.markup.week_markup import show_reservation_day_selector
-from app.utils.time_tools.novert_time_and_date import date_to_persian
+from app.utils.time_tools.covert_time_and_date import date_to_persian
 from database.session import SessionLocal
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.banner_repository import BannerRepository

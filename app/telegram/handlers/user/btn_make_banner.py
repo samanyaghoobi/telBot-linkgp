@@ -2,7 +2,7 @@ from telebot.types import Message
 from app.telegram.bot_instance import bot
 from app.telegram.states.banner_state import BannerStates
 from database.session import SessionLocal
-from app.utils.messages import get_message
+from app.utils.message import get_message
 from database.models.banner import Banner
 from database.repository.bot_setting_repository import BotSettingRepository
 from database.repository.user_repository import UserRepository

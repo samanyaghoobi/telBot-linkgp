@@ -4,7 +4,7 @@ from database.models.reservation import Reservation
 from telebot.types import Message
 from database.models.reservation import Reservation
 from app.telegram.bot_instance import bot
-from app.utils.time_tools.novert_time_and_date import date_to_persian
+from app.utils.time_tools.covert_time_and_date import date_to_persian
 
 
 def cancel_reservation_notifier(reservation: Reservation, result: bool,reserve_info:str=None, reason: str = None):

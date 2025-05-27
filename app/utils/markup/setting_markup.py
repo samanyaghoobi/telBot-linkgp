@@ -1,6 +1,6 @@
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from app.utils.messages import get_message
+from app.utils.message import get_message
 from database.models.bot_setting import BotSetting
 
 

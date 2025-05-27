@@ -15,7 +15,7 @@ class Reservation(Base):
     date = Column(Date, nullable=False)
     time = Column(Time, nullable=False)
     price = Column(Integer, default=0)
-    approved = Column(Boolean, default=False)
+    posted = Column(Boolean, default=False)
     link = Column(String(255), nullable=False)
 
     user = relationship("User", back_populates="reservations")

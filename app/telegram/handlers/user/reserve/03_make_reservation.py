@@ -2,7 +2,7 @@ from app.utils.notifiers import notify_admin
 from app.utils.markup.week_markup import show_week_for_navigation
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton,Message
 from app.telegram.bot_instance import bot
-from app.utils.messages import get_message
+from app.utils.message import get_message
 from app.utils.text_formatter.reservation_info import format_reservation_by_id
 from config import ADMINS
 from database.session import SessionLocal

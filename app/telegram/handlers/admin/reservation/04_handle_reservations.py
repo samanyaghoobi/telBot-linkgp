@@ -4,7 +4,7 @@ from telebot.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMar
 
 from app.utils.notifiers.notify_cancell_reservation import cancel_reservation_notifier
 from app.utils.text_formatter.reservation_info import format_reservation_by_id, format_reservation_message
-from app.utils.time_tools.novert_time_and_date import date_to_persian
+from app.utils.time_tools.covert_time_and_date import date_to_persian
 from database.models.user import User
 from database.repository.banner_repository import BannerRepository
 from database.repository.reservation_repository import ReservationRepository

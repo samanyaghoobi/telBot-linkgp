@@ -3,7 +3,7 @@ from telebot import  types
 from database.models.user import User
 
 
-def create_pagination(users_list: list[User], page: int, per_page: int = 10):
+def create_pagination_for_users(users_list: list[User], page: int, per_page: int = 10):
     keyboard = types.InlineKeyboardMarkup()
     if len(users_list) <1 :
         button=types.InlineKeyboardButton(f"هیچ کاربری جهت نمایش وجود ندارد")

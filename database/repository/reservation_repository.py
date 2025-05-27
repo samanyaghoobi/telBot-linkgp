@@ -8,14 +8,14 @@ class ReservationRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_reservation(self, user_id: int, banner_id: int, reserve_date: date, reserve_time: time, link: str, price: int = 0, approved: bool = False) -> Optional[Reservation]:
+    def create_reservation(self, user_id: int, banner_id: int, reserve_date: date, reserve_time: time, link: str, price: int = 0, posted: bool = False) -> Optional[Reservation]:
         reservation = Reservation(
             user_id=user_id,
             banner_id=banner_id,
             date=reserve_date,
             time=reserve_time,
             price=price,
-            approved=approved,
+            posted=posted,
             link=link
         )
         try:

@@ -2,7 +2,7 @@ from telebot.types import Message,CallbackQuery
 from app.telegram.bot_instance import bot
 from app.telegram.states.setting_state import SettingStates
 from app.utils.markup.setting_markup import make_setting_markup
-from app.utils.messages import get_message
+from app.utils.message import get_message
 from database.repository.bot_setting_repository import BotSettingRepository
 from database.session import SessionLocal
 

@@ -12,7 +12,7 @@ from database.session import SessionLocal
 
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from app.utils.messages import get_message
+from app.utils.message import get_message
 from database.repository.user_repository import UserRepository
 
 @bot.message_handler(content_types=["photo"], state=userState.waiting_for_pic)

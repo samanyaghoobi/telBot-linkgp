@@ -1,7 +1,8 @@
 from app.utils.markup.week_markup import show_week_for_navigation
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton,Message
 from app.telegram.bot_instance import bot
-from app.utils.messages import get_message
+from app.utils.message import get_message
+from config import AVAILABLE_HOURS
 from database.session import SessionLocal
 from datetime import datetime, timedelta
 
@@ -14,11 +15,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 # Constant: Fixed list of available reservation hours
 #todo move to db 
-AVAILABLE_HOURS = [
-    "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "18:30",
-    "19:00", "19:30", "20:00", "20:30", "21:00", "21:30",
-    "22:00", "22:30", "23:00", "23:30", "00:00", "00:30", "01:00", "01:30", "02:00"
-]
+
 # Step 2: Show available hours for the selected day
 @bot.callback_query_handler(func=lambda c: c.data.startswith("select_day_"))
 def show_free_hours_for_day(call: CallbackQuery):

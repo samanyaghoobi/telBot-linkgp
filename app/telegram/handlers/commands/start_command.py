@@ -2,7 +2,7 @@ from app.telegram.bot_instance import bot
 from app.telegram.middlewares.check_membership import check_membership
 from app.utils.command_menu import set_command_menu
 from app.utils.keyboard import admin_main_keyboard, user_main_keyboard
-from app.utils.messages import get_message
+from app.utils.message import get_message
 
 # Handler for admin users
 

@@ -1,5 +1,5 @@
 from datetime import date, time
-from app.utils.time_tools.novert_time_and_date import date_to_persian
+from app.utils.time_tools.covert_time_and_date import date_to_persian
 from database.session import SessionLocal
 from database.repository.banner_repository import BannerRepository
 from database.repository.reservation_repository import ReservationRepository

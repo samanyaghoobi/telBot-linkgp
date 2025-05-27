@@ -18,3 +18,9 @@ MYSQL_CONFIG = {
 ADMINS = [int(x) for x in os.getenv("ADMINS", "").split(",") if x.strip()]
 MAIN_CHANNEL_ID = int(os.getenv("MAIN_CHANNEL_ID", "-1"))
 MANDATORY_CHANNELS = [x.strip() for x in os.getenv("MANDATORY_CHANNELS", "").split(",") if x.strip()]
+
+AVAILABLE_HOURS = [
+    "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "18:30",
+    "19:00", "19:30", "20:00", "20:30", "21:00", "21:30",
+    "22:00", "22:30", "23:00", "23:30", "00:00", "00:30", "01:00", "01:30", "02:00"
+]

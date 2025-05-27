@@ -1,7 +1,7 @@
 from telebot.types import Message
 from app.telegram.bot_instance import bot
 from config import MANDATORY_CHANNELS
-from app.utils.messages import get_message
+from app.utils.message import get_message
 
 def is_user_member(user_id: int, channel_username: str) -> bool:
     """

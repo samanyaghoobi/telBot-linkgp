@@ -1,13 +1,14 @@
-from app.telegram.handlers.other.exception_handler import catch_errors
-from app.utils.messages import get_message
-from app.telegram.bot_instance import bot
-from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
-from config import ADMINS
-from database.session import SessionLocal
-from database.repository.reservation_repository import ReservationRepository
 from datetime import datetime, timedelta
 import jdatetime
-from apscheduler.schedulers.background import BackgroundScheduler
+from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from app.telegram.bot_instance import bot
+from app.telegram.schaduled.month_income import send_admin_monthly_auto_report
+from app.telegram.handlers.other.exception_handler import catch_errors
+from app.utils.message import get_message
+from database.session import SessionLocal
+from database.repository.transaction_repository import TransactionRepository
+from database.repository.reservation_repository import ReservationRepository
+from config import ADMINS
 
 
 def get_month_range(target_date: datetime) -> tuple[datetime, datetime]:
@@ -17,6 +18,54 @@ def get_month_range(target_date: datetime) -> tuple[datetime, datetime]:
     else:
         end = start.replace(month=start.month + 1)
     return start, end
+
+
+def format_monthly_report(month_title: str, deposit: int, reserve_sum: int, reserve_count: int) -> str:
+    avg_price = reserve_sum // reserve_count if reserve_count else 0
+    avg_deposit_day = deposit // 30
+    avg_count_day = reserve_count / 30 if reserve_count else 0
+    
+    section1 = f"""📊 گزارش ربات برای ماه {month_title}:
+
+💰 مجموع واریزی: {deposit:,} تومان
+💳 مجموع هزینه رزروها: {reserve_sum:,} تومان
+📝 تعداد رزروها: {reserve_count}
+"""
+    
+    section2 = f"""
+📈 میانگین‌ها در روز:
+- 💰 میانگین واریزی: {avg_deposit_day:,} تومان
+- 💳 میانگین هزینه رزرو: {avg_price:,} تومان
+- 📝 میانگین تعداد رزرو: {avg_count_day:.2f} رزرو
+
+📌 توجه: این گزارش‌ها بر پایه ماه میلادی تهیه شده‌اند.
+"""
+    return section1 + section2
+
+
+def format_monthly_comparison(this_month_data, last_month_data, this_month_title):
+    def diff(now, past):
+        delta = now - past
+        symbol = "📈" if delta >= 0 else "📉"
+        percent = abs(delta * 100 // past) if past else "∞"
+        return f"{symbol} {percent}%"
+
+    t_dep, t_count, t_sum = this_month_data
+    l_dep, l_count, l_sum = last_month_data
+
+    msg = f"""📅 مقایسه عملکرد ماهانه:
+
+🟢 این ماه ({this_month_title}):
+- 💰 واریزی: {t_dep:,} تومان
+- 💳 مجموع رزرو: {t_sum:,} تومان
+- 📝 تعداد رزرو: {t_count}
+
+📙 تغییر نسبت به ماه قبل:
+- 💰 واریزی: {diff(t_dep, l_dep)}
+- 💳 مجموع رزرو: {diff(t_sum, l_sum)}
+- 📝 تعداد رزرو: {diff(t_count, l_count)}
+"""
+    return msg
 
 
 @bot.message_handler(func=lambda m: m.text == get_message("btn.admin.income"), is_admin=True)
@@ -29,11 +78,11 @@ def admin_bot_setting_panel(msg: Message):
 def send_admin_monthly_report(chat_id: int, target_date: datetime):
     db = SessionLocal()
     reserve_repo = ReservationRepository(db)
-    # payment_repo = TransactionRepository(db)
+    payment_repo = TransactionRepository(db)
 
     start_date, end_date = get_month_range(target_date)
 
-    # total_deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
+    total_deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
     reservations = reserve_repo.get_reservations_between(start_date.date(), end_date.date())
     total_reserves = len(reservations)
     total_reserve_price = sum(r.price for r in reservations)
@@ -41,13 +90,7 @@ def send_admin_monthly_report(chat_id: int, target_date: datetime):
     shamsi = jdatetime.date.fromgregorian(date=start_date.date())
     month_title = f"{shamsi.year}/{shamsi.month}"
 
-# 💰 مجموع واریزی: {total_deposit:,} تومان
-    text = f"""📊 گزارش ربات برای ماه {month_title}:
-
-
-📝 تعداد رزرو: {total_reserves}
-💳 مجموع هزینه رزروها: {total_reserve_price:,} تومان
-"""
+    text = format_monthly_report(month_title, total_deposit, total_reserve_price, total_reserves)
 
     prev_month = (start_date - timedelta(days=1)).replace(day=1)
     next_month = end_date
@@ -72,18 +115,19 @@ def admin_month_navigation(call: CallbackQuery):
 
     db = SessionLocal()
     reserve_repo = ReservationRepository(db)
+    payment_repo = TransactionRepository(db)
+
     start_date, end_date = get_month_range(target_date)
+
+    total_deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
     reservations = reserve_repo.get_reservations_between(start_date.date(), end_date.date())
     total_reserves = len(reservations)
     total_reserve_price = sum(r.price for r in reservations)
+
     shamsi = jdatetime.date.fromgregorian(date=start_date.date())
     month_title = f"{shamsi.year}/{shamsi.month}"
 
-    text = f"""📊 گزارش ربات برای ماه {month_title}:
-
-📝 تعداد رزرو: {total_reserves}
-💳 مجموع هزینه رزروها: {total_reserve_price:,} تومان
-"""
+    text = format_monthly_report(month_title, total_deposit, total_reserve_price, total_reserves)
 
     prev_month = (start_date - timedelta(days=1)).replace(day=1)
     next_month = end_date
@@ -106,54 +150,8 @@ def admin_month_navigation(call: CallbackQuery):
 
 
 @bot.callback_query_handler(func=lambda c: c.data == "admin_compare_current_month", is_admin=True)
+@catch_errors(bot)
 def handle_admin_compare_month(call: CallbackQuery):
     bot.delete_message(call.message.chat.id, call.message.message_id)
     send_admin_monthly_auto_report()
-
-
-def send_admin_monthly_auto_report():
-    db = SessionLocal()
-    reserve_repo = ReservationRepository(db)
-    # payment_repo = TransactionRepository(db)0
-
-    this_month = datetime.today().replace(day=1)
-    last_month = (this_month - timedelta(days=1)).replace(day=1)
-
-    def get_data_range(start_date):
-        end_date = (start_date + timedelta(days=32)).replace(day=1)
-        # total_deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
-        reservations = reserve_repo.get_reservations_between(start_date.date(), end_date.date())
-        total_reserve_price = sum(r.price for r in reservations)
-        return  len(reservations), total_reserve_price
-        # return total_deposit, len(reservations), total_reserve_price
-
-    t_count, t_sum = get_data_range(this_month)
-    l_count, l_sum = get_data_range(last_month)
-     
-    # t_dep, t_count, t_sum = get_data_range(this_month)
-    # l_dep, l_count, l_sum = get_data_range(last_month)
-
-    def diff(now, past):
-        delta = now - past
-        symbol = "📈" if delta >= 0 else "📉"
-        percent = abs(delta * 100 // past) if past else "∞"
-        return f"{symbol} {percent}%"
-
-# - 💰 واریزی: {t_dep:,}
-# - 💰 واریزی: {diff(t_dep, l_dep)}
-
-    msg = f"""📅 مقایسه عملکرد ماهانه:
-
-🟢 این ماه ({jdatetime.date.fromgregorian(date=this_month.date())}):
-- 📝 رزرو: {t_count}
-- 💳 مجموع رزرو: {t_sum:,}
-
-📙 تغییر نسبت به ماه قبل:
-- 📝 رزرو: {diff(t_count, l_count)}
-- 💳 مجموع رزرو: {diff(t_sum, l_sum)}
-"""
-
-    for admin_id in ADMINS:
-        bot.send_message(chat_id=admin_id, text=msg)
-
 

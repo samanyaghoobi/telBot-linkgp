@@ -2,13 +2,13 @@ from app.telegram.bot_instance import bot
 from app.telegram.handlers.other.exception_handler import catch_errors
 from app.telegram.states.banner_state import EditBannerStates
 from app.utils.markup.banner_list import build_user_banner_list_markup
-from app.utils.messages import get_message
+from app.utils.message import get_message
 from database.session import SessionLocal
 from database.repository.banner_repository import BannerRepository
 from database.repository.user_repository import UserRepository
 from telebot.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from app.telegram.bot_instance import bot
-from app.utils.messages import get_message
+from app.utils.message import get_message
 from database.session import SessionLocal
 from database.models.banner import Banner
 from database.services.banner_service import soft_delete_banner_transaction

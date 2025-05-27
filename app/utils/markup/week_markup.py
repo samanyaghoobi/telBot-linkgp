@@ -2,7 +2,7 @@ from datetime import date, timedelta
 import jdatetime
 from telebot.types import InlineKeyboardMarkup,InlineKeyboardButton
 from app.telegram.bot_instance import  bot
-from app.utils.time_tools.novert_time_and_date import dateInPersian, date_to_persian
+from app.utils.time_tools.covert_time_and_date import dateInPersian, date_to_persian
 from app.utils.time_tools.weekday_farsi import get_weekday_farsi
 from database.session import SessionLocal
 from database.repository.bot_setting_repository import BotSettingRepository

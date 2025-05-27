@@ -1,7 +1,7 @@
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from app.telegram.bot_instance import bot
 from app.telegram.handlers.other.exception_handler import catch_errors
-from app.utils.messages import get_message
+from app.utils.message import get_message
 from config import ADMINS  # لیست آی‌دی ادمین‌ها
 
 @bot.message_handler(func=lambda m: m.text == get_message("btn.admin.reservation") , is_admin=True)
