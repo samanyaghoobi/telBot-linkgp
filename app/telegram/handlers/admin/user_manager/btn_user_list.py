@@ -8,6 +8,7 @@ from telebot.types import CallbackQuery,InlineKeyboardButton,Message
 
 @bot.message_handler(func=lambda m: m.text == get_message("btn.admin.user_list"), is_admin=True)
 def user_list(msg: Message):
+    bot.delete_state(msg.from_user.id, msg.chat.id)
     db = SessionLocal()
     repo = UserRepository(db)
     users = repo.get_all_users()

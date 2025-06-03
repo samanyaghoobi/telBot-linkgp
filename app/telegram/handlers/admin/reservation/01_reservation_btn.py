@@ -7,6 +7,7 @@ from config import ADMINS  # لیست آی‌دی ادمین‌ها
 @bot.message_handler(func=lambda m: m.text == get_message("btn.admin.reservation") , is_admin=True)
 @catch_errors(bot)
 def admin_reservation_menu(message: Message):
+    bot.delete_state(msg.from_user.id, msg.chat.id)
     markup = InlineKeyboardMarkup()
     markup.add(
         InlineKeyboardButton("📅 فقط رزروهای امروز به بعد", callback_data="admin_reserve_upcoming"),

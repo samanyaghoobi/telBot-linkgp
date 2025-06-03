@@ -1,5 +1,5 @@
 from app.telegram.bot_instance import bot
-from app.utils.time_tools.covert_time_and_date import date_to_persian, date_to_persian_str
+from app.utils.time_tools.covert_time_and_date import date_to_persian, convertToPersianDateStr
 from config import ADMINS
 from database.session import SessionLocal
 from database.repository.reservation_repository import ReservationRepository
@@ -32,7 +32,7 @@ def format_monthly_report(start_date: datetime, end_date: datetime, deposit: int
     # نام ماه میلادی
     miladi_month = calendar.month_name[start_date.month]
     miladi_range = f"{start_date.strftime('%Y/%m/%d')} تا {(end_date - timedelta(days=1)).strftime('%Y/%m/%d')}"
-    shamsi_range = f"{date_to_persian_str(start_date)} تا {date_to_persian_str(end_date)}"
+    shamsi_range = f"{convertToPersianDateStr(start_date)} تا {convertToPersianDateStr(end_date)}"
 
     return f"""
 📊 گزارش عملکرد ماه <b>{miladi_month}</b>

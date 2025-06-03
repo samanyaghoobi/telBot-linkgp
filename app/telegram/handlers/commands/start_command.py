@@ -6,7 +6,7 @@ from app.utils.message import get_message
 
 # Handler for admin users
 
-@bot.message_handler(commands=["start"], is_admin=True)
+@bot.message_handler(commands=["start","admin"], is_admin=True)
 def start_admin(message):
     if not check_membership(message): return
     set_command_menu(message.chat.id)

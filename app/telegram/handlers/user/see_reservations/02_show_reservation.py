@@ -4,11 +4,8 @@ from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton,Ca
 from app.telegram.bot_instance import bot
 from app.utils.message import get_message
 from database.session import SessionLocal
-from database.models.banner import Banner
-from database.models.reservation import Reservation
 from database.repository.banner_repository import BannerRepository
 from database.repository.reservation_repository import ReservationRepository
-from database.repository.user_repository import UserRepository
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("show_reservation_"))
 def show_single_reservation(call: CallbackQuery):

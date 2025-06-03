@@ -1,3 +1,4 @@
+from app.telegram.logger import logger
 from database.models.reservation import Reservation
 
 
@@ -34,4 +35,4 @@ def cancel_reservation_notifier(reservation: Reservation, result: bool,reserve_i
     try:
         bot.send_message(chat_id=user_id, text=message)
     except Exception as e:
-        print(f"❌ Failed to notify user {user_id}: {e}")
+        logger.error(f"❌ Failed to notify user {user_id}: {e}")

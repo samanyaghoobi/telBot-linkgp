@@ -1,4 +1,4 @@
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+from telebot.types import ReplyKeyboardMarkup, KeyboardButton,InlineKeyboardMarkup,InlineKeyboardButton
 from app.utils.message import get_message
 
 def user_main_keyboard() -> ReplyKeyboardMarkup:
@@ -12,6 +12,7 @@ def user_main_keyboard() -> ReplyKeyboardMarkup:
         KeyboardButton(get_message("btn.my_reservations")),
         KeyboardButton(get_message("btn.profile")),
         KeyboardButton(get_message("btn.user.make_banner")),
+        KeyboardButton(get_message("btn.rules")),
         KeyboardButton(get_message("btn.support"))
     )
     return markup
@@ -23,5 +24,12 @@ def admin_main_keyboard() -> ReplyKeyboardMarkup:
         KeyboardButton(get_message("btn.admin.reservation")),
         KeyboardButton(get_message("btn.admin.user_list")),
         KeyboardButton(get_message("btn.admin.income")),
+    )
+    return markup
+
+def cancel_markup()->InlineKeyboardMarkup :
+    markup = InlineKeyboardMarkup()
+    markup.add(
+        InlineKeyboardButton("کنسل کردن" , callback_data="cancel"),
     )
     return markup

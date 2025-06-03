@@ -32,20 +32,19 @@ def show_reservation_details(call: CallbackQuery):
     user = db.query(User).filter(User.userid == call.from_user.id).first()
 
     if not banner:
-        bot.answer_callback_query(call.id, "بنر پیدا نشد.")
+        bot.answer_callback_query(call.id, get_message("msg.noBannerFind"))
         return
 
     # Retrieve the price for the selected time
     setting_repo = BotSettingRepository(db)
-    price = setting_repo.bot_setting_get("price_per_hour", "50")  # Default price if not found in DB #todo : makr it work
+    price = setting_repo.bot_setting_get("price_per_hour", "50")  # Default price if not found in DB #todo : make it work
 
-    # Prepare the confirmation message
-    line = get_message("txt.line")
+    # Prepare the confirmation message #todo:move to functions
     message = f"✅ شما قصد دارید برای روز {selected_date} ساعت {selected_hour} بنر فوق را رزرو کنید:\n\n"
     message += f"🖼 بنر: {banner.title}\n"
     message_banner_text = f"{banner.text}\n"
-    message += f"💰 قیمت: {price} تومان\n"
-    message += f"💳 موجودی شما: {user.balance} تومان\n\n"
+    message += f"💰 قیمت: {price} هزار تومان\n"
+    message += f"💳 موجودی شما: {user.balance} هزار تومان\n\n"
     message += "💰 برای تایید رزرو و کسر موجودی، تایید کنید."
     
     banner_msg=bot.edit_message_text(
@@ -109,7 +108,7 @@ def confirm_reservation(call: CallbackQuery):
     price = int(setting_repo.bot_setting_get("price_per_hour", "50"))
 
     if not user or not banner:
-        bot.send_message(call.message.chat.id, "❌ اطلاعات کاربر یا بنر یافت نشد.")
+        bot.send_message(call.message.chat.id,get_message("msg.noBannerFind"))
         return
 
     # Call transactional reservation service
@@ -124,7 +123,7 @@ def confirm_reservation(call: CallbackQuery):
     )
 
     if not reservation:
-        bot.send_message(call.message.chat.id, "❌ رزرو انجام نشد. لطفاً دوباره تلاش کنید.")
+        bot.send_message(call.message.chat.id,get_message( "msg.error.failReservation") )
         return
 
     # If successful, delete previous messages and send confirmation

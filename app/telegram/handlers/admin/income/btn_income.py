@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import jdatetime
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from app.telegram.bot_instance import bot
-from app.telegram.schaduled.month_income import send_admin_monthly_auto_report
+from app.telegram.scheduled.month_income import send_admin_monthly_auto_report
 from app.telegram.exception_handler import catch_errors
 from app.utils.message import get_message
 from database.session import SessionLocal
@@ -71,6 +71,7 @@ def format_monthly_comparison(this_month_data, last_month_data, this_month_title
 @bot.message_handler(func=lambda m: m.text == get_message("btn.admin.income"), is_admin=True)
 @catch_errors(bot)
 def admin_bot_setting_panel(msg: Message):
+    bot.delete_state(msg.from_user.id, msg.chat.id)
     today = datetime.today()
     send_admin_monthly_report(msg.chat.id, target_date=today)
 

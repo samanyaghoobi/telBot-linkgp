@@ -23,7 +23,6 @@ def show_week_days(msg: Message):
     today = date.today()
     weekday = today.weekday()  # 0=Monday, 6=Sunday
     start_of_week = today - timedelta(days=weekday)
-    print(f"start_of_week:{start_of_week} , con:{date.today() - timedelta(days=7)}")
 
     text="📆 لطفاً یک روز را انتخاب کنید:"
     # Create the buttons for the days of the week

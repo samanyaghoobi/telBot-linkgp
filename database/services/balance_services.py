@@ -53,7 +53,6 @@ def charge_user_transaction(db, user_id: int, amount: int) -> bool:
 
         new_balance = user.balance + amount
         user_repo.update_balance(user_id, amount)
-        print("-----------------")
         db.add(Transaction(
             user_id=user_id,
             amount=amount,
@@ -62,9 +61,8 @@ def charge_user_transaction(db, user_id: int, amount: int) -> bool:
         ))
 
         db.commit()
-        print("-----------------")
         return True
     except Exception as e:
-        print (e)
+        print ("error :",e)
         db.rollback()
         return False

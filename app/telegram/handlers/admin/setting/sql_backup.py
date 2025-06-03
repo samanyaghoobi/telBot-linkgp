@@ -1,5 +1,5 @@
 from app.telegram.logger import logger
-from app.telegram.schaduled.sql_backup import send_latest_backup_to_channel
+from app.telegram.scheduled.sql_backup import send_latest_backup_to_channel
 from telebot.types import CallbackQuery
 from app.telegram.bot_instance import bot
 from app.utils.message import get_message

@@ -8,6 +8,7 @@ from database.session import SessionLocal
 
 @bot.message_handler(func=lambda m: m.text == get_message("btn.admin.bot_setting"), is_admin=True)
 def show_settings(msg: Message):
+    bot.delete_state(msg.from_user.id, msg.chat.id)
     db = SessionLocal()
     repo =BotSettingRepository(db)  
     settings=repo.get_all_settings()

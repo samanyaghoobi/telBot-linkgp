@@ -2,24 +2,22 @@ from datetime import date, timedelta
 from app.telegram.bot_instance import bot
 from telebot.types import CallbackQuery,Message,InlineKeyboardButton,InlineKeyboardMarkup
 from app.telegram.exception_handler import catch_errors
+from app.utils.message import get_message
+from config import AVAILABLE_HOURS
 from database.session import SessionLocal
 from database.repository.bot_setting_repository import BotSettingRepository
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.user_repository import UserRepository
 from database.services.reservation_service import reserve_custom_range_transaction
 
-AVAILABLE_HOURS = [
-    "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "18:30",
-    "19:00", "19:30", "20:00", "20:30", "21:00", "21:30",
-    "22:00", "22:30", "23:00", "23:30", "00:00", "00:30", "01:00", "01:30", "02:00"
-]
+
 
 # handler for starting custom range reservation
 @bot.callback_query_handler(func=lambda c: c.data == "customReservation")
 @catch_errors(bot)
 def ask_custom_range_length(call: CallbackQuery):
     bot.set_state(call.from_user.id, "waiting_range_days", call.message.chat.id)
-    bot.send_message(call.message.chat.id, "📌 چند روز متوالی می‌خواهی رزرو کنی؟ (بین ۳ تا ۳۰ عدد وارد کن)")
+    bot.send_message(call.message.chat.id, get_message("msg.customReserveDayInput"))
 
 
 # state handler to receive number of days
@@ -106,15 +104,3 @@ def confirm_custom_range_reserve(call: CallbackQuery):
     bot.send_message(call.message.chat.id, message)
 
 
-# service/reservation_service.py
-
-# repository/reservation_repository.py
-
-
-# # ابزار گرفتن ساعات قابل رزرو از تنظیمات
-# def get_available_hours_from_setting(setting_repo):
-#     from app.config.constants import DEFAULT_AVAILABLE_HOURS
-#     raw = setting_repo.bot_setting_get("AVAILABLE_HOURS", None)
-#     if not raw:
-#         return DEFAULT_AVAILABLE_HOURS
-#     return [x.strip() for x in raw.split(",") if x.strip()]

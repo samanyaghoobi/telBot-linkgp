@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from app.telegram.logger import logger
 from database.models.bot_setting import BotSetting
 
 class BotSettingRepository:
@@ -19,7 +20,7 @@ class BotSettingRepository:
                 self.db.add(setting)
             self.db.commit()
         except :
-            print("error")
+            logger.error("error in bot setting")
 
     def get_all_settings(self) -> list[BotSetting]:
         return self.db.query(BotSetting).all()
