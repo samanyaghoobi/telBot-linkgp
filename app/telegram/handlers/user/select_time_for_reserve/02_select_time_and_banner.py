@@ -2,17 +2,15 @@ from app.utils.markup.week_markup import show_week_for_navigation
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton,Message
 from app.telegram.bot_instance import bot
 from app.utils.message import get_message
-from app.utils.time_tools.other import is_more_than_30_minutes_left
+from app.utils.time_tools.covert_time_and_date import convertToPersianDateStr
+from app.utils.time_tools.other import get_weekday_persian, is_more_than_30_minutes_left
 from config import AVAILABLE_HOURS
 from database.session import SessionLocal
 from datetime import datetime, timedelta
 
 from database.models.banner import Banner
 from database.models.user import User
-from database.repository.bot_setting_repository import BotSettingRepository
-from database.repository.reservation_repository import ReservationRepository
 from database.repository.user_repository import UserRepository
-from sqlalchemy.exc import SQLAlchemyError
 
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("select_day_"))
@@ -20,7 +18,6 @@ def show_free_hours_for_day(call: CallbackQuery):
     from datetime import datetime, timedelta
     from database.session import SessionLocal
     from database.repository.reservation_repository import ReservationRepository
-    from database.repository.bot_setting_repository import BotSettingRepository
 
     selected_date_str = call.data.replace("select_day_", "")
     selected_date = datetime.strptime(selected_date_str, "%Y-%m-%d").date()
@@ -53,9 +50,9 @@ def show_free_hours_for_day(call: CallbackQuery):
         if hour_str in ["00:00", "00:30", "01:00", "01:30", "02:00"]:
             note = "(بامداد)"
         if hour_str == "02:00":
-            note += " ⭐(پست آخر)"
+            note += " (⭐,پست آخر)"
         if "13:00" <= hour_str <= "17:00":
-            note = "(1/2,تخفیف‌دار)"
+            note = "(-50%,تخفیف‌دار)"
 
         btn_text = f"{hour_str} {note}".strip()
         callback = f"reserve_{selected_date}_{hour_str}"
@@ -67,9 +64,10 @@ def show_free_hours_for_day(call: CallbackQuery):
 
     if not any_available:
         markup.add(InlineKeyboardButton("❌ هیچ ساعتی آزاد نیست", callback_data="none"))
-
+    shamsi_date=convertToPersianDateStr(selected_date)
+    weekday=get_weekday_persian(selected_date)
     bot.edit_message_text(
-        text=f"⏰ ساعت‌های خالی برای <b>{selected_date.strftime('%Y/%m/%d')}</b> را انتخاب کنید:",
+        text=f"⏰ ساعت‌های خالی برای <b>{shamsi_date}({weekday})</b> را انتخاب کنید:",
         chat_id=call.message.chat.id,
         message_id=call.message.id,
         reply_markup=markup,

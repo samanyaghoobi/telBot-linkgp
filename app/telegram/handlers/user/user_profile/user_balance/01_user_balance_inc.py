@@ -10,7 +10,7 @@ from database.repository.bot_setting_repository import BotSettingRepository
 import re
 
 # Step 1: Show predefined charge options
-@bot.callback_query_handler(func=lambda c: c.data == "user_charge" )
+@bot.callback_query_handler(func=lambda c: c.data == get_message("user.balanceIncrease") )
 @catch_errors(bot)
 def start_charge_flow(call: CallbackQuery):
     db = SessionLocal()

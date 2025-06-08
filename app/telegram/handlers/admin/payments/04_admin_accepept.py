@@ -12,7 +12,7 @@ from database.session import SessionLocal
 def confirm_charge(call: CallbackQuery):
     try:
         key = call.data.replace("confirm_charge_","")
-        user_id, amount, msg_id = key.split("_")
+        user_id, amount, msg_id,chat_id = key.split("_")
         user_id = int(user_id)
         amount = int(amount)
 
@@ -34,7 +34,7 @@ def confirm_charge(call: CallbackQuery):
             
 
             bot.send_message(
-                call.message.chat.id,
+                chat_id,
                 f"💰 <b>شارژ با موفقیت انجام شد!</b>\n\n"
                 f"🔹 <b>موجودی قبلی:</b> <code>{old_balance:,}</code> هزار تومان\n"
                 f"🔹 <b>میزان افزایش:</b> ✅<code>{(user.balance-old_balance):,}</code> هزار تومان\n"

@@ -29,11 +29,11 @@ class is_button(AdvancedCustomFilter):
 
     def __init__(self):
         self.allowed_texts = {
-            get_message("btn.free_times"),
-            get_message("btn.my_reservations"),
-            get_message("btn.profile"),
-            get_message("btn.user.make_banner"),
-            get_message("btn.support"),
+            get_message("btn.user.free_times"),
+            get_message("btn.user.my_reservations"),
+            get_message("btn.user.profile"),
+            get_message("btn.user.see_banners"),
+            get_message("btn.user.support"),
             get_message("btn.admin.bot_setting"),
             get_message("btn.admin.reservation"),
             get_message("btn.admin.user_list"),

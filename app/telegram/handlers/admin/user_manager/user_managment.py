@@ -1,7 +1,7 @@
 from app.telegram.bot_instance import bot
 from telebot.types import Message, CallbackQuery
 from app.telegram.states.admin_state import AdminUserEditState
-from app.utils.messages.user_profile import show_user_profile_to_admin
+from app.utils.messages.user_profile import get_userProfile_and_markup
 from database.session import SessionLocal
 from database.repository.user_repository import UserRepository
 
@@ -17,7 +17,6 @@ def handle_user_management_callback(call: CallbackQuery):
     if action.startswith("send_msg"):
         bot.send_message(call.message.chat.id, "📝 لطفاً پیام موردنظر برای کاربر را وارد کنید:")
         bot.set_state(user_id= call.message.chat.id,chat_id=  call.message.chat.id,state= AdminUserEditState.waiting_for_message)
-        print (bot.get_state(user_id=call.message.chat.id))
     else:
         bot.send_message(call.message.chat.id, "🔢 لطفاً مقدار موردنظر (عدد صحیح) را وارد کنید:")
         bot.set_state(user_id= call.message.chat.id, chat_id= call.message.chat.id,state= AdminUserEditState.waiting_for_amount)
@@ -70,32 +69,34 @@ def receive_admin_amount_input(msg: Message):
     if action == "inc_balance":
         repo.update_balance(user_id, amount)
     elif action == "dec_balance":
-        repo.update_balance(user_id, -amount)
+        result=repo.update_balance(user_id, -amount)
     elif action == "inc_score":
         repo.update_score(user_id, amount)
     elif action == "dec_score":
         repo.update_score(user_id, -amount)
 
-    user = repo.get_user(user_id)
-
+    updated_user = repo.get_user(user_id)
+    db.close()
     text = ""
     if action.endswith("balance"):
         text = (
             f"💰 <b>تغییر موجودی انجام شد!</b>\n\n"
             f"🔹 <b>موجودی قبلی:</b> <code>{before_balance:,}</code> هزار تومان\n"
             f"🔹 <b>تغییر:</b> {'✅' if 'inc' in action else '❌'}<code>{amount:,}</code> هزار تومان\n"
-            f"🔸 <b>موجودی جدید:</b> <code>{user.balance:,}</code> هزار تومان"
+            f"🔸 <b>موجودی جدید:</b> <code>{updated_user.balance:,}</code> هزار تومان"
         )
     else:
         text = (
             f"🎯 <b>تغییر امتیاز انجام شد!</b>\n\n"
             f"🔹 <b>امتیاز قبلی:</b> <code>{before_score:,}</code>\n"
             f"🔹 <b>تغییر:</b> {'✅' if 'inc' in action else '❌'}<code>{amount:,}</code>\n"
-            f"🔸 <b>امتیاز جدید:</b> <code>{user.score:,}</code>"
+            f"🔸 <b>امتیاز جدید:</b> <code>{updated_user.score:,}</code>"
         )
     bot.delete_message(chat_id=msg.chat.id,message_id=msg_id)
 
-    message_info=show_user_profile_to_admin(bot, msg.chat.id, user,reply_to_message_id=msg.id)
+    user_profile,markup=get_userProfile_and_markup(user)
+    message_info=bot.send_message(msg.chat.id, user_profile, parse_mode="HTML",reply_markup=markup)
+
     bot.send_message(msg.chat.id, text, parse_mode="HTML", reply_to_message_id=message_info.id)
     bot.delete_state(msg.from_user.id, msg.chat.id)
 

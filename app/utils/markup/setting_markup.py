@@ -16,4 +16,6 @@ def make_setting_markup(settings :list[BotSetting])-> InlineKeyboardMarkup:
     for setting in settings:
         btn=InlineKeyboardButton(f"{setting.key}:{setting.value}",callback_data=f"botSetting_{setting.key}")
         markup.add(btn)
+    btn=InlineKeyboardButton(get_message("btn.admin.add_setting"),callback_data=get_message("btn.admin.add_setting"))
+    markup.add(btn)
     return markup        

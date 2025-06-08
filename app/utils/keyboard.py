@@ -8,12 +8,12 @@ def user_main_keyboard() -> ReplyKeyboardMarkup:
     """
     markup = ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
     markup.add(
-        KeyboardButton(get_message("btn.free_times")),
-        KeyboardButton(get_message("btn.my_reservations")),
-        KeyboardButton(get_message("btn.profile")),
-        KeyboardButton(get_message("btn.user.make_banner")),
-        KeyboardButton(get_message("btn.rules")),
-        KeyboardButton(get_message("btn.support"))
+        KeyboardButton(get_message("btn.user.free_times")),
+        KeyboardButton(get_message("btn.user.my_reservations")),
+        KeyboardButton(get_message("btn.user.profile")),
+        KeyboardButton(get_message("btn.user.see_banners")),
+        KeyboardButton(get_message("btn.user.rules")),
+        KeyboardButton(get_message("btn.user.support"))
     )
     return markup
 

@@ -13,7 +13,7 @@ from database.session import SessionLocal
 from database.models.banner import Banner
 from database.services.banner_service import soft_delete_banner_transaction
 
-@bot.message_handler(func=lambda m:m.text == get_message("btn.profile"))
+@bot.message_handler(func=lambda m:m.text == get_message("btn.user.profile"))
 @catch_errors(bot)
 def profile_info(msg :Message):
     bot.delete_state(msg.from_user.id, msg.chat.id)
@@ -24,9 +24,8 @@ def profile_info(msg :Message):
 
     markup = InlineKeyboardMarkup()
     markup.add(
-        InlineKeyboardButton(get_message("btn.user.charge"), callback_data="user_charge"),
-        InlineKeyboardButton(get_message("btn.user.show_banners"), callback_data="user_show_banners"),
-        InlineKeyboardButton(get_message("btn.convert_points"), callback_data="convert_points"),
+        InlineKeyboardButton(get_message("user.balanceIncrease"), callback_data=get_message("user.balanceIncrease")),
+        InlineKeyboardButton(get_message("btn.user.convert_points"), callback_data=get_message("btn.user.convert_points")),
         row_width=2
     )
 

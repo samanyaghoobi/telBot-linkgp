@@ -3,30 +3,56 @@ from telebot.types import CallbackQuery,InlineKeyboardMarkup,InlineKeyboardButto
 from app.telegram.exception_handler import catch_errors
 from app.telegram.states.banner_state import EditBannerStates
 from app.utils.markup.banner_list import build_user_banner_list_markup
+from app.utils.message import get_message
 from database.session import SessionLocal
 from database.models.banner import Banner
 from database.repository.banner_repository import BannerRepository
 from database.repository.user_repository import UserRepository
 from database.services.banner_service import soft_delete_banner_transaction
 #* show banner
-@bot.callback_query_handler(func=lambda c: c.data == "user_show_banners")
+@bot.message_handler(func=lambda m: m.text == get_message("btn.user.see_banners"))
+@catch_errors(bot)
+def show_user_banners(message: Message):
+    db = SessionLocal()
+    repo = UserRepository(db)
+    user = repo.get_user(message.from_user.id)
+
+    if not user:
+        bot.send_message(
+            chat_id=message.chat.id,
+            text=get_message("msg.noBannerFind")
+        )
+        return
+
+
+    markup = build_user_banner_list_markup(user_id=user.userid)
+    text = "📋 لیست بنرهای شما:"
+    bot.send_message(
+        chat_id=message.chat.id,
+        text=text,
+        reply_markup=markup
+    )
+
+@bot.callback_query_handler(func=lambda c: c.data == get_message("btn.user.see_banners"))
 @catch_errors(bot)
 def show_user_banners(call: CallbackQuery):
     db = SessionLocal()
     repo = UserRepository(db)
-    user = repo.get_user(call.from_user.id)
+    user = repo.get_user(call.message.chat.id)
 
     if not user:
-        bot.answer_callback_query(call.id, "شما هیچ بنری ثبت نکرده‌اید.")
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text=get_message("msg.noBannerFind")
+        )
         return
-
 
 
     markup = build_user_banner_list_markup(user_id=user.userid)
     text = "📋 لیست بنرهای شما:"
     bot.edit_message_text(
+        message_id=call.message.id,
         chat_id=call.message.chat.id,
-        message_id=call.message.message_id,
         text=text,
         reply_markup=markup
     )
@@ -48,7 +74,7 @@ def show_banner_detail(call: CallbackQuery):
     markup = InlineKeyboardMarkup()
     markup.add(
         InlineKeyboardButton("🗑 حذف", callback_data=f"delete_banner_{banner.id}"),
-        # InlineKeyboardButton("✏️ ویرایش", callback_data=f"edit_banner_{banner.id}")
+        InlineKeyboardButton("🔙 بازگشت", callback_data=get_message("btn.user.see_banners"))
     )
     bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=banner.text,reply_markup=markup)
 

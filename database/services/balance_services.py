@@ -63,6 +63,5 @@ def charge_user_transaction(db, user_id: int, amount: int) -> bool:
         db.commit()
         return True
     except Exception as e:
-        print ("error :",e)
         db.rollback()
         return False

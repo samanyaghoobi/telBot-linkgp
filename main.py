@@ -10,6 +10,8 @@ from app.utils.messages.delete_message import delete_scheduled_messages
 from database.init import init_db
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.telegram.handlers.admin.income.btn_income import send_admin_monthly_auto_report
+
+
 if __name__ == "__main__":
     init_db()
     logger.info("📦 Database initialized.")
@@ -40,5 +42,5 @@ if __name__ == "__main__":
 
     scheduler.start()
 
-    bot.infinity_polling(skip_pending=True)
+    bot.infinity_polling(skip_pending=True,)
     logger.info("🤖 Bot is running...")

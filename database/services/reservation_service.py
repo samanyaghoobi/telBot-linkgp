@@ -46,7 +46,6 @@ def reserve_banner_transaction(
 
         return reservation
     except SQLAlchemyError as e:
-        print (e)
         db.rollback()
         return None
 

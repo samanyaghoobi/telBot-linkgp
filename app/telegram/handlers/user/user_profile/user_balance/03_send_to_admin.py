@@ -54,7 +54,7 @@ def handle_receipt(msg: Message):
 
         markup = InlineKeyboardMarkup(row_width=2)
         markup.add(
-            InlineKeyboardButton("✅ تایید", callback_data=f"confirm_charge_{user.userid}_{amount}_{msg.message_id}"),
+            InlineKeyboardButton("✅ تایید", callback_data=f"confirm_charge_{user.userid}_{amount}_{msg.message_id}_{msg.chat.id}"),
             InlineKeyboardButton("❌ رد", callback_data=f"reject_charge_{user.userid}_{msg.message_id}"),
             InlineKeyboardButton("✏️ تغییر مبلغ", callback_data=f"edit_charge_{user.userid}_{msg.message_id}")
         )

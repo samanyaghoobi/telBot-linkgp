@@ -9,7 +9,7 @@ SUPPORT_ID = 345490618
 SUPPORT_USERNAME = "@linkgp_admin"
 SUPPORT_TEXT = "برای ارتباط با پشتیبان روی دکمه زیر کلیک کنید"
 
-@bot.message_handler(func=lambda m: m.text == get_message("btn.support"))
+@bot.message_handler(func=lambda m: m.text == get_message("btn.user.support"))
 @catch_errors(bot)
 def support_handler(msg: Message):
     bot.delete_state(user_id=msg.from_user.id, chat_id=msg.chat.id)

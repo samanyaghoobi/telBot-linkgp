@@ -1,4 +1,5 @@
 from app.utils.message import get_message
+from app.utils.messages.user_profile import get_userProfile_and_markup
 from app.utils.paging_inline_btn import create_pagination_for_users
 from telebot.types import InlineKeyboardMarkup
 from app.telegram.bot_instance import bot
@@ -47,22 +48,7 @@ def handle_user_profile_view(call: CallbackQuery):
         bot.answer_callback_query(call.id, "❌ کاربر یافت نشد.", show_alert=True)
         return
 
-    profile_text = get_message(
-        "user.profile",
-        user_id=user.userid,
-        username=user.username,
-        balance=user.balance,
-        score=user.score
-    )
-
-    markup = InlineKeyboardMarkup(row_width=2)
-    markup.add(
-        InlineKeyboardButton("➕ افزایش موجودی", callback_data=f"inc_balance_{user.userid}"),
-        InlineKeyboardButton("➖ کاهش موجودی", callback_data=f"dec_balance_{user.userid}"),
-        InlineKeyboardButton("➕ افزایش امتیاز", callback_data=f"inc_score_{user.userid}"),
-        InlineKeyboardButton("➖ کاهش امتیاز", callback_data=f"dec_score_{user.userid}"),
-        InlineKeyboardButton("✉️ ارسال پیام", callback_data=f"send_msg_{user.userid}"),
-    )
+    profile_text, markup = get_userProfile_and_markup(user=user)
 
     bot.edit_message_text(
         chat_id=call.message.chat.id,

@@ -6,7 +6,6 @@ load_dotenv(override=True,verbose=True)
 
 TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
 TELEGRAM_PROXY_URL = os.getenv("TELEGRAM_PROXY_URL", "")
-
 MYSQL_CONFIG = {
     "host": os.getenv("MYSQL_HOST"),
     "port": int(os.getenv("MYSQL_PORT", 3306)),

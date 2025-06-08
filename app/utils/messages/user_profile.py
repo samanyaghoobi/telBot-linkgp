@@ -1,9 +1,11 @@
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton,Message
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database.models.user import User
-from telebot import TeleBot
 from app.utils.message import get_message
 
-def show_user_profile_to_admin(bot:TeleBot, chat_id:int, user:User, reply_to_message_id=None)->Message:
+
+def get_userProfile_and_markup( user: User ) -> tuple:
+    """return profile_text, markup"""
+    # Prepare the profile text using the user data
     profile_text = get_message(
         "user.profile",
         user_id=user.userid,
@@ -12,6 +14,7 @@ def show_user_profile_to_admin(bot:TeleBot, chat_id:int, user:User, reply_to_mes
         score=user.score
     )
 
+    # Create the inline keyboard markup
     markup = InlineKeyboardMarkup(row_width=2)
     markup.add(
         InlineKeyboardButton("➕ افزایش موجودی", callback_data=f"inc_balance_{user.userid}"),
@@ -21,11 +24,5 @@ def show_user_profile_to_admin(bot:TeleBot, chat_id:int, user:User, reply_to_mes
         InlineKeyboardButton("✉️ ارسال پیام", callback_data=f"send_msg_{user.userid}"),
     )
 
-    message :Message= bot.send_message(
-        chat_id=chat_id,
-        text=profile_text,
-        parse_mode="HTML",
-        reply_to_message_id=reply_to_message_id,
-        reply_markup=markup
-    )
-    return message
+    # Return both profile text and markup
+    return profile_text, markup

@@ -2,12 +2,13 @@
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from app.telegram.bot_instance import bot
 from app.telegram.exception_handler import catch_errors
+from app.utils.message import get_message
 from database.session import SessionLocal
 from database.repository.user_repository import UserRepository
 from database.repository.bot_setting_repository import BotSettingRepository
 from database.services.balance_services import convert_score_to_balance_transaction
 
-@bot.callback_query_handler(func=lambda c: c.data == "convert_points")
+@bot.callback_query_handler(func=lambda c: c.data == get_message("btn.user.convert_points"))
 @catch_errors(bot)
 def handle_point_conversion(call: CallbackQuery):
     db = SessionLocal()
@@ -16,10 +17,9 @@ def handle_point_conversion(call: CallbackQuery):
 
     user = user_repo.get_user(call.from_user.id)
     if not user:
-        bot.answer_callback_query(call.id, "کاربر یافت نشد.", show_alert=True)
+        bot.answer_callback_query(call.id,get_message("error.userNotFound") , show_alert=True)
         return
 
-    # نرخ تبدیل از تنظیمات یا دیفالت
     rate_str = setting_repo.bot_setting_get("point_to_toman", "10")
     try:
         rate = int(rate_str)
@@ -27,7 +27,7 @@ def handle_point_conversion(call: CallbackQuery):
         rate = 10
 
     if user.score < rate:
-        bot.answer_callback_query(call.id, "❌ حداقل امتیاز برای تبدیل کافی نیست.", show_alert=True)
+        bot.answer_callback_query(call.id, get_message("error.user.notEnoughScore",min=rate_str), show_alert=True)
         return
 
     # محاسبه مبلغ قابل تبدیل

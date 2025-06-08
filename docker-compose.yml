@@ -10,6 +10,7 @@ services:
     env_file:
       - .env
     volumes:
+      - .:/bot                     # bind mount کل پروژه
       - /root/backup/sql:/app/backups/sql:ro 
     working_dir: /bot
     command: ["python", "main.py"]

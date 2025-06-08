@@ -16,7 +16,7 @@ from app.telegram.exception_handler import catch_errors
 
 # Step 1: Display the list of days from this week (starting from today)
 
-@bot.message_handler(func=lambda m: m.text == get_message("btn.free_times"))
+@bot.message_handler(func=lambda m: m.text == get_message("btn.user.free_times"))
 @catch_errors(bot)
 def show_week_days(msg: Message):
     bot.delete_state(msg.from_user.id, msg.chat.id)

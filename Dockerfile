@@ -1,22 +1,19 @@
-FROM python:3.9.19-slim 
+FROM python:3.9.19-slim
 
-# تنظیم منطقه زمانی به تهران
+# Set timezone to Tehran
 ENV TZ=Asia/Tehran
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# make dir
-RUN mkdir -p /logs 
+# Create log directory and set working dir
+RUN mkdir -p /logs
 WORKDIR /bot
 
-# copy alla file to dir '/bot'
-COPY . .
-
-# install requrment 
+# Install requirements without copying source code
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# کپی فایل تنظیمات logrotate
+# Copy logrotate config (optional)
 COPY logrotate.conf /etc/logrotate.d/bot-logrotate.conf
 
-#run code
+# Run main.py from mounted code
 CMD ["python", "main.py"]
-# CMD ["sh", "-c", "python main.py > /logs/output.log 2>&1"]

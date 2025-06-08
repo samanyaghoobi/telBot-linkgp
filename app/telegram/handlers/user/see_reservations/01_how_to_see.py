@@ -10,7 +10,7 @@ from database.repository.banner_repository import BannerRepository
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.user_repository import UserRepository
 
-@bot.message_handler(func=lambda m: m.text == get_message("btn.my_reservations"))
+@bot.message_handler(func=lambda m: m.text == get_message("btn.user.my_reservations"))
 def my_reservation(msg: Message):
     bot.delete_state(msg.from_user.id, msg.chat.id)
     markup = InlineKeyboardMarkup(row_width=1)
@@ -27,7 +27,7 @@ def my_reservation(msg: Message):
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("show_future_reservations") or c.data.startswith("show_all_reservations"))
 def show_reservations(call: CallbackQuery):
-    bot.delete_state(msg.from_user.id, msg.chat.id)
+    bot.delete_state(call.message.chat.id, call.message.chat.id)
     db = SessionLocal()
     repo = ReservationRepository(db)
     banner_repo = BannerRepository(db)

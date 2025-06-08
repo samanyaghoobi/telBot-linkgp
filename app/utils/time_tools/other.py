@@ -22,3 +22,19 @@ def is_more_than_30_minutes_left(target_time_str):
     except ValueError:
         # اگر فرمت ورودی اشتباه بود
         raise ValueError("زمان باید به فرمت HH:MM باشد")
+
+
+def get_weekday_persian(date: datetime.date) -> str:
+    weekdays_persian = {
+        0: "دوشنبه",
+        1: "سه‌شنبه",
+        2: "چهارشنبه",
+        3: "پنج‌شنبه",
+        4: "جمعه",
+        5: "شنبه",
+        6: "یکشنبه",
+    }
+    
+    # تبدیل weekday عددی به فارسی (0 = Monday)
+    weekday_number = date.weekday()
+    return weekdays_persian.get(weekday_number, "نامشخص")
