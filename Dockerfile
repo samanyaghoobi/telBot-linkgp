@@ -4,16 +4,28 @@ FROM python:3.9.19-slim
 ENV TZ=Asia/Tehran
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-# Create log directory and set working dir
-RUN mkdir -p /logs
+# Improve Python behavior in containers
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Create app user and directories
+RUN useradd -ms /bin/bash appuser
+RUN mkdir -p /logs /bot && chown -R appuser:appuser /logs /bot
+
 WORKDIR /bot
 
-# Install requirements without copying source code
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy requirements first to leverage layer cache
+COPY --chown=appuser:appuser requirements.txt /bot/requirements.txt
+RUN pip install -r requirements.txt
 
-# Copy logrotate config (optional)
-COPY logrotate.conf /etc/logrotate.d/bot-logrotate.conf
+# Copy source code
+COPY --chown=appuser:appuser . /bot
 
-# Run main.py from mounted code
+# NOTE: We persist logs via volume /logs; rotate on host via logging options or external tools.
+# COPY logrotate.conf /etc/logrotate.d/bot-logrotate.conf  # Not recommended inside the container
+
+USER appuser
+
 CMD ["python", "main.py"]

@@ -1,22 +1,35 @@
 version: "3.9"
 
 services:
-  telegram-bot:
-    container_name: telebot_link_GP
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
+  bot:
+    container_name: ${CONTAINER_NAME:-linkgp-bot}
+    image: "${IMAGE_NAME}:${IMAGE_TAG}"
+    # No ports exposed; bot uses outbound connections only.
     env_file:
-      - .env
-    volumes:
-      - .:/bot                     # bind mount کل پروژه
-      - /root/backup/sql:/app/backups/sql:ro 
-    working_dir: /bot
-    command: ["python", "main.py"]
-    networks:
-      - bot-network
+      - "${ENV_FILE}"
+    restart: unless-stopped
 
-networks:
-  bot-network:
-    driver: bridge
+    # Persist logs on a named volume
+    volumes:
+      - bot-logs:/logs
+
+    # Resource limits (Compose will apply cgroup limits on modern Docker)
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"      # Limit to 1 CPU
+          memory: 750M     # Limit to 750 MB RAM
+        reservations:
+          cpus: "0.25"     # (Optional) ensure some baseline
+          memory: 128M
+
+    # Cap container log size on host (json-file driver)
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  bot-logs:
+    name: linkgp-bot-logs
