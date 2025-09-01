@@ -1,22 +1,43 @@
-version: "3.9"
-
 services:
-  telegram-bot:
-    container_name: telebot_link_GP
-    build:
-      context: .
-      dockerfile: Dockerfile
-    restart: unless-stopped
+  mysql:
+    container_name: linkgp-mysql
+    image: mysql:8.0
     env_file:
-      - .env
+      - "/home/saman/env/linkgp/.env"
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:${DB_PORT:-3333}:3306"
     volumes:
-      - .:/bot                     # bind mount کل پروژه
-      - /root/backup/sql:/app/backups/sql:ro 
-    working_dir: /bot
-    command: ["python", "main.py"]
-    networks:
-      - bot-network
+      - /home/saman/valoums/mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
 
-networks:
-  bot-network:
-    driver: bridge
+  bot:
+    container_name: ${CONTAINER_NAME:-linkgp-bot}
+    image: "${IMAGE_NAME}:${IMAGE_TAG}"
+    # No ports exposed; bot uses outbound connections only.
+    env_file:
+      - "/home/saman/env/linkgp/.env"
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    # Persist logs on a named volume
+    volumes:
+      - /home/saman/valoums/bot-logs:/logs
+
+    # Resource limits for non-Swarm compose
+    mem_limit: 750m
+    cpus: "1.0"
+
+    # Cap container log size on host (json-file driver)
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
