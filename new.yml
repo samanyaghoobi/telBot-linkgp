@@ -1,0 +1,290 @@
+name: CI/CD - Telegram Bot (Docker Compose)
+
+on:
+  push:
+    branches: [ master, develop ]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Where to deploy"
+        type: choice
+        required: true
+        options: [staging, production]
+        default: staging
+      do_build:
+        description: "Build & push image before deploy?"
+        type: boolean
+        required: true
+        default: true
+      image_tag:
+        description: "Image tag to deploy (leave empty to use sha-<commit>)"
+        type: string
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: linkgp-${{ github.ref_name }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  DOCKER_IMAGE_BASE: ${{ secrets.DOCKER_USERNAME }}/${{ secrets.DOCKER_IMAGE_NAME }}
+
+jobs:
+  build:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    # Build on push; on manual only if do_build == true
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.do_build == true)
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Enable Buildx with docker-container driver (supports advanced cache/export)
+      - name: Setup Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+          driver: docker-container
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Decide IMAGE_TAG
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.image_tag }}" ]; then
+            echo "IMAGE_TAG=${{ inputs.image_tag }}" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE_TAG=sha-${{ github.sha }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build & Push (with GHA cache)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.DOCKER_IMAGE_BASE }}:latest
+            ${{ env.DOCKER_IMAGE_BASE }}:${{ env.IMAGE_TAG }}
+            ${{ env.DOCKER_IMAGE_BASE }}:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy_staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    if: (github.event_name == 'push' && github.ref_name == 'develop') || (github.event_name == 'workflow_dispatch' && inputs.target == 'staging')
+    env:
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_IP: ${{ secrets.SERVER_IP }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}   # optional; leave empty for 22
+      DEPLOY_DIR: /home/saman/deploy/linkgp
+      ENV_FILE: /home/saman/env/linkgp/.env
+      IMAGE_NAME: ${{ env.DOCKER_IMAGE_BASE }}
+      CONTAINER_NAME: linkgp-bot
+    steps:
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          # write key; strip CR if any
+          printf '%s' "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          # sanity check: fail early if key is invalid
+          ssh-keygen -y -f ~/.ssh/id_rsa >/dev/null 2>&1 || { echo "Invalid SSH private key"; exit 1; }
+          # host key pinning
+          ssh-keyscan -H "${SERVER_IP}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Decide IMAGE_TAG
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.image_tag }}" ]; then
+            echo "IMAGE_TAG=${{ inputs.image_tag }}" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE_TAG=sha-${{ github.sha }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Quick SSH connectivity check
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${SERVER_PORT:-22}"
+          ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -p "$PORT" "$SERVER_USER@$SERVER_IP" "whoami"
+
+      - name: Copy docker-compose file to server
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${SERVER_PORT:-22}"
+          ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -p "$PORT" "$SERVER_USER@$SERVER_IP" "mkdir -p $DEPLOY_DIR"
+          scp -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -P "$PORT" docker-compose.yml "$SERVER_USER@$SERVER_IP:$DEPLOY_DIR/docker-compose.yml"
+
+      - name: Deploy with Docker Compose (with rollback)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${SERVER_PORT:-22}"
+          ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -p "$PORT" "$SERVER_USER@$SERVER_IP" bash -lc '
+            set -Eeuo pipefail
+            DEPLOY_DIR="'$DEPLOY_DIR'"
+            ENV_FILE="'$ENV_FILE'"
+            IMAGE_NAME="'$IMAGE_NAME'"
+            NEW_TAG="'$IMAGE_TAG'"
+            META_DIR="$DEPLOY_DIR/.meta"
+            COMPOSE_ENV="$DEPLOY_DIR/.compose.env"
+            RELEASE_FILE="$META_DIR/release"
+
+            mkdir -p "$META_DIR"
+
+            LAST_TAG=""
+            if [ -f "$RELEASE_FILE" ]; then . "$RELEASE_FILE"; fi
+
+            # Write compose env (no indentation)
+            cat > "$COMPOSE_ENV" <<EOF
+            IMAGE_NAME=$IMAGE_NAME
+            IMAGE_TAG=$NEW_TAG
+            ENV_FILE=$ENV_FILE
+            CONTAINER_NAME=linkgp-bot
+            EOF
+
+            docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$COMPOSE_ENV" pull
+
+            if ! docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$COMPOSE_ENV" up -d; then
+              echo "Compose up failed."
+              exit 1
+            fi
+
+            sleep 6
+            if [ -z "$(docker ps -q -f name=linkgp-bot)" ]; then
+              echo "New container is not running. Rolling back..."
+              if [ -n "$LAST_TAG" ]; then
+                cat > "$COMPOSE_ENV" <<EOF
+                IMAGE_NAME=$IMAGE_NAME
+                IMAGE_TAG=$LAST_TAG
+                ENV_FILE=$ENV_FILE
+                CONTAINER_NAME=linkgp-bot
+                EOF
+                docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$COMPOSE_ENV" pull || true
+                docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$COMPOSE_ENV" up -d || true
+              fi
+              exit 1
+            fi
+
+            # Update release pointer
+            cat > "$RELEASE_FILE" <<EOF
+            LAST_TAG=$NEW_TAG
+            EOF
+
+            docker logs --tail=200 linkgp-bot || true
+            docker image prune -f --filter "until=24h" || true
+          '
+
+  deploy_prod:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    environment: production
+    if: (github.event_name == 'push' && github.ref_name == 'master') || (github.event_name == 'workflow_dispatch' && inputs.target == 'production')
+    env:
+      SERVER_USER: ${{ secrets.SERVER_USER }}
+      SERVER_IP: ${{ secrets.SERVER_IP }}
+      SERVER_PORT: ${{ secrets.SERVER_PORT }}   # optional; leave empty for 22
+      DEPLOY_DIR: /home/saman/deploy/linkgp
+      ENV_FILE: /home/saman/env/linkgp/.env
+      IMAGE_NAME: ${{ env.DOCKER_IMAGE_BASE }}
+      CONTAINER_NAME: linkgp-bot
+    steps:
+      - name: Prepare SSH
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s' "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keygen -y -f ~/.ssh/id_rsa >/dev/null 2>&1 || { echo "Invalid SSH private key"; exit 1; }
+          ssh-keyscan -H "${SERVER_IP}" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Decide IMAGE_TAG
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.image_tag }}" ]; then
+            echo "IMAGE_TAG=${{ inputs.image_tag }}" >> "$GITHUB_ENV"
+          else
+            echo "IMAGE_TAG=sha-${{ github.sha }}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Quick SSH connectivity check
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${SERVER_PORT:-22}"
+          ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -p "$PORT" "$SERVER_USER@$SERVER_IP" "whoami"
+
+      - name: Copy docker-compose file to server
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${SERVER_PORT:-22}"
+          ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -p "$PORT" "$SERVER_USER@$SERVER_IP" "mkdir -p $DEPLOY_DIR"
+          scp -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -P "$PORT" docker-compose.yml "$SERVER_USER@$SERVER_IP:$DEPLOY_DIR/docker-compose.yml"
+
+      - name: Deploy with Docker Compose (with rollback)
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          PORT="${SERVER_PORT:-22}"
+          ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -p "$PORT" "$SERVER_USER@$SERVER_IP" bash -lc '
+            set -Eeuo pipefail
+            DEPLOY_DIR="'$DEPLOY_DIR'"
+            ENV_FILE="'$ENV_FILE'"
+            IMAGE_NAME="'$IMAGE_NAME'"
+            NEW_TAG="'$IMAGE_TAG'"
+            META_DIR="$DEPLOY_DIR/.meta"
+            COMPOSE_ENV="$DEPLOY_DIR/.compose.env"
+            RELEASE_FILE="$META_DIR/release"
+
+            mkdir -p "$META_DIR"
+
+            LAST_TAG=""
+            if [ -f "$RELEASE_FILE" ]; then . "$RELEASE_FILE"; fi
+
+            cat > "$COMPOSE_ENV" <<EOF
+            IMAGE_NAME=$IMAGE_NAME
+            IMAGE_TAG=$NEW_TAG
+            ENV_FILE=$ENV_FILE
+            CONTAINER_NAME=linkgp-bot
+            EOF
+
+            docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$COMPOSE_ENV" pull
+
+            if ! docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$COMPOSE_ENV" up -d; then
+              echo "Compose up failed."
+              exit 1
+            fi
+
+            sleep 6
+            if [ -z "$(docker ps -q -f name=linkgp-bot)" ]; then
+              echo "New container is not running. Rolling back..."
+              if [ -n "$LAST_TAG" ]; then
+                cat > "$COMPOSE_ENV" <<EOF
+                IMAGE_NAME=$IMAGE_NAME
+                IMAGE_TAG=$LAST_TAG
+                ENV_FILE=$ENV_FILE
+                CONTAINER_NAME=linkgp-bot
+                EOF
+                docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$COMPOSE_ENV" pull || true
+                docker compose -f "$DEPLOY_DIR/docker-compose.yml" --env-file "$COMPOSE_ENV" up -d || true
+              fi
+              exit 1
+            fi
+
+            cat > "$RELEASE_FILE" <<EOF
+            LAST_TAG=$NEW_TAG
+            EOF
+
+            docker logs --tail=200 linkgp-bot || true
+            docker image prune -f --filter "until=24h" || true
+          '

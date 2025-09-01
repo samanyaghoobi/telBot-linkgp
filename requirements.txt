@@ -1,5 +1,13 @@
-schedule
-telebot
-mysql-connector-python
-convertdate
 python-dotenv
+pyTelegramBotAPI
+sqlalchemy
+pymysql
+coloredlogs
+watchdog
+psutil
+jdatetime
+apscheduler
+SQLAlchemy==1.4.49
+APScheduler
+coloredlogs
+cryptography

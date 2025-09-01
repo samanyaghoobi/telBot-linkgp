@@ -1,0 +1,27 @@
+services:
+  bot:
+    container_name: ${CONTAINER_NAME:-linkgp-bot}
+    image: "${IMAGE_NAME}:${IMAGE_TAG}"
+    # No ports exposed; bot uses outbound connections only.
+    env_file:
+      - "/home/saman/env/linkgp/.env"
+    restart: unless-stopped
+
+    # Persist logs on a named volume
+    volumes:
+      - bot-logs:/logs
+
+    # Resource limits for non-Swarm compose
+    mem_limit: 750m
+    cpus: "1.0"
+
+    # Cap container log size on host (json-file driver)
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  bot-logs:
+    name: linkgp-bot-logs
