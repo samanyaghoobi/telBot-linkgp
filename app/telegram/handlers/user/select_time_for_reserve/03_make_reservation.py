@@ -111,7 +111,6 @@ def confirm_reservation(call: CallbackQuery):
     db = SessionLocal()
     try:
         userRepo = UserRepository(db)
-        setting_repo = BotSettingRepository(db)
         bannerRepo = BannerRepository(db)
         reservationRepo = ReservationRepository(db)
 

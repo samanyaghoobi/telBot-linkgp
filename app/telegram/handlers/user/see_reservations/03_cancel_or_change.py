@@ -9,6 +9,7 @@ from database.models.reservation import Reservation
 from database.repository.banner_repository import BannerRepository
 from database.repository.reservation_repository import ReservationRepository
 from database.repository.user_repository import UserRepository
+from database.services.reservation_service import cancel_reservation_transaction
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("cancel_reservation_"))
 @catch_errors(bot)
@@ -25,16 +26,21 @@ def cancel_reservation_action(call: CallbackQuery):
 
         now = datetime.now()
         res_datetime = datetime.combine(reservation.date, reservation.time)
-        #todo : change timing  
+        # Enforce user cancellation window (must be >= 30 minutes left)
         if res_datetime - now < timedelta(minutes=30):
             bot.answer_callback_query(call.id, "❌ امکان کنسل کردن نیست. کمتر از ۳۰ دقیقه تا زمان رزرو باقی‌ست.", show_alert=True)
             return
 
-        repo.delete_reservation(reservation_id)
+        # Cancel reservation with refund transactionally
+        success = cancel_reservation_transaction(db, reservation_id)
+        if not success:
+            bot.answer_callback_query(call.id, "❌ خطا در لغو رزرو. کمی بعد دوباره تلاش کنید.", show_alert=True)
+            return
+
         bot.edit_message_text(
             chat_id=call.message.chat.id,
             message_id=call.message.id,
-            text="❌ رزرو با موفقیت لغو شد."
+            text="❌ رزرو با موفقیت لغو شد و مبلغ به حساب شما برگشت."
         )
     finally:
         db.close()

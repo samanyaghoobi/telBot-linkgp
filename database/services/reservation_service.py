@@ -1,3 +1,4 @@
+from app.utils.priceing import get_price_from_db_for_time
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError,IntegrityError
 from typing import Optional
@@ -149,11 +150,12 @@ def reserve_custom_range_transaction(db, user_id: int, banner_id: int, from_date
         if not user or not banner:
             return False, "❌ بنر یا کاربر یافت نشد."
 
-        rate = int(setting_repo.bot_setting_get("price_per_hour", "50"))
+        # rate = int(setting_repo.bot_setting_get("price_per_hour", "50"))
+        rate = get_price_from_db_for_time(hour)
         total_days = (to_date - from_date).days + 1
         max_total_price = rate * total_days
 
-        if user.balance < rate:
+        if user.balance < max_total_price:
             return False, f"❌ موجودی شما برای این رزرو کافی نیست. حداقل موجودی مورد نیاز: {rate:,} تومان"
 
         reserved = []

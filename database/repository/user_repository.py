@@ -19,9 +19,12 @@ class UserRepository:
         try:
             user = self.db.query(User).filter_by(userid=userid).first()
             if user:
-                
-                user.balance += amount
-                
+                new_balance = (user.balance or 0) + amount
+                if new_balance < 0:
+                    # Prevent negative balances
+                    raise ValueError("Insufficient balance: result would be negative")
+                user.balance = new_balance
+
                 self.db.flush()  
                 
                 self.db.commit()
