@@ -142,7 +142,6 @@ def reserve_custom_range_transaction(db, user_id: int, banner_id: int, from_date
         user_repo = UserRepository(db)
         res_repo = ReservationRepository(db)
         banner_repo = BannerRepository(db)
-        setting_repo = BotSettingRepository(db)
 
         user = user_repo.get_user(user_id)
         banner = banner_repo.get_by_id(banner_id)
@@ -156,7 +155,7 @@ def reserve_custom_range_transaction(db, user_id: int, banner_id: int, from_date
         max_total_price = rate * total_days
 
         if user.balance < max_total_price:
-            return False, f"❌ موجودی شما برای این رزرو کافی نیست. حداقل موجودی مورد نیاز: {rate:,} تومان"
+            return False, f"❌ موجودی شما برای این رزرو کافی نیست. حداقل موجودی مورد نیاز: {max_total_price:,} تومان"
 
         reserved = []
         failed = []

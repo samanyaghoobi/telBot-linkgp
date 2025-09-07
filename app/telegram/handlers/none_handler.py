@@ -9,7 +9,7 @@ from app.telegram.exception_handler import catch_errors
 @bot.callback_query_handler(func=lambda c: c.data == "none")
 @catch_errors(bot)
 def unimplemented_button(call: CallbackQuery):
-    bot.answer_callback_query(call.id, text="❗ این دکمه هنوز فعال نشده.", show_alert=False)
+    bot.answer_callback_query(call.id, text="❗ این دکمه هنوز فعال نشده. برای شروع دوباره /start را ارسال کنید.", show_alert=False)
 
 
 @bot.callback_query_handler(func=lambda c: c.data == "cancel")
@@ -25,9 +25,9 @@ def unimplemented_button(call: CallbackQuery):
 @bot.message_handler(func=lambda m: bot.get_state(m.from_user.id, m.chat.id) is None)
 @catch_errors(bot)
 def fallback_message_handler(msg: Message):
-    bot.send_message(msg.chat.id, "❓ این پیام توسط ربات شناسایی نشد.")
+    bot.send_message(msg.chat.id, "❓ این پیام توسط ربات شناسایی نشد. برای استفاده دوباره، دستور /start را ارسال کنید.")
 
 @bot.callback_query_handler(func=lambda c: True)
 @catch_errors(bot)
 def unknown_callback(call: CallbackQuery):
-    bot.answer_callback_query(call.id, text="❓ این عملیات تعریف نشده.", show_alert=False)
+    bot.answer_callback_query(call.id, text="❓ این عملیات تعریف نشده. برای شروع دوباره /start را ارسال کنید.", show_alert=False)

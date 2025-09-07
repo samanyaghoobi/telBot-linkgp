@@ -40,7 +40,6 @@ def handle_custom_range_days(msg: Message):
 
     repo = ReservationRepository(db)
     setting_repo = BotSettingRepository(db)
-    # all_hours = get_available_hours_from_setting(setting_repo) #todo
     all_hours=AVAILABLE_HOURS
     free_hours = repo.get_fully_free_hours(from_date, to_date, all_hours)
 
