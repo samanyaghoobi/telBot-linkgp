@@ -1,4 +1,5 @@
 from app.telegram.bot_instance import bot
+from app.telegram.exception_handler import catch_errors
 from app.telegram.middlewares.check_membership import check_membership
 from app.utils.command_menu import set_command_menu
 from app.utils.keyboard import admin_main_keyboard, user_main_keyboard
@@ -11,6 +12,7 @@ from app.telegram.scheduled.banner_publisher import publish_custom_banner
 # Handler for admin users
 
 @bot.message_handler(commands=["start","admin"], is_admin=True)
+@catch_errors(bot)
 def start_admin(message):
     if not check_membership(message): return
     set_command_menu(message.chat.id)
@@ -22,7 +24,8 @@ def start_admin(message):
     )
 
 # Handler for normal users
-@bot.message_handler(commands=["start", "user"])
+@bot.message_handler(commands=["start", "user"]) 
+@catch_errors(bot)
 def start_user(message):
     if not check_membership(message):
         return
@@ -41,9 +44,7 @@ def start_user(message):
 
 @bot.message_handler(commands=["test"], is_admin=True)
 def test_publish_custom_banner(message):
-    # متن تست را می‌توانید تغییر دهید یا از message.text استفاده کنید
     test_text = "این یک پیام تستی است که توسط ادمین ارسال شده است."
     banner_title = "بنر تستی"
     publish_custom_banner(test_text, banner_title)
     bot.reply_to(message, "پیام تستی به کانال و ادمین‌ها ارسال شد.")
-
