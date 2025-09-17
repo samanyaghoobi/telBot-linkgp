@@ -4,14 +4,41 @@ from dotenv import load_dotenv
 load_dotenv(override=True,verbose=True)
 
 
-TELEGRAM_API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
-TELEGRAM_PROXY_URL = os.getenv("TELEGRAM_PROXY_URL", "")
+def _clean_env_value(value: str | None) -> str | None:
+    if value is None:
+        return None
+    cleaned = value.strip()
+    if not cleaned or cleaned.lower() in {"none", "null"}:
+        return None
+    return cleaned
+
+
+def _get_env(*keys: str, default: str | None = None) -> str | None:
+    for key in keys:
+        val = _clean_env_value(os.getenv(key))
+        if val is not None:
+            return val
+    return default
+
+
+def _get_int_env(*keys: str, default: int) -> int:
+    raw = _get_env(*keys)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        return default
+
+
+TELEGRAM_API_TOKEN = _get_env("TELEGRAM_API_TOKEN", "BOT_TOKEN")
+TELEGRAM_PROXY_URL = _get_env("TELEGRAM_PROXY_URL", default="") or ""
 MYSQL_CONFIG = {
-    "host": os.getenv("MYSQL_HOST"),
-    "port": int(os.getenv("MYSQL_PORT", 3306)),
-    "user": os.getenv("MYSQL_USER"),
-    "password": os.getenv("MYSQL_PASSWORD"),
-    "database": os.getenv("MYSQL_DB")
+    "host": _get_env("MYSQL_HOST", "DB_HOST", default="mysql"),
+    "port": _get_int_env("MYSQL_PORT", "DB_PORT", default=3306),
+    "user": _get_env("MYSQL_USER", "DB_USER"),
+    "password": _get_env("MYSQL_PASSWORD", "DB_PASSWORD"),
+    "database": _get_env("MYSQL_DB", "DB_NAME"),
 }
 
 ADMINS = [int(x) for x in os.getenv("ADMINS", "").split(",") if x.strip()]

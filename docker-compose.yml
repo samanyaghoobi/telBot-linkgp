@@ -1,4 +1,21 @@
 services:
+  mysql:
+    container_name: linkgp-mysql
+    image: mysql:8.0
+    env_file:
+      - "/home/saman/env/linkgp/.env"
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:${DB_PORT:-3333}:3306"
+    volumes:
+      - /home/saman/valoums/mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+
   bot:
     container_name: ${CONTAINER_NAME:-linkgp-bot}
     image: "${IMAGE_NAME}:${IMAGE_TAG}"
@@ -6,10 +23,13 @@ services:
     env_file:
       - "/home/saman/env/linkgp/.env"
     restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
 
     # Persist logs on a named volume
     volumes:
-      - bot-logs:/logs
+      - /home/saman/valoums/bot-logs:/logs
 
     # Resource limits for non-Swarm compose
     mem_limit: 750m
@@ -21,7 +41,3 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
-
-volumes:
-  bot-logs:
-    name: linkgp-bot-logs

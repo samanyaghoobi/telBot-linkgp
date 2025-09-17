@@ -7,14 +7,24 @@ from app.telegram.handlers.other.startup import startup_message
 from app.telegram.filters.filters import IsAdminFilter, is_button, NoStateFilter
 from app.telegram.scheduled.sql_backup import send_latest_backup_to_channel
 from app.utils.messages.delete_message import delete_scheduled_messages
-from database.init import init_db
+from config import ADMINS
+from database.init import init_db, is_database_available
 from apscheduler.schedulers.background import BackgroundScheduler
 from app.telegram.handlers.admin.income.btn_income import send_admin_monthly_auto_report
 
 
 if __name__ == "__main__":
-    init_db()
-    logger.info("📦 Database initialized.")
+    if is_database_available():
+        init_db()
+        logger.info("📦 Database initialized.")
+    else:
+        logger.error("❌ Database unavailable. Skipping initialization.")
+        notification = "⚠️ Database connection failed. Bot started without initializing the database."
+        for admin_id in ADMINS:
+            try:
+                bot.send_message(admin_id, notification)
+            except Exception as exc:
+                logger.error("Failed to notify admin %s: %s", admin_id, exc)
 
     bot.add_custom_filter(IsAdminFilter())
     bot.add_custom_filter(NoStateFilter())
