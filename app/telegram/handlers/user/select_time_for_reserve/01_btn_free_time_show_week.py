@@ -2,15 +2,7 @@ from app.utils.markup.week_markup import show_week_for_navigation
 from telebot.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton,Message
 from app.telegram.bot_instance import bot
 from app.utils.message import get_message
-from database.session import SessionLocal
-from datetime import datetime, timedelta, date, time
-
-from database.models.banner import Banner
-from database.models.user import User
-from database.repository.bot_setting_repository import BotSettingRepository
-from database.repository.reservation_repository import ReservationRepository
-from database.repository.user_repository import UserRepository
-from sqlalchemy.exc import SQLAlchemyError
+from datetime import  timedelta, date
 from app.telegram.exception_handler import catch_errors
 
 

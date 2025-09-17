@@ -40,33 +40,34 @@ def receive_edited_amount(msg: Message):
         msg_id = int(data.get("msg_id"))
 
     db = SessionLocal()
-    userRepo=UserRepository(db)
-    old_balance = userRepo.get_user(user_id).balance
-    success = charge_user_transaction(db, user_id=user_id, amount=new_amount)
+    try:
+        userRepo = UserRepository(db)
+        old_balance = userRepo.get_user(user_id).balance
+        success = charge_user_transaction(db, user_id=user_id, amount=new_amount)
 
-    if success:
-        user = userRepo.get_user(user_id)
-        profile_text = get_message(
-            "user.profile",
-            user_id=user.userid,
-            username=user.username,
-            balance=user.balance,
-            score=user.score
-        )
-
-        bot.send_message(
-            msg.chat.id,
-            f"💰 <b>شارژ با موفقیت انجام شد!</b>\n\n"
-            f"🔹 <b>موجودی قبلی:</b> <code>{old_balance:,}</code> هزار تومان\n"
-            f"🔹 <b>میزان افزایش:</b> ✅<code>{(user.balance-old_balance):,}</code> هزار تومان\n"
-            f"🔸 <b>موجودی جدید:</b> <code>{user.balance:,}</code> هزار تومان\n\n"
-            f"{profile_text}",
-            reply_to_message_id=int(msg_id),
-            parse_mode="HTML"
+        if success:
+            user = userRepo.get_user(user_id)
+            profile_text = get_message(
+                "user.profile",
+                user_id=user.userid,
+                username=user.username,
+                balance=user.balance,
+                score=user.score
             )
-        
 
-    else:
-        bot.send_message(msg.chat.id, "❌ خطا در انجام عملیات شارژ.")
+            bot.send_message(
+                msg.chat.id,
+                f"💰 <b>شارژ با موفقیت انجام شد!</b>\n\n"
+                f"🔹 <b>موجودی قبلی:</b> <code>{old_balance:,}</code> هزار تومان\n"
+                f"🔹 <b>میزان افزایش:</b> ✅<code>{(user.balance-old_balance):,}</code> هزار تومان\n"
+                f"🔸 <b>موجودی جدید:</b> <code>{user.balance:,}</code> هزار تومان\n\n"
+                f"{profile_text}",
+                reply_to_message_id=int(msg_id),
+                parse_mode="HTML"
+            )
+        else:
+            bot.send_message(msg.chat.id, "❌ خطا در انجام عملیات شارژ.")
+    finally:
+        db.close()
 
     bot.delete_state(user_id=msg.chat.id, chat_id=msg.chat.id)

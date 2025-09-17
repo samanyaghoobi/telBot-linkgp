@@ -9,42 +9,47 @@ from database.repository.bot_setting_repository import BotSettingRepository
 from collections import defaultdict
 from database.repository.reservation_repository import ReservationRepository
 
-
 def show_week_for_navigation(message:str, start_of_week,input_markup:InlineKeyboardMarkup=None)-> InlineKeyboardMarkup:
-    
-    markup = input_markup or  InlineKeyboardMarkup(row_width=3)
+    markup = input_markup or InlineKeyboardMarkup(row_width=3)
 
     for i in range(7):
-        date = start_of_week + timedelta(days=i)
-        if date < date.today():
+        date_ = start_of_week + timedelta(days=i)
+        if date_ < date.today():
             continue
-        day_shamsi = jdatetime.date.fromgregorian(date=date)
-        weekday_farsi = get_weekday_farsi(date.weekday())
+        day_shamsi = jdatetime.date.fromgregorian(date=date_)
+        weekday_farsi = get_weekday_farsi(date_.weekday())
         label = f"{weekday_farsi} {day_shamsi.strftime('%d-%m-%Y')}"
-        callback = f"select_day_{date.isoformat()}"
-        markup.add( InlineKeyboardButton(label, callback_data=callback))
+        callback = f"select_day_{date_.isoformat()}"
+        markup.add(InlineKeyboardButton(label, callback_data=callback))
 
     if start_of_week > date.today():  # Prevent going back more than this week
         prev_week_callback = f"week_prev_{start_of_week.isoformat()}"
-        markup.add( InlineKeyboardButton("⏪ هفته قبلی", callback_data=prev_week_callback))
+        markup.add(InlineKeyboardButton("⏪ هفته قبلی", callback_data=prev_week_callback))
+
     db = SessionLocal()
-    setting_repo = BotSettingRepository(db)
-    max_future_date = int(setting_repo.bot_setting_get("max_future_date", "32"))
+    try:
+        setting_repo = BotSettingRepository(db)
+        max_future_date = int(setting_repo.bot_setting_get("max_future_date", "32"))
+    finally:
+        db.close()
+
     if start_of_week < date.today() + timedelta(days=max_future_date):
         next_week_callback = f"week_next_{start_of_week.isoformat()}"
-        markup.add( InlineKeyboardButton("⏩ هفته بعدی", callback_data=next_week_callback))
+        markup.add(InlineKeyboardButton("⏩ هفته بعدی", callback_data=next_week_callback))
 
     return markup
 
 
 def show_reservation_day_selector(start_date: date):
     db = SessionLocal()
-    repo = ReservationRepository(db)
+    try:
+        repo = ReservationRepository(db)
+        end_date = start_date + timedelta(days=7)
 
-    end_date = start_date + timedelta(days=7)
-
-    # 📦 فقط یک کوئری برای همه رزروهای هفته
-    reservations = repo.get_reservations_between_dates(start_date, end_date)
+        # 📦 فقط یک کوئری برای همه رزروهای هفته
+        reservations = repo.get_reservations_between_dates(start_date, end_date)
+    finally:
+        db.close()
 
     # 🔢 شمارش تعداد رزرو به ازای هر روز
     count_by_day = defaultdict(int)

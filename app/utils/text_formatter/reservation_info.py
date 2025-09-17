@@ -25,20 +25,23 @@ def format_reservation_message(reserve_date: date, reserve_time: time, price: in
 # Format reservation details from DB by reservation ID
 def format_reservation_by_id(reservation_id: int) -> str:
     db = SessionLocal()
-    repo = ReservationRepository(db)
-    banner_repo = BannerRepository(db)
+    try:
+        repo = ReservationRepository(db)
+        banner_repo = BannerRepository(db)
 
-    reservation = repo.get_by_id(reservation_id)
-    if not reservation:
-        return "❌ رزرو یافت نشد."
+        reservation = repo.get_by_id(reservation_id)
+        if not reservation:
+            return "❌ رزرو یافت نشد."
 
-    banner = banner_repo.get_by_id(reservation.banner_id)
-    banner_title = banner.title if banner else "بنر حذف شده"
+        banner = banner_repo.get_by_id(reservation.banner_id)
+        banner_title = banner.title if banner else "بنر حذف شده"
 
-    return format_reservation_message(
-        reserve_date=reservation.date,
-        reserve_time=reservation.time,
-        price=reservation.price,
-        banner_title=banner_title,
-        link=banner.link
-    )
+        return format_reservation_message(
+            reserve_date=reservation.date,
+            reserve_time=reservation.time,
+            price=reservation.price,
+            banner_title=banner_title,
+            link=banner.link
+        )
+    finally:
+        db.close()

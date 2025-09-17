@@ -13,26 +13,27 @@ from database.session import SessionLocal
 from database.models.banner import Banner
 from database.services.banner_service import soft_delete_banner_transaction
 
-@bot.message_handler(func=lambda m:m.text == get_message("btn.user.profile"))
+@bot.message_handler(func=lambda m: m.text == get_message("btn.user.profile"))
 @catch_errors(bot)
-def profile_info(msg :Message):
+def profile_info(msg: Message):
     bot.delete_state(msg.from_user.id, msg.chat.id)
-    # if not check_membership(message): return
     db = SessionLocal()
-    repo = UserRepository(db)
-    user = repo.get_or_create_user(msg .from_user.id, msg .from_user.username)
+    try:
+        repo = UserRepository(db)
+        user = repo.get_or_create_user(msg.from_user.id, msg.from_user.username)
 
-    markup = InlineKeyboardMarkup()
-    markup.add(
-        InlineKeyboardButton(get_message("user.balanceIncrease"), callback_data=get_message("user.balanceIncrease")),
-        InlineKeyboardButton(get_message("btn.user.convert_points"), callback_data=get_message("btn.user.convert_points")),
-        row_width=2
-    )
+        markup = InlineKeyboardMarkup()
+        markup.add(
+            InlineKeyboardButton(get_message("user.balanceIncrease"), callback_data=get_message("user.balanceIncrease")),
+            InlineKeyboardButton(get_message("btn.user.convert_points"), callback_data=get_message("btn.user.convert_points")),
+            row_width=2
+        )
 
-    bot.send_message(
-        msg .chat.id,
-        text=get_message("user.profile", user_id=user.userid, username=user.username, balance=user.balance, score=user.score),
-        parse_mode="HTML",
-        reply_markup=markup
-    )
-
+        bot.send_message(
+            msg.chat.id,
+            text=get_message("user.profile", user_id=user.userid, username=user.username, balance=user.balance, score=user.score),
+            parse_mode="HTML",
+            reply_markup=markup
+        )
+    finally:
+        db.close()

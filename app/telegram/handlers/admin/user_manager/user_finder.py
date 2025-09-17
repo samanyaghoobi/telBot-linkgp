@@ -20,33 +20,28 @@ from database.session import SessionLocal
 )
 def search_user_by_forward_or_id(msg: Message):
     db = SessionLocal()
-    repo = UserRepository(db)
-    user_id = None
+    try:
+        repo = UserRepository(db)
+        user_id = None
 
-    if  msg.text and msg.text.strip().isdigit():
-        user_id = int(msg.text.strip())
-    
-    # If the message contains a formatted user ID (e.g., شناسه کاربری : 5416152450)
-    elif msg.text:
-        user_id = extract_user_id(msg.text)
+        if msg.text and msg.text.strip().isdigit():
+            user_id = int(msg.text.strip())
+        elif msg.text:
+            user_id = extract_user_id(msg.text)
 
-    # Search for the user by the ID
-    user = repo.get_user(user_id)
-    if user:
-        # Show the user profile to the admin
-        
-        profile_text, markup = get_userProfile_and_markup(user=user)
-        bot.send_message(
-            chat_id=msg.chat.id,
-            text=profile_text,
-            parse_mode="HTML",
-            reply_markup=markup
-        )
-
-    else:
-        # If the user is not found, send an error message
-        bot.send_message(msg.chat.id, get_message("error.userNotFound"))
-
+        user = repo.get_user(user_id)
+        if user:
+            profile_text, markup = get_userProfile_and_markup(user=user)
+            bot.send_message(
+                chat_id=msg.chat.id,
+                text=profile_text,
+                parse_mode="HTML",
+                reply_markup=markup
+            )
+        else:
+            bot.send_message(msg.chat.id, get_message("error.userNotFound"))
+    finally:
+        db.close()
 
 
 @bot.callback_query_handler(func=lambda call: call.data== get_message("btn.find_user"))

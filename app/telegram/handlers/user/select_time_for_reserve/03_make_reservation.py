@@ -30,49 +30,52 @@ def show_reservation_details(call: CallbackQuery):
 
     # Retrieve banner, user details, and price from the database
     db = SessionLocal()
-    banner = db.query(Banner).filter(Banner.id == int(banner_id)).first()
-    user = db.query(User).filter(User.userid == call.from_user.id).first()
+    try:
+        banner = db.query(Banner).filter(Banner.id == int(banner_id)).first()
+        user = db.query(User).filter(User.userid == call.from_user.id).first()
 
-    if not banner:
-        bot.answer_callback_query(call.id, "بنر پیدا نشد.")
-        return
+        if not banner:
+            bot.answer_callback_query(call.id, "بنر پیدا نشد.")
+            return
 
-    # Retrieve the price for the selected time
-    #todo : makr it work
-    price = get_price_from_db_for_time(selected_hour) # Default price if not found in DB 
-    shamsi_date=convertToPersianDateStr(selected_date)
-    weekday=get_weekday_persian(selected_date)
-    # Prepare the confirmation message
-    message =get_message("user.msg.reserve.confirm",    selected_date=shamsi_date,weekday=weekday,
-    selected_hour=selected_hour,
-    banner_title=banner.title,
-    banner_text=banner.text,
-    price=price,
-    balance=user.balance)
-    message_banner_text = f"{banner.text}\n"
-    banner_msg=bot.edit_message_text(
-        text=message_banner_text,
-        chat_id=call.message.chat.id,
-        message_id=call.message.id
-    )
-    # Prepare markup with confirmation and cancel buttons
-    markup = InlineKeyboardMarkup(row_width=2)
-    if  int(user.balance) <  int(price):
-        markup.add(InlineKeyboardButton(get_message("user.balanceIncrease"),callback_data=get_message("user.balanceIncrease")))
-        bot.send_message(reply_to_message_id=call.message.id,chat_id=call.message.chat.id,text=message+"\n\n"+get_message("error.user.notEnoughBalance"),reply_markup=markup)
-        return
-    markup.add(
-        InlineKeyboardButton("✅ تایید رزرو", callback_data=f"confirm_reservation_{banner.id}_{selected_date}_{selected_hour}_{banner_msg.id}"),
-        InlineKeyboardButton("❌ بیخیال", callback_data=f"forget_reservation_{banner_msg.id}")
-    )
-    
+        # Retrieve the price for the selected time
+        #todo : makr it work
+        price = get_price_from_db_for_time(selected_hour) # Default price if not found in DB 
+        shamsi_date=convertToPersianDateStr(selected_date)
+        weekday=get_weekday_persian(selected_date)
+        # Prepare the confirmation message
+        message =get_message("user.msg.reserve.confirm",    selected_date=shamsi_date,weekday=weekday,
+        selected_hour=selected_hour,
+        banner_title=banner.title,
+        banner_text=banner.text,
+        price=price,
+        balance=user.balance)
+        message_banner_text = f"{banner.text}\n"
+        banner_msg=bot.edit_message_text(
+            text=message_banner_text,
+            chat_id=call.message.chat.id,
+            message_id=call.message.id
+        )
+        # Prepare markup with confirmation and cancel buttons
+        markup = InlineKeyboardMarkup(row_width=2)
+        if  int(user.balance) <  int(price):
+            markup.add(InlineKeyboardButton(get_message("user.balanceIncrease"),callback_data=get_message("user.balanceIncrease")))
+            bot.send_message(reply_to_message_id=call.message.id,chat_id=call.message.chat.id,text=message+"\n\n"+get_message("error.user.notEnoughBalance"),reply_markup=markup)
+            return
+        markup.add(
+            InlineKeyboardButton("✅ تایید رزرو", callback_data=f"confirm_reservation_{banner.id}_{selected_date}_{selected_hour}_{banner_msg.id}"),
+            InlineKeyboardButton("❌ بیخیال", callback_data=f"forget_reservation_{banner_msg.id}")
+        )
+        
 
-    bot.send_message(
-        chat_id=call.message.chat.id,
-        text=message,
-        reply_to_message_id=banner_msg.id,
-        reply_markup=markup
-    )
+        bot.send_message(
+            chat_id=call.message.chat.id,
+            text=message,
+            reply_to_message_id=banner_msg.id,
+            reply_markup=markup
+        )
+    finally:
+        db.close()
 
 
 
@@ -106,62 +109,63 @@ def confirm_reservation(call: CallbackQuery):
     selected_date = datetime.strptime(selected_date, "%Y-%m-%d").date()
 
     db = SessionLocal()
-    userRepo = UserRepository(db)
-    setting_repo = BotSettingRepository(db)
-    bannerRepo = BannerRepository(db)
-    reservationRepo = ReservationRepository(db)
+    try:
+        userRepo = UserRepository(db)
+        bannerRepo = BannerRepository(db)
+        reservationRepo = ReservationRepository(db)
 
-    user = userRepo.get_user(call.from_user.id)
-    banner = bannerRepo.get_by_id(banner_id=banner_id)
-    #todo fix pricing
-    price = int(setting_repo.bot_setting_get("price_per_hour", "50"))
+        user = userRepo.get_user(call.from_user.id)
+        banner = bannerRepo.get_by_id(banner_id=banner_id)
+        #todo fix pricing
+        # price = int(setting_repo.bot_setting_get("price_per_hour", "50"))
+        price = get_price_from_db_for_time(selected_hour)
+        #banner existence
+        if not user or not banner:
+            bot.send_message(call.message.chat.id, "❌ اطلاعات کاربر یا بنر یافت نشد.")
+            return
 
-    #banner existence
-    if not user or not banner:
-        bot.send_message(call.message.chat.id, "❌ اطلاعات کاربر یا بنر یافت نشد.")
-        return
-
-    # link duplication
-    duplicated_link=reservationRepo.is_duplicate_link_for_date(target_date=selected_date,link=banner.link )
-    if duplicated_link:
-        bot.delete_message(call.message.chat.id,call.message.id)
-        bot.send_message(
-        chat_id=call.message.chat.id,
-        text=(
-            "⚠️ <b>امکان ثبت این رزرو وجود ندارد.</b>\n\n"
-            "برای هر روز تنها یک بار می‌توان از هر لینک استفاده کرد.\n"
-            "لینکی که وارد کرده‌اید قبلاً برای این تاریخ ثبت شده است. ❌"
-        ),
-        parse_mode="HTML")
-
-        return
-    # handle today time delay reservation rule 
-    now = datetime.now()
-    if selected_date == now.date():
-        if not is_more_than_30_minutes_left(selected_hour):
+        # link duplication
+        duplicated_link=reservationRepo.is_duplicate_link_for_date(target_date=selected_date,link=banner.link )
+        if duplicated_link:
             bot.delete_message(call.message.chat.id,call.message.id)
-            bot.send_message(call.message.chat.id,text="امکان رزرو این ساعت وجود ندارد❌")
-    # Call transactional reservation service
-    reservation = reserve_banner_transaction(
-        db=db,
-        user_id=user.userid,
-        banner_id=banner.id,
-        reserve_date=selected_date,
-        reserve_time=selected_hour,
-        price=price,
-        link=banner.link
-    )
-    if not reservation:
-        bot.send_message(call.message.chat.id, "❌ رزرو انجام نشد. لطفاً دوباره تلاش کنید.")
-        return
+            bot.send_message(
+            chat_id=call.message.chat.id,
+            text=(
+                "⚠️ <b>امکان ثبت این رزرو وجود ندارد.</b>\n\n"
+                "برای هر روز تنها یک بار می‌توان از هر لینک استفاده کرد.\n"
+                "لینکی که وارد کرده‌اید قبلاً برای این تاریخ ثبت شده است. ❌"
+            ),
+            parse_mode="HTML")
 
-    # If successful, delete previous messages and send confirmation
-    bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
-    bot.delete_message(chat_id=call.message.chat.id, message_id=banner_msg_id)
+            return
+        # handle today time delay reservation rule 
+        now = datetime.now()
+        if selected_date == now.date():
+            if not is_more_than_30_minutes_left(selected_hour):
+                bot.delete_message(call.message.chat.id,call.message.id)
+                bot.send_message(call.message.chat.id,text="امکان رزرو این ساعت وجود ندارد❌")
+        # Call transactional reservation service
+        reservation = reserve_banner_transaction(
+            db=db,
+            user_id=user.userid,
+            banner_id=banner.id,
+            reserve_date=selected_date,
+            reserve_time=selected_hour,
+            price=price,
+            link=banner.link
+        )
+        if not reservation:
+            bot.send_message(call.message.chat.id, "❌ رزرو انجام نشد. لطفاً دوباره تلاش کنید.")
+            return
 
-    message = format_reservation_by_id(reservation_id=reservation.id)
-    bot.send_message(
-        call.message.chat.id,
-        f"اطلاعات رزرو شما:\n{message}\n\n✅ رزرو شما با موفقیت ثبت شد."
-    )
+        # If successful, delete previous messages and send confirmation
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
+        bot.delete_message(chat_id=call.message.chat.id, message_id=banner_msg_id)
 
+        message = format_reservation_by_id(reservation_id=reservation.id)
+        bot.send_message(
+            call.message.chat.id,
+            f"اطلاعات رزرو شما:\n{message}\n\n✅ رزرو شما با موفقیت ثبت شد."
+        )
+    finally:
+        db.close()

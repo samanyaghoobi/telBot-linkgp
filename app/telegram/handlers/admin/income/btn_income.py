@@ -78,35 +78,37 @@ def admin_bot_setting_panel(msg: Message):
 
 def send_admin_monthly_report(chat_id: int, target_date: datetime):
     db = SessionLocal()
-    reserve_repo = ReservationRepository(db)
-    payment_repo = TransactionRepository(db)
+    try:
+        reserve_repo = ReservationRepository(db)
+        payment_repo = TransactionRepository(db)
 
-    start_date, end_date = get_month_range(target_date)
+        start_date, end_date = get_month_range(target_date)
 
-    total_deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
-    reservations = reserve_repo.get_reservations_between(start_date.date(), end_date.date())
-    total_reserves = len(reservations)
-    total_reserve_price = sum(r.price for r in reservations)
+        total_deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
+        reservations = reserve_repo.get_reservations_between(start_date.date(), end_date.date())
+        total_reserves = len(reservations)
+        total_reserve_price = sum(r.price for r in reservations)
 
-    shamsi = jdatetime.date.fromgregorian(date=start_date.date())
-    month_title = f"{shamsi.year}/{shamsi.month}"
+        shamsi = jdatetime.date.fromgregorian(date=start_date.date())
+        month_title = f"{shamsi.year}/{shamsi.month}"
 
-    text = format_monthly_report(month_title, total_deposit, total_reserve_price, total_reserves)
+        text = format_monthly_report(month_title, total_deposit, total_reserve_price, total_reserves)
 
-    prev_month = (start_date - timedelta(days=1)).replace(day=1)
-    next_month = end_date
+        prev_month = (start_date - timedelta(days=1)).replace(day=1)
+        next_month = end_date
 
-    markup = InlineKeyboardMarkup(row_width=2)
-    markup.add(
-        InlineKeyboardButton("⬅️ ماه قبل", callback_data=f"admin_month_stats_{prev_month.date()}"),
-        InlineKeyboardButton("➡️ ماه بعد", callback_data=f"admin_month_stats_{next_month.date()}"),
-    )
-    markup.add(
-        InlineKeyboardButton("📊 مقایسه با ماه قبل", callback_data="admin_compare_current_month")
-    )
+        markup = InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            InlineKeyboardButton("⬅️ ماه قبل", callback_data=f"admin_month_stats_{prev_month.date()}"),
+            InlineKeyboardButton("➡️ ماه بعد", callback_data=f"admin_month_stats_{next_month.date()}"),
+        )
+        markup.add(
+            InlineKeyboardButton("📊 مقایسه با ماه قبل", callback_data="admin_compare_current_month")
+        )
 
-    bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
-
+        bot.send_message(chat_id=chat_id, text=text, reply_markup=markup)
+    finally:
+        db.close()
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("admin_month_stats_"), is_admin=True)
 @catch_errors(bot)
@@ -115,40 +117,42 @@ def admin_month_navigation(call: CallbackQuery):
     target_date = datetime.fromisoformat(date_str)
 
     db = SessionLocal()
-    reserve_repo = ReservationRepository(db)
-    payment_repo = TransactionRepository(db)
+    try:
+        reserve_repo = ReservationRepository(db)
+        payment_repo = TransactionRepository(db)
 
-    start_date, end_date = get_month_range(target_date)
+        start_date, end_date = get_month_range(target_date)
 
-    total_deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
-    reservations = reserve_repo.get_reservations_between(start_date.date(), end_date.date())
-    total_reserves = len(reservations)
-    total_reserve_price = sum(r.price for r in reservations)
+        total_deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
+        reservations = reserve_repo.get_reservations_between(start_date.date(), end_date.date())
+        total_reserves = len(reservations)
+        total_reserve_price = sum(r.price for r in reservations)
 
-    shamsi = jdatetime.date.fromgregorian(date=start_date.date())
-    month_title = f"{shamsi.year}/{shamsi.month}"
+        shamsi = jdatetime.date.fromgregorian(date=start_date.date())
+        month_title = f"{shamsi.year}/{shamsi.month}"
 
-    text = format_monthly_report(month_title, total_deposit, total_reserve_price, total_reserves)
+        text = format_monthly_report(month_title, total_deposit, total_reserve_price, total_reserves)
 
-    prev_month = (start_date - timedelta(days=1)).replace(day=1)
-    next_month = end_date
+        prev_month = (start_date - timedelta(days=1)).replace(day=1)
+        next_month = end_date
 
-    markup = InlineKeyboardMarkup(row_width=2)
-    markup.add(
-        InlineKeyboardButton("⬅️ ماه قبل", callback_data=f"admin_month_stats_{prev_month.date()}"),
-        InlineKeyboardButton("➡️ ماه بعد", callback_data=f"admin_month_stats_{next_month.date()}"),
-    )
-    markup.add(
-        InlineKeyboardButton("📊 مقایسه با ماه قبل", callback_data="admin_compare_current_month")
-    )
+        markup = InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            InlineKeyboardButton("⬅️ ماه قبل", callback_data=f"admin_month_stats_{prev_month.date()}"),
+            InlineKeyboardButton("➡️ ماه بعد", callback_data=f"admin_month_stats_{next_month.date()}"),
+        )
+        markup.add(
+            InlineKeyboardButton("📊 مقایسه با ماه قبل", callback_data="admin_compare_current_month")
+        )
 
-    bot.edit_message_text(
-        chat_id=call.message.chat.id,
-        message_id=call.message.message_id,
-        text=text,
-        reply_markup=markup
-    )
-
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=text,
+            reply_markup=markup
+        )
+    finally:
+        db.close()
 
 @bot.callback_query_handler(func=lambda c: c.data == "admin_compare_current_month", is_admin=True)
 @catch_errors(bot)

@@ -6,6 +6,7 @@ from app.utils.message import get_message
 from database.repository.user_repository import UserRepository
 from database.services.user_service import create_user_if_not_exists
 from database.session import SessionLocal
+from app.telegram.scheduled.banner_publisher import publish_custom_banner
 
 # Handler for admin users
 
@@ -26,14 +27,23 @@ def start_user(message):
     if not check_membership(message):
         return
 
-
     db = SessionLocal()
-    repo = UserRepository(db)
-    user = repo.get_or_create_user(message .from_user.id, message .from_user.username)
+    try:
+        repo = UserRepository(db)
+        user = repo.get_or_create_user(message.from_user.id, message.from_user.username)
+        bot.send_message(
+            message.chat.id,
+            get_message("start.welcome"),
+            reply_markup=user_main_keyboard()
+        )
+    finally:
+        db.close()
 
+@bot.message_handler(commands=["test"], is_admin=True)
+def test_publish_custom_banner(message):
+    # متن تست را می‌توانید تغییر دهید یا از message.text استفاده کنید
+    test_text = "این یک پیام تستی است که توسط ادمین ارسال شده است."
+    banner_title = "بنر تستی"
+    publish_custom_banner(test_text, banner_title)
+    bot.reply_to(message, "پیام تستی به کانال و ادمین‌ها ارسال شد.")
 
-    bot.send_message(
-        message.chat.id,
-        get_message("start.welcome"),
-        reply_markup=user_main_keyboard()
-    )

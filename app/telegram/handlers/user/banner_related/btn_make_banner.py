@@ -10,25 +10,33 @@ from database.repository.bot_setting_repository import BotSettingRepository
 from database.repository.user_repository import UserRepository
 
 @bot.callback_query_handler(func=lambda c: c.data == get_message("btn.user.make_banner"))
-def start_banner_creation(call :CallbackQuery):
+def start_banner_creation(call: CallbackQuery):
     bot.delete_state(call.message.from_user.id, call.message.chat.id)
     db = SessionLocal()
-    user_repo = UserRepository(db)
-    setting_repo = BotSettingRepository(db)
+    try:
+        user_repo = UserRepository(db)
+        setting_repo = BotSettingRepository(db)
 
-    user = user_repo.get_or_create_user(call.message.from_user.id, call.message.from_user.username)
-    
-    #  Count only active banners (not deleted)
-    user_banners_count = len([b for b in user.banners if not b.is_deleted])
-    max_allowed = int(setting_repo.bot_setting_get("max_user_banners", "6"))
+        user = user_repo.get_or_create_user(call.message.from_user.id, call.message.from_user.username)
+        
+        # Count only active banners (not deleted)
+        user_banners_count = len([b for b in user.banners if not b.is_deleted])
+        max_allowed = int(setting_repo.bot_setting_get("max_user_banners", "6"))
 
-    if user_banners_count >= max_allowed:
-        bot.send_message(call.message.chat.id, get_message("error.banner.limit_reached"))
-        return
+        if user_banners_count >= max_allowed:
+            bot.send_message(call.message.chat.id, get_message("error.banner.limit_reached"))
+            return
 
-    bot.set_state(call.message.chat.id, BannerStates.waiting_for_title, call.message.chat.id)
-    msg_to_delete=bot.edit_message_text(message_id=call.message.id,chat_id=call.message.chat.id, text=get_message("banner.msg.title"),reply_markup=cancel_markup())
-    schedule_message_deletion(chat_id=msg_to_delete.chat.id,message_id=msg_to_delete.id,delay=50)
+        bot.set_state(call.message.chat.id, BannerStates.waiting_for_title, call.message.chat.id)
+        msg_to_delete = bot.edit_message_text(
+            message_id=call.message.id,
+            chat_id=call.message.chat.id,
+            text=get_message("banner.msg.title"),
+            reply_markup=cancel_markup()
+        )
+        schedule_message_deletion(chat_id=msg_to_delete.chat.id, message_id=msg_to_delete.id, delay=50)
+    finally:
+        db.close()
 
 
 #########################################################################
@@ -72,18 +80,21 @@ def get_banner_link(msg: Message):
         link = msg.text
 
     db = SessionLocal()
-    setting_repo = BotSettingRepository(db)
-    user_repo = UserRepository(db)
+    try:
+        setting_repo = BotSettingRepository(db)
+        user_repo = UserRepository(db)
 
-    user = user_repo.get_user(msg.from_user.id)
-    banner_format = setting_repo.bot_setting_get("banner_format",
-        "Super GP\n\nnaмe: {name}\n\nмeмвer: {member}\n\nlιnĸ: {link}\n\n@LinkGP")
-    banner_text = banner_format.format( name=name, member=member, link=link)
-    banner_link=link
+        user = user_repo.get_user(msg.from_user.id)
+        banner_format = setting_repo.bot_setting_get("banner_format",
+            "Super GP\n\nnaмe: {name}\n\nмeмвer: {member}\n\nlιnĸ: {link}\n\n@LinkGP")
+        banner_text = banner_format.format(name=name, member=member, link=link)
+        banner_link = link
 
-    new_banner = Banner(title=title,user_id=user.userid, text=banner_text,link=banner_link)
-    db.add(new_banner)
-    db.commit()
+        new_banner = Banner(title=title, user_id=user.userid, text=banner_text, link=banner_link)
+        db.add(new_banner)
+        db.commit()
+    finally:
+        db.close()
 
     bot.send_message(msg.chat.id, get_message("banner.msg.success"))
     bot.send_message(msg.chat.id, banner_text)

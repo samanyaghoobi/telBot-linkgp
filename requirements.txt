@@ -10,3 +10,4 @@ apscheduler
 SQLAlchemy==1.4.49
 APScheduler
 coloredlogs
+cryptography

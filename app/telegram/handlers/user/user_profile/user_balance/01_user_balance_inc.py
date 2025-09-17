@@ -14,16 +14,19 @@ import re
 @catch_errors(bot)
 def start_charge_flow(call: CallbackQuery):
     db = SessionLocal()
-    setting_repo = BotSettingRepository(db)
-    options_str = setting_repo.bot_setting_get("charge_options", "8,15,25")
-    options = [int(opt.strip()) for opt in options_str.split(",") if opt.strip().isdigit()]
+    try:
+        setting_repo = BotSettingRepository(db)
+        options_str = setting_repo.bot_setting_get("charge_options", "8,15,25")
+        options = [int(opt.strip()) for opt in options_str.split(",") if opt.strip().isdigit()]
 
-    markup = InlineKeyboardMarkup(row_width=2)
-    for amount in options:
-        markup.add(InlineKeyboardButton(f"{amount:,} هزارتومان", callback_data=f"select_charge_{amount}"))
-    markup.add(InlineKeyboardButton("💳 مبلغ دلخواه", callback_data="select_charge_custom"))
+        markup = InlineKeyboardMarkup(row_width=2)
+        for amount in options:
+            markup.add(InlineKeyboardButton(f"{amount:,} هزارتومان", callback_data=f"select_charge_{amount}"))
+        markup.add(InlineKeyboardButton("💳 مبلغ دلخواه", callback_data="select_charge_custom"))
 
-    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.id,text= "💰 لطفاً یکی از مبالغ زیر را برای شارژ انتخاب کنید:", reply_markup=markup)
+        bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.id,text= "💰 لطفاً یکی از مبالغ زیر را برای شارژ انتخاب کنید:", reply_markup=markup)
+    finally:
+        db.close()
 
 # Step 2: Handle charge selection
 @bot.callback_query_handler(func=lambda c: c.data.startswith("select_charge_"))

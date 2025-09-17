@@ -11,8 +11,11 @@ from telebot.types import CallbackQuery,InlineKeyboardButton,Message
 def user_list(msg: Message):
     bot.delete_state(msg.from_user.id, msg.chat.id)
     db = SessionLocal()
-    repo = UserRepository(db)
-    users = repo.get_all_users()
+    try:
+        repo = UserRepository(db)
+        users = repo.get_all_users()
+    finally:
+        db.close()
 
     markup = create_pagination_for_users(users, 0)
     bot.send_message(
@@ -24,8 +27,11 @@ def user_list(msg: Message):
 @bot.callback_query_handler(func=lambda call: call.data.startswith("prev_") or call.data.startswith("next_"))
 def paginate_user_list(call: CallbackQuery):
     db = SessionLocal()
-    repo = UserRepository(db)
-    users = repo.get_all_users()
+    try:
+        repo = UserRepository(db)
+        users = repo.get_all_users()
+    finally:
+        db.close()
 
     page = int(call.data.split("_")[1])
     markup = create_pagination_for_users(users, page)
@@ -42,8 +48,12 @@ def handle_user_profile_view(call: CallbackQuery):
     user_id = int(call.data.split("_")[1])
 
     db = SessionLocal()
-    repo = UserRepository(db)
-    user = repo.get_user(user_id)
+    try:
+        repo = UserRepository(db)
+        user = repo.get_user(user_id)
+    finally:
+        db.close()
+
     if not user:
         bot.answer_callback_query(call.id, "❌ کاربر یافت نشد.", show_alert=True)
         return

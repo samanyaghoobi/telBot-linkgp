@@ -85,33 +85,34 @@ def format_monthly_comparison(this_data, last_data, this_month_start: datetime) 
 - 💳 مجموع رزرو: {diff_label(t_sum, l_sum)}
 - 📝 تعداد رزرو: {diff_label(t_count, l_count)}
 """.strip()
-
 def send_admin_monthly_auto_report():
     logger.info(f"📊 Monthly income report is triggered")
 
     db = SessionLocal()
-    reserve_repo = ReservationRepository(db)
-    payment_repo = TransactionRepository(db)
+    try:
+        reserve_repo = ReservationRepository(db)
+        payment_repo = TransactionRepository(db)
 
-    this_month = datetime.today().replace(day=1)
-    last_month = (this_month - timedelta(days=1)).replace(day=1)
+        this_month = datetime.today().replace(day=1)
+        last_month = (this_month - timedelta(days=1)).replace(day=1)
 
-    def get_data(start_date):
-        end_date = (start_date + timedelta(days=32)).replace(day=1)
-        deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
-        reservations = reserve_repo.get_reservations_between(start_date.date(), end_date.date())
-        reserve_price = sum(r.price for r in reservations)
-        return deposit, len(reservations), reserve_price, start_date, end_date
+        def get_data(start_date):
+            end_date = (start_date + timedelta(days=32)).replace(day=1)
+            deposit = payment_repo.get_total_deposit(start_date.date(), end_date.date())
+            reservations = reserve_repo.get_reservations_between(start_date.date(), end_date.date())
+            reserve_price = sum(r.price for r in reservations)
+            return deposit, len(reservations), reserve_price, start_date, end_date
 
-    t_dep, t_count, t_sum, t_start, t_end = get_data(this_month)
-    l_dep, l_count, l_sum, _, _ = get_data(last_month)
+        t_dep, t_count, t_sum, t_start, t_end = get_data(this_month)
+        l_dep, l_count, l_sum, _, _ = get_data(last_month)
 
-    full_report = format_monthly_report(t_start, t_end, t_dep, t_sum, t_count)
-    comparison = format_monthly_comparison((t_dep, t_count, t_sum), (l_dep, l_count, l_sum), t_start)
+        full_report = format_monthly_report(t_start, t_end, t_dep, t_sum, t_count)
+        comparison = format_monthly_comparison((t_dep, t_count, t_sum), (l_dep, l_count, l_sum), t_start)
 
-    msg = f"{full_report}\n\n{comparison}"
+        msg = f"{full_report}\n\n{comparison}"
 
-    for admin_id in ADMINS:
-        bot.send_message(chat_id=admin_id, text=msg, parse_mode="HTML")
-        logger.info(f"📊 Monthly income report sent to admin 🧑‍💼 ID: {admin_id}")
-
+        for admin_id in ADMINS:
+            bot.send_message(chat_id=admin_id, text=msg, parse_mode="HTML")
+            logger.info(f"📊 Monthly income report sent to admin 🧑‍💼 ID: {admin_id}")
+    finally:
+        db.close()

@@ -18,7 +18,6 @@ def ask_custom_range_length(call: CallbackQuery):
     bot.set_state(call.from_user.id, "waiting_range_days", call.message.chat.id)
     bot.send_message(call.message.chat.id, "📌 چند روز متوالی می‌خواهی رزرو کنی؟ (بین ۳ تا ۳۰ عدد وارد کن)")
 
-
 # state handler to receive number of days
 @bot.message_handler(state="waiting_range_days")
 @catch_errors(bot)
@@ -28,10 +27,12 @@ def handle_custom_range_days(msg: Message):
         days = int(msg.text.strip())
     except ValueError:
         bot.send_message(msg.chat.id, "❌ لطفاً فقط یک عدد بین ۳ تا ۳۰ وارد کن.")
+        db.close()
         return
 
     if days < 3 or days > 30:
         bot.send_message(msg.chat.id, "❌ عدد وارد شده باید بین ۳ تا ۳۰ باشد.")
+        db.close()
         return
 
     from_date = date.today()
@@ -39,12 +40,12 @@ def handle_custom_range_days(msg: Message):
 
     repo = ReservationRepository(db)
     setting_repo = BotSettingRepository(db)
-    # all_hours = get_available_hours_from_setting(setting_repo) #todo
     all_hours=AVAILABLE_HOURS
     free_hours = repo.get_fully_free_hours(from_date, to_date, all_hours)
 
     if not free_hours:
         bot.send_message(msg.chat.id, "❌ در این بازه هیچ ساعتی به‌طور کامل آزاد نیست.")
+        db.close()
         return
 
     markup = InlineKeyboardMarkup(row_width=3)
@@ -58,6 +59,7 @@ def handle_custom_range_days(msg: Message):
 
     bot.send_message(msg.chat.id, "⏰ یکی از ساعت‌هایی که در کل این بازه آزاد است را انتخاب کن:", reply_markup=markup)
     bot.delete_state(msg.from_user.id, msg.chat.id)
+    db.close()
 
 
 # handler to select hour and show banners
@@ -74,6 +76,7 @@ def choose_banner_for_range(call: CallbackQuery):
 
     if not user or not user.banners:
         bot.send_message(call.message.chat.id, "❌ شما هیچ بنری ثبت نکرده‌اید.")
+        db.close()
         return
 
     markup = InlineKeyboardMarkup(row_width=1)
@@ -83,6 +86,7 @@ def choose_banner_for_range(call: CallbackQuery):
         markup.add(InlineKeyboardButton(banner.title, callback_data=f"confirm_range_reserve_{days}_{hour_str}_{banner.id}"))
 
     bot.send_message(call.message.chat.id, "🖼 لطفاً بنری که می‌خواهی رزرو شود را انتخاب کن:", reply_markup=markup)
+    db.close()
 
 
 # confirm reservation and call transaction
@@ -101,17 +105,4 @@ def confirm_custom_range_reserve(call: CallbackQuery):
 
     result, message = reserve_custom_range_transaction(db, user_id, banner_id, from_date, to_date, hour)
     bot.send_message(call.message.chat.id, message)
-
-
-# service/reservation_service.py
-
-# repository/reservation_repository.py
-
-
-# # ابزار گرفتن ساعات قابل رزرو از تنظیمات
-# def get_available_hours_from_setting(setting_repo):
-#     from app.config.constants import DEFAULT_AVAILABLE_HOURS
-#     raw = setting_repo.bot_setting_get("AVAILABLE_HOURS", None)
-#     if not raw:
-#         return DEFAULT_AVAILABLE_HOURS
-#     return [x.strip() for x in raw.split(",") if x.strip()]
+    db.close()

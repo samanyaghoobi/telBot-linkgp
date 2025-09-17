@@ -10,15 +10,15 @@ from database.session import SessionLocal
 @bot.callback_query_handler(func=lambda c: c.data.startswith("confirm_charge_"))
 @catch_errors(bot)
 def confirm_charge(call: CallbackQuery):
+    db = None
     try:
         key = call.data.replace("confirm_charge_","")
         user_id, amount, msg_id,chat_id = key.split("_")
         user_id = int(user_id)
         amount = int(amount)
 
-
         db = SessionLocal()
-        userRepo=UserRepository(db)
+        userRepo = UserRepository(db)
         old_balance = userRepo.get_user(user_id).balance
         success = charge_user_transaction(db, user_id=user_id, amount=amount)
 
@@ -31,7 +31,6 @@ def confirm_charge(call: CallbackQuery):
                 balance=user.balance,
                 score=user.score
             )
-            
 
             bot.send_message(
                 chat_id,
@@ -42,10 +41,10 @@ def confirm_charge(call: CallbackQuery):
                 f"{profile_text}",
                 reply_to_message_id=int(msg_id),
                 parse_mode="HTML"
-              )
-            
-            markup_edited=InlineKeyboardMarkup()
-            markup_edited.add(InlineKeyboardButton(text="✅این رسید تایید شده است✅",callback_data="none"))
+            )
+
+            markup_edited = InlineKeyboardMarkup()
+            markup_edited.add(InlineKeyboardButton(text="✅این رسید تایید شده است✅", callback_data="none"))
             bot.edit_message_reply_markup(call.message.chat.id, call.message.id, reply_markup=markup_edited)
 
         else:
@@ -53,3 +52,6 @@ def confirm_charge(call: CallbackQuery):
     except Exception as e:
         bot.answer_callback_query(call.id, "❌ خطا در پردازش تایید.")
         notify_admins_error(bot, "confirm_charge callback", e, user_info=call.from_user.id)
+    finally:
+        if db is not None:
+            db.close()

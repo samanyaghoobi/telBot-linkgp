@@ -14,87 +14,94 @@ from database.services.banner_service import soft_delete_banner_transaction
 @catch_errors(bot)
 def show_user_banners(message: Message):
     db = SessionLocal()
-    repo = UserRepository(db)
-    user = repo.get_user(message.from_user.id)
+    try:
+        repo = UserRepository(db)
+        user = repo.get_user(message.from_user.id)
 
-    if not user:
+        if not user:
+            bot.send_message(
+                chat_id=message.chat.id,
+                text=get_message("msg.noBannerFind")
+            )
+            return
+
+        markup = build_user_banner_list_markup(user_id=user.userid)
+        text = "📋 لیست بنرهای شما:"
         bot.send_message(
             chat_id=message.chat.id,
-            text=get_message("msg.noBannerFind")
+            text=text,
+            reply_markup=markup
         )
-        return
-
-
-    markup = build_user_banner_list_markup(user_id=user.userid)
-    text = "📋 لیست بنرهای شما:"
-    bot.send_message(
-        chat_id=message.chat.id,
-        text=text,
-        reply_markup=markup
-    )
+    finally:
+        db.close()
 
 @bot.callback_query_handler(func=lambda c: c.data == get_message("btn.user.see_banners"))
 @catch_errors(bot)
 def show_user_banners(call: CallbackQuery):
     db = SessionLocal()
-    repo = UserRepository(db)
-    user = repo.get_user(call.message.chat.id)
+    try:
+        repo = UserRepository(db)
+        user = repo.get_user(call.message.chat.id)
 
-    if not user:
-        bot.send_message(
+        if not user:
+            bot.send_message(
+                chat_id=call.message.chat.id,
+                text=get_message("msg.noBannerFind")
+            )
+            return
+
+        markup = build_user_banner_list_markup(user_id=user.userid)
+        text = "📋 لیست بنرهای شما:"
+        bot.edit_message_text(
+            message_id=call.message.id,
             chat_id=call.message.chat.id,
-            text=get_message("msg.noBannerFind")
+            text=text,
+            reply_markup=markup
         )
-        return
-
-
-    markup = build_user_banner_list_markup(user_id=user.userid)
-    text = "📋 لیست بنرهای شما:"
-    bot.edit_message_text(
-        message_id=call.message.id,
-        chat_id=call.message.chat.id,
-        text=text,
-        reply_markup=markup
-    )
-
+    finally:
+        db.close()
 
 #* banner info
 @bot.callback_query_handler(func=lambda c: c.data.startswith("getBanner_"))
 @catch_errors(bot)
 def show_banner_detail(call: CallbackQuery):
-    banner_id = int(call.data.replace("getBanner_", ""))
     db = SessionLocal()
-    repo=BannerRepository(db)
-    banner = repo.get_by_id(banner_id)
+    try:
+        banner_id = int(call.data.replace("getBanner_", ""))
+        repo = BannerRepository(db)
+        banner = repo.get_by_id(banner_id)
 
-    if not banner or banner.user_id != call.from_user.id:
-        bot.answer_callback_query(call.id, "بنر یافت نشد یا مجاز نیستید.")
-        return
+        if not banner or banner.user_id != call.from_user.id:
+            bot.answer_callback_query(call.id, "بنر یافت نشد یا مجاز نیستید.")
+            return
 
-    markup = InlineKeyboardMarkup()
-    markup.add(
-        InlineKeyboardButton("🗑 حذف", callback_data=f"delete_banner_{banner.id}"),
-        InlineKeyboardButton("🔙 بازگشت", callback_data=get_message("btn.user.see_banners"))
-    )
-    bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,text=banner.text,reply_markup=markup)
-
+        markup = InlineKeyboardMarkup()
+        markup.add(
+            InlineKeyboardButton("🗑 حذف", callback_data=f"delete_banner_{banner.id}"),
+            InlineKeyboardButton("🔙 بازگشت", callback_data=get_message("btn.user.see_banners"))
+        )
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=banner.text, reply_markup=markup)
+    finally:
+        db.close()
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("delete_banner_"))
 @catch_errors(bot)
 def delete_banner(call: CallbackQuery):
-    banner_id = int(call.data.replace("delete_banner_", ""))
     db = SessionLocal()
-    bannerRepo=BannerRepository(db)
-    
-    banner = bannerRepo.get_by_id(banner_id)
-    
-    result = soft_delete_banner_transaction(banner_id=banner_id,db=db,user_id=call.message.chat.id,)
-    if result:
-        bot.delete_message(chat_id=call.message.chat.id,message_id=call.message.id)
-        banner_msg=bot.send_message(call.message.chat.id,banner.text)
-        bot.send_message(call.message.chat.id, "✅این بنر با موفقیت حذف شد.",reply_to_message_id=banner_msg.id)
-    else:
-        bot.answer_callback_query(call.id, "⛔ شما اجازه حذف این بنر را ندارید.")
+    try:
+        banner_id = int(call.data.replace("delete_banner_", ""))
+        bannerRepo = BannerRepository(db)
+        banner = bannerRepo.get_by_id(banner_id)
+
+        result = soft_delete_banner_transaction(banner_id=banner_id, db=db, user_id=call.message.chat.id)
+        if result:
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
+            banner_msg = bot.send_message(call.message.chat.id, banner.text)
+            bot.send_message(call.message.chat.id, "✅این بنر با موفقیت حذف شد.", reply_to_message_id=banner_msg.id)
+        else:
+            bot.answer_callback_query(call.id, "⛔ شما اجازه حذف این بنر را ندارید.")
+    finally:
+        db.close()
 
 #info : to much problem for editing link of banner
 # @bot.callback_query_handler(func=lambda c: c.data.startswith("edit_banner_"))
