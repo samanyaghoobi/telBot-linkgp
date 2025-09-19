@@ -1,4 +1,4 @@
-from typing import Optional,List
+from typing import Optional, List
 from sqlalchemy.orm import Session
 from database.models.user import User
 from sqlalchemy.exc import SQLAlchemyError
@@ -6,10 +6,12 @@ class UserRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_or_create_user(self, userid: int, username: str) -> User:
+    def get_or_create_user(self, userid: int, username: Optional[str]) -> User:
         user = self.db.query(User).filter_by(userid=userid).first()
         if not user:
-            user = User(userid=userid, username=username)
+            # Ensure username is never NULL to satisfy DB constraint
+            safe_username = (username or "").strip()
+            user = User(userid=userid, username=safe_username)
             self.db.add(user)
             self.db.commit()
         return user

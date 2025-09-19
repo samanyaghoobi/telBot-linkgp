@@ -1,31 +1,33 @@
 import logging
-import os
 from datetime import datetime
 from pathlib import Path
 import coloredlogs
 
-LOG_DIR = "logs"
-MAX_LOG_FILES = 7
+# Where to store logs: project_root/logs
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+LOG_DIR_NAME = "logs"
+MAX_LOG_FILES = 7  # keep logs of last 7 bot starts
 
-# Create log directory if it doesn't exist
-log_dir = Path(LOG_DIR)
-log_dir.mkdir(exist_ok=True)
+log_dir = PROJECT_ROOT / LOG_DIR_NAME
+log_dir.mkdir(parents=True, exist_ok=True)
 
-# Generate log filename
+# New log file per process start
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 log_file = log_dir / f"log_{timestamp}.log"
 
-# Clean old logs (keep only the latest MAX_LOG_FILES)
 def clean_old_logs():
+    """Keep only the latest MAX_LOG_FILES log files."""
     log_files = sorted(
-        [f for f in log_dir.glob("log_*.log")],
+        [f for f in log_dir.glob("log_*.log") if f.is_file()],
         key=lambda f: f.stat().st_mtime
     )
     while len(log_files) > MAX_LOG_FILES:
         oldest = log_files.pop(0)
-        oldest.unlink()
-
-clean_old_logs()
+        try:
+            oldest.unlink()
+        except Exception:
+            # Ignore failures to delete; continue pruning others
+            pass
 
 # Setup main logger
 logger = logging.getLogger("link_bot")
@@ -41,6 +43,9 @@ stream_handler.setFormatter(formatter)
 
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
+
+# After creating the new log file, prune older ones
+clean_old_logs()
 
 # Enable colored logs in terminal
 coloredlogs.install(level="DEBUG", logger=logger, fmt="%(asctime)s [%(levelname)s] %(message)s")
